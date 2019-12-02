@@ -36,6 +36,11 @@ BUILD_DIR = build
 # source
 ######################################
 # C sources
+RTT_C_SOURCES = \
+Lib/RTT/SEGGER_RTT.c \
+Lib/RTT/SEGGER_RTT_printf.c \
+Lib/Syscalls/SEGGER_RTT_Syscalls_GCC.c
+
 C_SOURCES =  \
 Src/main.c \
 Src/sd_diskio.c \
@@ -101,6 +106,8 @@ Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c  
 
+C_SOURCES += $(RTT_C_SOURCES)
+
 # ASM sources
 ASM_SOURCES =  \
 startup_stm32f405xx.s
@@ -158,6 +165,9 @@ AS_INCLUDES =  \
 -I\Inc
 
 # C includes
+RTT_C_INCLUDES = \
+-ILib/RTT
+
 C_INCLUDES =  \
 -IInc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
@@ -170,6 +180,7 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Include \
 -IDrivers/CMSIS/Include
 
+C_INCLUDES += $(RTT_C_INCLUDES)
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
