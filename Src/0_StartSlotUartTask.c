@@ -330,7 +330,6 @@ void DoCalibrationNTCConstantReq(uint8_t slotNumber)
 void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
 {
 	uint8_t u[5] = {0};
-	uint8_t i;
 
 	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
 

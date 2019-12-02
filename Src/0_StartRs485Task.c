@@ -65,9 +65,9 @@ void StartRs485Task(void const * argument)
     //uint8_t     i;
 
     HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
-	Rs485RTxQueue_Init(&Rs485RxQueue);			//블루투스용 rx 버퍼, 서클러큐 구현
+    Rs485RTxQueue_Init(&Rs485RxQueue);			//블루투스용 rx 버퍼, 서클러큐 구현
     HAL_UART_Receive_DMA(&huart1, rx485DataDMA, 32);
-	Rs485RxQueue_Clear(&Rs485RxQueue);
+    Rs485RxQueue_Clear(&Rs485RxQueue);
 
     //Task 부팅 완료 플레그
     SysProperties.bootingWate[1] = TRUE;
@@ -92,7 +92,7 @@ void StartRs485Task(void const * argument)
 
         //RX FUNCTION
         RxFunction();
-		UnpackingRs485RxQueue();
+	UnpackingRs485RxQueue();
 
         if(Rx485ReadCount == 31)
         {
@@ -111,13 +111,11 @@ void StartRs485Task(void const * argument)
 
 void RxFunction(void)
 {
-    uint8_t i;
-
 	if(BinarySem485RxHandle != NULL)  //RX
 	{
 		if(osSemaphoreWait(BinarySem485RxHandle, 0) == osOK)
 		{
-			for(i = 0; i < huart1.RxXferSize; i++)
+			for(uint8_t i = 0; i < huart1.RxXferSize; i++)
 			{
 				osDelay(1); 	  // nop 로 변경시 HardFault 발생 함. osDelayUntil(&xLastWakeTime, 180); 와 같이 사용 해야 함.
 				//doNOP(25000);
@@ -136,8 +134,12 @@ void UnpackingRs485RxQueue(void)
 	if(Rs485RxQueue_empty(&Rs485RxQueue) == FALSE)	//Rx 버퍼에 입력 데이터가 잇는지 확인
 	{
 
-		if((Rs485RxQueue.tail + 31) >= RS_485_RX_BUF_MAX)  {   etxLength0 = Rs485RxQueue.tail + 31 - RS_485_RX_BUF_MAX;   }
-		else											   {   etxLength0 = Rs485RxQueue.tail + 31; 					}
+		if((Rs485RxQueue.tail + 31) >= RS_485_RX_BUF_MAX)  {
+		  etxLength0 = Rs485RxQueue.tail + 31 - RS_485_RX_BUF_MAX;
+		}
+		else {
+		  etxLength0 = Rs485RxQueue.tail + 31;
+		}
 
 		if(Rs485RxQueue_Count(&Rs485RxQueue) > 31)// || (RxQueue_Count(&RxQueue) >= 134))
 		{
@@ -364,7 +366,6 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 	uint8_t t[1] = {0};
     int32_t ReadSize;
     uint16_t i = 0, j, ct;
-	uint16_t len;
 	uni4Byte temp;
 
 	if(osSemaphoreGetCount(CountingSem485TxHandle) == 0)
@@ -389,7 +390,7 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 		doMakeSend485DataDownLoad(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY, &ReadFileBuf[0], ReadSize + 8, packetSize + 8, packetSize + 8 + 20);
 		SendUart485String(&tx485DataDMA[0], packetSize + 8 + 20);
 
-/*		len = (packetSize + 8 + 20);
+/*		uint16_t len = (packetSize + 8 + 20);
 		ct  = (len / 32);
 
 		for(j = 0; j < ct; j++)
