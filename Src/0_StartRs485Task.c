@@ -2,7 +2,7 @@
 #include "0_soonQueue.h"
 #include "0_StartSlotUartTask.h"
 #include "0_soonFlashMemory.h"
-#include "0_Sdcard.h"
+#include "0_SdCard.h"
 
 /*********************************************************************
 *	Private variables

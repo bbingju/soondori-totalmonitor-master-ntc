@@ -24,7 +24,7 @@
 #else
 /* USER CODE BEGIN FirstSection */
 /* can be used to modify / undefine following code or add new definitions */
-#include "0_util.h"
+#include "0_Util.h"
 
 /* USER CODE END FirstSection */
 /* Includes ------------------------------------------------------------------*/
