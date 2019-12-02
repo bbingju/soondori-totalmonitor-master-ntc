@@ -580,7 +580,7 @@ void CmdCalibrationRTDConstSet(void)
 
 	if(i > 10)		//기록 실패
 	{
-		i == 0xFF;
+		i = 0xFF;
 		doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &i, 1, 12, 32);
 	}
 	else			//기록 성공
