@@ -18,38 +18,38 @@
 #define ALL_SLOT            0xF0
 
 // to Slave UART
-#define SEND_DATA_LENGTH					(uint8_t)(14)
+#define SEND_DATA_LENGTH					((uint8_t)(14))
 #define CMD_BASE                			CMD_STX, (uint8_t)0x00, (uint8_t)0x00, (uint8_t)0x00, (uint8_t)0x00, (uint8_t)0x00, (uint8_t)0x00, (uint8_t)0x00, (uint8_t)0x00, CMD_ETX
-#define CMD_STX     		    			(uint8_t)0x02
-#define CMD_ETX     		    			(uint8_t)0x03
-#define CMD_BOARD_TYPE		    			(uint8_t)'a'		//Board Type ¿äÃ»
-#define CMD_BOARD_EN_REQ					(uint8_t)'b'		//Board »ç¿ë ¿äÃ»
-#define CMD_BOARD_EN_SET					(uint8_t)'c'		//Board »ç¿ë ¼³Á¤
-#define CMD_BOARD_RESET		    			(uint8_t)'d'		//Board Reset
-#define CMD_SLOT_ID_REQ						(uint8_t)'e'		//Slot ¿äÃ»
-#define CMD_HW_VER							(uint8_t)'f'		//HW Version ¿äÃ»
-#define CMD_FW_VER							(uint8_t)'g'		//FW Version ¿äÃ»
-#define CMD_UUID_REQ 						(uint8_t)'h'		//UUID ¿äÃ»
-#define CMD_TEMP_REQ 						(uint8_t)'i'		//Temp ¿äÃ»
-#define CMD_TEMP_STATE_REQ 					(uint8_t)'j'		//Temp »óÅÂ ¿äÃ»
-#define CMD_ADC_REQ							(uint8_t)'k'		//ADC ¿äÃ»
-#define CMD_THRESHOLD_REQ	    			(uint8_t)'l'		//°æ°í¿Âµµ ¿äÃ»
-#define CMD_THRESHOLD_SET	    			(uint8_t)'m'		//°æ°í¿Âµµ ¼³Á¤
-#define CMD_RELAY_REQ 		    			(uint8_t)'n'		//RELAY »óÅÂ ¿äÃ»
-#define CMD_RELAY_SET 		    			(uint8_t)'o'		//RELAY »ç¿ë ¼³Á¤
+#define CMD_STX     		    			((uint8_t)0x02)
+#define CMD_ETX     		    			((uint8_t)0x03)
+#define CMD_BOARD_TYPE		    			((uint8_t)'a')		//Board Type ìš”ì²­
+#define CMD_BOARD_EN_REQ					((uint8_t)'b')		//Board ì‚¬ìš© ìš”ì²­
+#define CMD_BOARD_EN_SET					((uint8_t)'c')		//Board ì‚¬ìš© ì„¤ì •
+#define CMD_BOARD_RESET		    			((uint8_t)'d')		//Board Reset
+#define CMD_SLOT_ID_REQ						((uint8_t)'e')		//Slot ìš”ì²­
+#define CMD_HW_VER							((uint8_t)'f')		//HW Version ìš”ì²­
+#define CMD_FW_VER							((uint8_t)'g')		//FW Version ìš”ì²­
+#define CMD_UUID_REQ 						((uint8_t)'h')		//UUID ìš”ì²­
+#define CMD_TEMP_REQ 						((uint8_t)'i')		//Temp ìš”ì²­
+#define CMD_TEMP_STATE_REQ 					((uint8_t)'j')		//Temp ìƒíƒœ ìš”ì²­
+#define CMD_ADC_REQ							((uint8_t)'k')		//ADC ìš”ì²­
+#define CMD_THRESHOLD_REQ	    			((uint8_t)'l')		//ê²½ê³ ì˜¨ë„ ìš”ì²­
+#define CMD_THRESHOLD_SET	    			((uint8_t)'m')		//ê²½ê³ ì˜¨ë„ ì„¤ì •
+#define CMD_RELAY_REQ 		    			((uint8_t)'n')		//RELAY ìƒíƒœ ìš”ì²­
+#define CMD_RELAY_SET 		    			((uint8_t)'o')		//RELAY ì‚¬ìš© ì„¤ì •
 
-#define CMD_REVISION_APPLY_SET     			(uint8_t)'p'		//º¸Á¤ Àû¿ë
-#define CMD_REVISION_CONSTANT_SET			(uint8_t)'q'		//Á¢ÃË»ó¼ö ¼³Á¤
-#define CMD_REVISION_APPLY_REQ      		(uint8_t)'r'		//º¸Á¤»óÅÂ ¿äÃ»
-#define CMD_REVISION_CONSTANT_REQ			(uint8_t)'s'		//Á¢ÃË»ó¼ö ¿äÃ»
+#define CMD_REVISION_APPLY_SET     			((uint8_t)'p')		//ë³´ì • ì ìš©
+#define CMD_REVISION_CONSTANT_SET			((uint8_t)'q')		//ì ‘ì´‰ìƒìˆ˜ ì„¤ì •
+#define CMD_REVISION_APPLY_REQ      		((uint8_t)'r')		//ë³´ì •ìƒíƒœ ìš”ì²­
+#define CMD_REVISION_CONSTANT_REQ			((uint8_t)'s')		//ì ‘ì´‰ìƒìˆ˜ ìš”ì²­
 
-#define CMD_CALIBRATION_NTC_CON_TABLE_CAL	(uint8_t)'t'		//NTC±³Á¤»ó¼ö °è»êÇØ¶ó
-#define CMD_CALIBRATION_NTC_CONSTANT_SET	(uint8_t)'u'		//NTC±³Á¤»ó¼ö Áõ°¨ ¼³Á¤
-#define CMD_CALIBRATION_NTC_CON_TABLE_REQ	(uint8_t)'v'		//NTC±³Á¤»ó¼ö ¿äÃ»
-#define CMD_CALIBRATION_NTC_CONSTANT_REQ	(uint8_t)'w'		//NTC±³Á¤Áõ°¨ ¿äÃ»
+#define CMD_CALIBRATION_NTC_CON_TABLE_CAL	((uint8_t)'t')		//NTCêµì •ìƒìˆ˜ ê³„ì‚°í•´ë¼
+#define CMD_CALIBRATION_NTC_CONSTANT_SET	((uint8_t)'u')		//NTCêµì •ìƒìˆ˜ ì¦ê° ì„¤ì •
+#define CMD_CALIBRATION_NTC_CON_TABLE_REQ	((uint8_t)'v')		//NTCêµì •ìƒìˆ˜ ìš”ì²­
+#define CMD_CALIBRATION_NTC_CONSTANT_REQ	((uint8_t)'w')		//NTCêµì •ì¦ê° ìš”ì²­
 
-#define CMD_REQ         	    			(uint8_t)0x01
-#define CMD_SET         	    			(uint8_t)0x02
+#define CMD_REQ         	    			((uint8_t)0x01)
+#define CMD_SET         	    			((uint8_t)0x02)
 
 //void StartBluetooehTask(void const * argument);
 //////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@
 //////////////////////////////////////////////////////////////////
 void StartSlotUartTask(void const * argument);
 
-//  °øÅë
+//  ê³µí†µ
 void SlotRxFunction(void);
 void UnpackingRxQueue(void);
 void DoSlotReset(uint8_t slot);

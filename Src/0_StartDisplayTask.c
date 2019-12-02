@@ -32,7 +32,7 @@ uint8_t iiii;
 
 /*********************************************************************
 *	StartDisplayTask
-*	16-SEGMENT, LED, BUTTON INPUT µîÀ» Ã³¸® ÇÏ´Â TASK
+*	16-SEGMENT, LED, BUTTON INPUT ë“±ì„ ì²˜ë¦¬ í•˜ëŠ” TASK
 **********************************************************************/
 void StartDisplayTask(void const * argument)
 {
@@ -44,7 +44,7 @@ void StartDisplayTask(void const * argument)
 	revid = HAL_GetREVID();
 	devid = HAL_GetDEVID();
 
-    //Task ºÎÆÃ ¿Ï·á ÇÃ·¹±×
+    //Task ë¶€íŒ… ì™„ë£Œ í”Œë ˆê·¸
     SysProperties.bootingWate[0] = TRUE;
 
     while(1)
@@ -64,7 +64,7 @@ void StartDisplayTask(void const * argument)
     {
         xLastWakeTime = osKernelSysTick();
 
-        if(ct++ % 2 == 0)	// 1ÃÊ¿¡ ÇÑ¹ø¾¿ Á¡¸ê
+        if(ct++ % 2 == 0)	// 1ì´ˆì— í•œë²ˆì”© ì ë©¸
         {
             HAL_GPIO_TogglePin(POWER_LED_GPIO_Port, POWER_LED_Pin);
 			DoDisplayModeChange();
@@ -99,14 +99,14 @@ void StartDisplayTask(void const * argument)
 
 /*********************************************************************
 *	DoDisplayModeChange
-*	16Segment Ç¥½Ã ¸ğµå º¯°æÀ» À§ÇØ ¿¡·¯ Ã¼Å©
+*	16Segment í‘œì‹œ ëª¨ë“œ ë³€ê²½ì„ ìœ„í•´ ì—ëŸ¬ ì²´í¬
 **********************************************************************/
 void DoDisplayModeChange(void)
 {
 	uint8_t	i, j;
 	uint8_t errorCount = 0;
 
-	//¿Âµµ °æ°í°¡ ÀÖ´ÂÁö È®ÀÎ
+	//ì˜¨ë„ ê²½ê³ ê°€ ìˆëŠ”ì§€ í™•ì¸
 	for(j = 0; j < 4; j++)
 	{
 		for(i = 0; i < 16; i++)
@@ -121,20 +121,20 @@ void DoDisplayModeChange(void)
 		}
 	}
 
-	//sd Ä«µå ¿¡·¯ È®ÀÎ
+	//sd ì¹´ë“œ ì—ëŸ¬ í™•ì¸
 	if(sdValue.sdState != SCS_OK)
 	{
 		SysProperties.displayMode = DPM_SDCARD_ERROR;
 		return;
 	}
 
-	//¿¡·¯ ¾øÀ½
+	//ì—ëŸ¬ ì—†ìŒ
 	SysProperties.displayMode = DPM_NORMAL;
 }
 
 /*********************************************************************
 *	doSegmentDisplay
-*	Ç¥½Ã ¸ğµåº° 16Segment Ç¥½Ã
+*	í‘œì‹œ ëª¨ë“œë³„ 16Segment í‘œì‹œ
 **********************************************************************/
 void doSegmentDisplay(uint8_t quarterSec)
 {
@@ -193,33 +193,33 @@ void doSegmentDisplay(uint8_t quarterSec)
 
 /*********************************************************************
 *	doModeButton
-*	¸ğµå ¹öÆ° Ã³¸®
+*	ëª¨ë“œ ë²„íŠ¼ ì²˜ë¦¬
 **********************************************************************/
 void doModeButton(void)
 {
 	//Mode Button
 	if(myBinarySemModeHandle != NULL)
 	{
-		if(osSemaphoreWait(myBinarySemModeHandle, 0) == osOK)	// ¹öÆ° ´­·È´ÂÁö È®ÀÎ
+		if(osSemaphoreWait(myBinarySemModeHandle, 0) == osOK)	// ë²„íŠ¼ ëˆŒë ¸ëŠ”ì§€ í™•ì¸
 		{
-			modeButtonEnter = BTN_FALLING;		// ¹öÆ° ´­¸²
+			modeButtonEnter = BTN_FALLING;		// ë²„íŠ¼ ëˆŒë¦¼
 		}
 	}
 
-	if(HAL_GPIO_ReadPin(MODE_BUTTON_GPIO_Port, MODE_BUTTON_Pin) == GPIO_PIN_SET)	//¹öÆ°¿¡¼­ ¼Õ ¶§¸é º¹±Í
+	if(HAL_GPIO_ReadPin(MODE_BUTTON_GPIO_Port, MODE_BUTTON_Pin) == GPIO_PIN_SET)	//ë²„íŠ¼ì—ì„œ ì† ë•Œë©´ ë³µê·€
 	{
 		modeButtonEnter = BTN_NORMAL;
 		modeButtonDelay = 0;
 	}
 
-	if(modeButtonEnter == BTN_FALLING)		//¹öÆ° ´­¸°°Å È®ÀÎ‰çÀ»¶§
+	if(modeButtonEnter == BTN_FALLING)		//ë²„íŠ¼ ëˆŒë¦°ê±° í™•ì¸ë¬ì„ë•Œ
 	{
 		modeButtonDelay++;
-		if(modeButtonDelay > 12)						//¹öÆ° ´©¸£°í 3ÃÊ È®ÀÎ
+		if(modeButtonDelay > 12)						//ë²„íŠ¼ ëˆ„ë¥´ê³  3ì´ˆ í™•ì¸
 		{
 			if(SysProperties.displayMode == DPM_NORMAL)
 			{
-				modeButtonEnter = BTN_ENTERED;		//¹öÆ° 3ÃÊ ÀÌ»ó ´­·ÈÀ½, Á¦ÁøÀÔ ±İÁö
+				modeButtonEnter = BTN_ENTERED;		//ë²„íŠ¼ 3ì´ˆ ì´ìƒ ëˆŒë ¸ìŒ, ì œì§„ì… ê¸ˆì§€
 				doBuzzerPlay(90);
 				osDelay(40);
 				doBuzzerPlay(90);
@@ -227,7 +227,7 @@ void doModeButton(void)
 			}
 			else if(SysProperties.displayMode == DPM_SETTING)
 			{
-				modeButtonEnter = BTN_ENTERED;		//¹öÆ° 3ÃÊ ÀÌ»ó ´­·ÈÀ½, Á¦ÁøÀÔ ±İÁö
+				modeButtonEnter = BTN_ENTERED;		//ë²„íŠ¼ 3ì´ˆ ì´ìƒ ëˆŒë ¸ìŒ, ì œì§„ì… ê¸ˆì§€
 				doBuzzerPlay(90);
 				osDelay(40);
 				doBuzzerPlay(90);
@@ -239,30 +239,30 @@ void doModeButton(void)
 
 /*********************************************************************
 *	doBatteryVoltageCheck
-*	¹èÅÍ¸® Àü¿ø È®ÀÎ
+*	ë°°í„°ë¦¬ ì „ì› í™•ì¸
 **********************************************************************/
 void doBatteryVoltageCheck(void)
 {
 	uint8_t i;
 
 	adc_battert_add = 0;
-	for(i = 10; i < 100; i++){	//dma ·Î ÀÏ¤¡¾î³½ µ¥ÀÌÅÍÁß Ã³¸§ ¸î°³ÀÇ °ªÀÌ ¿ÀÂ÷°¡ »ı°Ü¼­ 10°³´Â °Ç³Ê¤§µÚ¾î¼­ °Ô»ê ÇÔ.
+	for(i = 10; i < 100; i++){	//dma ë¡œ ì¼ã„±ì–´ë‚¸ ë°ì´í„°ì¤‘ ì²˜ë¦„ ëª‡ê°œì˜ ê°’ì´ ì˜¤ì°¨ê°€ ìƒê²¨ì„œ 10ê°œëŠ” ê±´ë„ˆã„·ë’¤ì–´ì„œ ê²Œì‚° í•¨.
 		adc_battert_add += adc_battery[i];
 	}
 	TestData.mainBoard[MBS_BATTERY].Float = (float)(((double)( ( (double) ((double)adc_battert_add
-																					/ 90) 						// 90 : ÇÕ°ÔµÈ ¼ö·®
-																					* 2)						// 2 : ³»ºÎ¿¡¼­ 1/2·Î ¹èÀ²µÊ
+																					/ 90) 						// 90 : í•©ê²Œëœ ìˆ˜ëŸ‰
+																					* 2)						// 2 : ë‚´ë¶€ì—ì„œ 1/2ë¡œ ë°°ìœ¨ë¨
 																					* 3300						// 3.3V * 1000
 																					/ 0xfff)					// 4095 resolution
-																					/ 1000) 					// 3.3V ·Î È¯»ê
-																					+ 0.1);						// diode drop voltage º¸»ó
+																					/ 1000) 					// 3.3V ë¡œ í™˜ì‚°
+																					+ 0.1);						// diode drop voltage ë³´ìƒ
 
 	HAL_ADC_Start_DMA(&hadc1, adc_battery, 100);
 }
 
 /*********************************************************************
 *	doMainBoardSensorCheck
-*	¸ŞÀÎº¸µå ³»ºÎ ¼¾¼­ È®ÀÎ
+*	ë©”ì¸ë³´ë“œ ë‚´ë¶€ ì„¼ì„œ í™•ì¸
 **********************************************************************/
 void doMainBoardSensorCheck(void)
 {
@@ -279,7 +279,7 @@ void doMainBoardSensorCheck(void)
 	    adc_mainBoardRTD_add += adc_mainBoardSensor[i * 3];
 	}
 	TestData.mainBoardADC[MBS_RTD] = adc_mainBoardRTD_add / 100;
-	TestData.mainBoard[MBS_RTD].Float = Calc_Temp_RTD(TestData.mainBoardADC[MBS_RTD]) + TestData.rtdCalibrationConst.Float;	//±³Á¤ »ó¼ö Ãß
+	TestData.mainBoard[MBS_RTD].Float = Calc_Temp_RTD(TestData.mainBoardADC[MBS_RTD]) + TestData.rtdCalibrationConst.Float;	//êµì • ìƒìˆ˜ ì¶”
 
 	// BOARD TEMP
 	for(i = 0; i < 100; i++){

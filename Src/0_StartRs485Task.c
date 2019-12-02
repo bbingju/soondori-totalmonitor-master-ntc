@@ -8,14 +8,14 @@
 *	Private variables
 **********************************************************************/
 
-// ÇÔ¼ö ³»ºÎ·Î º¯¼ö¸¦ ¿Å±â¸é StackÀ» Â÷ÁöÇÏ¸é¼­ ¹®Á¦°¡ ¹ß»ıÇÏ¿©
-// Å©±â¸¦ ÀÚÄ¡ÇÏ´Â ¸ğµç Buffer typeÀ¸ º¯¼ö´Â °¡±ŞÀû Àü¿ªº¯¼ö·Î ¼³Á¤ÇÏ¿´À½.
+// í•¨ìˆ˜ ë‚´ë¶€ë¡œ ë³€ìˆ˜ë¥¼ ì˜®ê¸°ë©´ Stackì„ ì°¨ì§€í•˜ë©´ì„œ ë¬¸ì œê°€ ë°œìƒí•˜ì—¬
+// í¬ê¸°ë¥¼ ìì¹˜í•˜ëŠ” ëª¨ë“  Buffer typeìœ¼ ë³€ìˆ˜ëŠ” ê°€ê¸‰ì  ì „ì—­ë³€ìˆ˜ë¡œ ì„¤ì •í•˜ì˜€ìŒ.
 
 
-uint8_t         rx485DataDMA[320] = { 0 };      //dma ¿ëµµ
-uint8_t         Rx485Data[40] = { 0 };          //parsing ¿ëµµ
+uint8_t         rx485DataDMA[320] = { 0 };      //dma ìš©ë„
+uint8_t         Rx485Data[40] = { 0 };          //parsing ìš©ë„
 
-uint8_t         tx485DataDMA[MAX_485_BUF_LEN] = { 0 };       //dma ¿ëµµ
+uint8_t         tx485DataDMA[MAX_485_BUF_LEN] = { 0 };       //dma ìš©ë„
 
 uint8_t         Rx485ReadCount = 0;
 uint8_t         noReturn485SendCt = 0;
@@ -28,7 +28,7 @@ RS_485_RX_QUEUE_STRUCT Rs485RxQueue;
 RS_485_TX_QUEUE_STRUCT Rs485TxQueue;
 //SD_CARD_STRUCT SdCard;
 //TEST_STATE_STRUCT TestState;
-uint8_t			FindFilelistFlag = 0;		//0 : ÆÄÀÏ ¸®½ºÆ® °Ë»ö ¾ÈÇÏ´ÂÁß / 1 : ÆÄÀÏ ¸®½ºÆ® °Ë»öÁß
+uint8_t			FindFilelistFlag = 0;		//0 : íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ê²€ìƒ‰ ì•ˆí•˜ëŠ”ì¤‘ / 1 : íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ê²€ìƒ‰ì¤‘
 
 
 void SendUart485String(uint8_t *data, uint16_t length)
@@ -56,8 +56,8 @@ void SendUart485NonDma(uint8_t *data, uint16_t length)
 
 /*********************************************************************
 *	Bluetooth Task
-*	ºí·çÅõ½º Åë½ÅÀ» À§ÇÑ ¸ğµâ ÃÊ±âÈ­
-*	ºí·çÅõ½º Åë½ÅÀ¸·Î µéÀ¸¿Â ¸í·ÉµéÀ» ÆÄ½Ì
+*	ë¸”ë£¨íˆ¬ìŠ¤ í†µì‹ ì„ ìœ„í•œ ëª¨ë“ˆ ì´ˆê¸°í™”
+*	ë¸”ë£¨íˆ¬ìŠ¤ í†µì‹ ìœ¼ë¡œ ë“¤ìœ¼ì˜¨ ëª…ë ¹ë“¤ì„ íŒŒì‹±
 **********************************************************************/
 void StartRs485Task(void const * argument)
 {
@@ -65,11 +65,11 @@ void StartRs485Task(void const * argument)
     //uint8_t     i;
 
     HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
-	Rs485RTxQueue_Init(&Rs485RxQueue);			//ºí·çÅõ½º¿ë rx ¹öÆÛ, ¼­Å¬·¯Å¥ ±¸Çö
+	Rs485RTxQueue_Init(&Rs485RxQueue);			//ë¸”ë£¨íˆ¬ìŠ¤ìš© rx ë²„í¼, ì„œí´ëŸ¬í êµ¬í˜„
     HAL_UART_Receive_DMA(&huart1, rx485DataDMA, 32);
 	Rs485RxQueue_Clear(&Rs485RxQueue);
 
-    //Task ºÎÆÃ ¿Ï·á ÇÃ·¹±×
+    //Task ë¶€íŒ… ì™„ë£Œ í”Œë ˆê·¸
     SysProperties.bootingWate[1] = TRUE;
 
     while(1)
@@ -119,7 +119,7 @@ void RxFunction(void)
 		{
 			for(i = 0; i < huart1.RxXferSize; i++)
 			{
-				osDelay(1); 	  // nop ·Î º¯°æ½Ã HardFault ¹ß»ı ÇÔ. osDelayUntil(&xLastWakeTime, 180); ¿Í °°ÀÌ »ç¿ë ÇØ¾ß ÇÔ.
+				osDelay(1); 	  // nop ë¡œ ë³€ê²½ì‹œ HardFault ë°œìƒ í•¨. osDelayUntil(&xLastWakeTime, 180); ì™€ ê°™ì´ ì‚¬ìš© í•´ì•¼ í•¨.
 				//doNOP(25000);
 				Rs485RxQueue_Send(&Rs485RxQueue, rx485DataDMA[i]);
 			}
@@ -131,9 +131,9 @@ void RxFunction(void)
 void UnpackingRs485RxQueue(void)
 {
     uint16_t    etxLength0 = 0;
-	uint8_t 	temp;			//ÀÌ°Å Warning ³ª¿Íµµ Áö¿ìÁö ¸»°Í.
+	uint8_t 	temp;			//ì´ê±° Warning ë‚˜ì™€ë„ ì§€ìš°ì§€ ë§ê²ƒ.
 
-	if(Rs485RxQueue_empty(&Rs485RxQueue) == FALSE)	//Rx ¹öÆÛ¿¡ ÀÔ·Â µ¥ÀÌÅÍ°¡ ÀÕ´ÂÁö È®ÀÎ
+	if(Rs485RxQueue_empty(&Rs485RxQueue) == FALSE)	//Rx ë²„í¼ì— ì…ë ¥ ë°ì´í„°ê°€ ì‡ëŠ”ì§€ í™•ì¸
 	{
 
 		if((Rs485RxQueue.tail + 31) >= RS_485_RX_BUF_MAX)  {   etxLength0 = Rs485RxQueue.tail + 31 - RS_485_RX_BUF_MAX;   }
@@ -176,7 +176,7 @@ void UnpackingRs485RxQueue(void)
 
 /*********************************************************************
 *	JumpToFunction
-* 	°¢ ¸í·Éº°·Î ºĞ±â ½ÃÄÑ¼­ ÇÔ¼ö¸¦ ºĞ¸® ÇÔ.
+* 	ê° ëª…ë ¹ë³„ë¡œ ë¶„ê¸° ì‹œì¼œì„œ í•¨ìˆ˜ë¥¼ ë¶„ë¦¬ í•¨.
 **********************************************************************/
 void JumpToFunction485(void)
 {
@@ -343,13 +343,13 @@ void DoSendFileOpen(void)
 
 	if(res == FR_OK){
 		res = f_open(&sdValue.sendFileObject, sdValue.sendFileName, FA_OPEN_EXISTING | FA_READ);
-		if(res == FR_OK)	//ÆÄÀÏ Á¤»ó ¿ÀÇÂ
+		if(res == FR_OK)	//íŒŒì¼ ì •ìƒ ì˜¤í”ˆ
 		{
 			sdValue.sdState = SCS_OK;
 			doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_DOWNLOAD_HEADER, sdValue.sendFileName, fileNameLen, 36, 56);
 			SendUart485String(tx485DataDMA, 56);
 		}
-		else		//ÆÄÀÏ ¿ÀÇÂ ¿¡·¯
+		else		//íŒŒì¼ ì˜¤í”ˆ ì—ëŸ¬
 		{
 			sdValue.sdState = SCS_OPEN_ERROR;
 			t[0] = SCS_OPEN_ERROR;
@@ -400,7 +400,7 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 		osDelay(1);
 		SendUart485String(&tx485DataDMA[j * 32], len);
 		*/
-		if(packetSize != ReadSize)	//¸¶Áö¸· ÆäÅ¶
+		if(packetSize != ReadSize)	//ë§ˆì§€ë§‰ í˜í‚·
 		{
 			osDelay(1);
 			break;
@@ -417,13 +417,13 @@ void DoSendFileClose(void)
 	uint8_t t[1] = {0};
 
 	res = f_close(&sdValue.sendFileObject);
-	if(res == FR_OK)	//ÆÄÀÏ Á¤»óÀ¸·Î ´İÈû
+	if(res == FR_OK)	//íŒŒì¼ ì •ìƒìœ¼ë¡œ ë‹«í˜
 	{
 		sdValue.sdState = SCS_OK;
 		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER, sdValue.sendFileName, sdValue.sendFileNameLen, 36, 56);
 		SendUart485String(tx485DataDMA, 56);
 	}
-	else		//ÆÄÀÏ ´İ±â ¿¡·¯
+	else		//íŒŒì¼ ë‹«ê¸° ì—ëŸ¬
 	{
 		sdValue.sdState = SCS_CLOSE_ERROR;
 		t[0] = SCS_CLOSE_ERROR;
@@ -474,12 +474,12 @@ void DoReadFileList(void)
 	util_mem_set(&sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
 	osDelay(1);
 
-	if(Rx485Data[7] == '.')	//·çÆ®¸¦ ¿äÃ» ÇßÀ» °æ¿ì
+	if(Rx485Data[7] == '.')	//ë£¨íŠ¸ë¥¼ ìš”ì²­ í–ˆì„ ê²½ìš°
 	{
 		osDelay(1);
 		scan_files(root_directory);
 	}
-	else	//°æ·Î ÁöÁ¤ ÇßÀ» °æ¿ì
+	else	//ê²½ë¡œ ì§€ì • í–ˆì„ ê²½ìš°
 	{
 		util_mem_set(&sdValue.scanReadFileName[0], 0x00, sizeof(sdValue.scanReadFileName));
 		sdValue.scanReadFileName[0] = '0';
@@ -502,7 +502,7 @@ void DoReadFileList(void)
 	SendUart485String(tx485DataDMA, 32);
 }
 
-void doSaveIntervalTime(void)   //»ùÇÃ·¹ÀÌÆ®
+void doSaveIntervalTime(void)   //ìƒ˜í”Œë ˆì´íŠ¸
 {
     SysProperties.intervalTime.UI8[0] = Rx485Data[ 7];
     SysProperties.intervalTime.UI8[1] = Rx485Data[ 8];
@@ -517,7 +517,7 @@ void CmdWarningTempSet(void)
 {
 	uni4Byte setThreshold;
 
-	setThreshold.UI8[0] = Rx485Data[ 9];		//¼³Á¤ ÇÏ´Â ¿Âµµ
+	setThreshold.UI8[0] = Rx485Data[ 9];		//ì„¤ì • í•˜ëŠ” ì˜¨ë„
 	setThreshold.UI8[1] = Rx485Data[10];
 	setThreshold.UI8[2] = Rx485Data[11];
 	setThreshold.UI8[3] = Rx485Data[12];
@@ -532,7 +532,7 @@ void CmdWarningTempReq(void)
 
 void CmdRevisionApplySet(void)
 {
-	DoRevisionApplySet(Rx485Data[7], Rx485Data[8]);	//slot ¹øÈ£ Àü´Ş , 0: ÃøÁ¤¿Âµµ ¸ğµå, 1: º¸Á¤¿Âµµ ¸ğµå
+	DoRevisionApplySet(Rx485Data[7], Rx485Data[8]);	//slot ë²ˆí˜¸ ì „ë‹¬ , 0: ì¸¡ì •ì˜¨ë„ ëª¨ë“œ, 1: ë³´ì •ì˜¨ë„ ëª¨ë“œ
 }
 
 void CmdRevisionConstantSet(void)
@@ -578,12 +578,12 @@ void CmdCalibrationRTDConstSet(void)
 		}while(TestData.rtdCalibrationConst.Float != readConst.Float);
 	}
 
-	if(i > 10)		//±â·Ï ½ÇÆĞ
+	if(i > 10)		//ê¸°ë¡ ì‹¤íŒ¨
 	{
 		i == 0xFF;
 		doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &i, 1, 12, 32);
 	}
-	else			//±â·Ï ¼º°ø
+	else			//ê¸°ë¡ ì„±ê³µ
 	{
 		doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &readConst.UI8[0], 4, 12, 32);
 	}
@@ -592,7 +592,7 @@ void CmdCalibrationRTDConstSet(void)
 
 void CmdCalibrationNTCTableCal(void)
 {
-	DoCalibrationNTCTableCal(Rx485Data[7]);	//slot ¹øÈ£ Àü´Ş
+	DoCalibrationNTCTableCal(Rx485Data[7]);	//slot ë²ˆí˜¸ ì „ë‹¬
 }
 
 void CmdCalibrationNTCConstantSet(void)
@@ -613,12 +613,12 @@ void CmdCalibrationRTDConstReq(void)
 
 void CmdCalibrationNTCTableReq(void)
 {
-	DoCalibrationNTCTableReq(Rx485Data[7]); //slot ¹øÈ£ Àü´Ş
+	DoCalibrationNTCTableReq(Rx485Data[7]); //slot ë²ˆí˜¸ ì „ë‹¬
 }
 
 void CmdCalibrationNTCConstantReq(void)
 {
-	DoCalibrationNTCConstantReq(Rx485Data[7]); //slot ¹øÈ£ Àü´Ş
+	DoCalibrationNTCConstantReq(Rx485Data[7]); //slot ë²ˆí˜¸ ì „ë‹¬
 }
 
 void doSetTime(void)

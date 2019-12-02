@@ -34,7 +34,7 @@ void MX_FATFS_Init(void)
 
   /* USER CODE BEGIN Init */
 	/* additional user code for init */     
-	if(retSD != 0)	// 0¿Ã∏È ¡§ªÛ 
+	if(retSD != 0)	// 0Ïù¥Î©¥ Ï†ïÏÉÅ 
 	{
 		sdValue.sdState = SCS_LINK_ERROR;
 	}

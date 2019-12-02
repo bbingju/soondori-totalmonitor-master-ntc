@@ -2,18 +2,18 @@
 
 /*********************************************************************
 *	Callback Function
-*	2byte ÀÔ·Â½Ã ÇÑ¹ø ÀÎÅÍ·´Æ® ¹ß»ý 
-*	dma·Î ÀÔ·Â ¹ÞÀ» °æ¿ì 16 ¹ÙÀÌÆ® ´ÜÀ§ ÀÔ·ÂÀ¸·Î ÇØ¾ßÇØ¼­ bt module ÀÇ 
-*	ÀÀ´äÀ» ¹Þ¾Æ¼­ Ã³¸® ÇÏ±â Èûµë 
+*	2byte ìž…ë ¥ì‹œ í•œë²ˆ ì¸í„°ëŸ½íŠ¸ ë°œìƒ 
+*	dmaë¡œ ìž…ë ¥ ë°›ì„ ê²½ìš° 16 ë°”ì´íŠ¸ ë‹¨ìœ„ ìž…ë ¥ìœ¼ë¡œ í•´ì•¼í•´ì„œ bt module ì˜ 
+*	ì‘ë‹µì„ ë°›ì•„ì„œ ì²˜ë¦¬ í•˜ê¸° íž˜ë“¬ 
 **********************************************************************/
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
     uint8_t i;
     
-	if(huart->Instance == USART2)       //Slot Interface & Bluetooth
-	{
-        osSemaphoreRelease(CountingSemSlaveRxHandle);
-	}
+    if(huart->Instance == USART2)       //Slot Interface & Bluetooth
+    {
+      osSemaphoreRelease(CountingSemSlaveRxHandle);
+    }
     else if(huart->Instance == USART1)
     {
         osSemaphoreRelease(BinarySem485RxHandle);
@@ -29,7 +29,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     else if(huart->Instance == USART1)   //
     {
         osSemaphoreRelease(CountingSem485TxHandle);
-		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
     }
 }
 

@@ -8,7 +8,7 @@ uint8_t 	wData[420];
 
 /*********************************************************************
 *	MountSDIO
-*	SD CARD ¸¶¿îÆ® ÇÔ¼ö
+*	SD CARD ë§ˆìš´íŠ¸ í•¨ìˆ˜
 **********************************************************************/
 FRESULT MountSDIO(void)
 {
@@ -24,7 +24,7 @@ FRESULT MountSDIO(void)
 
 /*********************************************************************
 *	UnMountSDIO
-*	SD CARD ¸¶¿îÆ® ÇØÁ¦ ÇÔ¼ö
+*	SD CARD ë§ˆìš´íŠ¸ í•´ì œ í•¨ìˆ˜
 **********************************************************************/
 FRESULT UnMountSDIO(void)
 {
@@ -40,7 +40,7 @@ FRESULT UnMountSDIO(void)
 
 /*********************************************************************
 *	DoFolderCheck
-*	ÇöÀç ½Ã°£À» ±âÁØÀ¸·Î ÇØ´ç Æú´õ°¡ ÀÖ´ÂÁö È®ÀÎ ÇÏ¿© Æú´õ¸¦ »ı¼º ÇÑ´Ù.
+*	í˜„ì¬ ì‹œê°„ì„ ê¸°ì¤€ìœ¼ë¡œ í•´ë‹¹ í´ë”ê°€ ìˆëŠ”ì§€ í™•ì¸ í•˜ì—¬ í´ë”ë¥¼ ìƒì„± í•œë‹¤.
 **********************************************************************/
 FRESULT DoFolderCheck(void)
 {
@@ -110,30 +110,30 @@ FRESULT DoFolderCheck(void)
 
 /*********************************************************************
 *	DoFileCheck
-*	ÀÌ¹Ì ¿­·Á ÀÖ´Â ÆÄÀÏÀÌ ÀÖ´Ù¸é ´İÀºÈÄ ÀÛ¾÷ ÇÑ´Ù.
-*	È®ÀÎÈÄ ÆÄÀÏÀ» »ı¼º ÇÑ´Ù.
+*	ì´ë¯¸ ì—´ë ¤ ìˆëŠ” íŒŒì¼ì´ ìˆë‹¤ë©´ ë‹«ì€í›„ ì‘ì—… í•œë‹¤.
+*	í™•ì¸í›„ íŒŒì¼ì„ ìƒì„± í•œë‹¤.
 **********************************************************************/
 void DoFileCheck(void)
 {
-	if(sdValue.loadFileName[0] == 0)		//¿­·Á ÀÖ´Â ÆÄÀÏÀÌ ¾øÀ» °æ¿ì
+	if(sdValue.loadFileName[0] == 0)		//ì—´ë ¤ ìˆëŠ” íŒŒì¼ì´ ì—†ì„ ê²½ìš°
 	{
 		DoMakeLoadFileName();
 		DoMakeFile();
 	}
-	else	//¿­·ÁÀÖ´Â ÆÄÀÏÀÌ ÀÖ´Â °æ¿ì
+	else	//ì—´ë ¤ìˆëŠ” íŒŒì¼ì´ ìˆëŠ” ê²½ìš°
 	{
 		if(	(sdValue.loadFileName[ 2] == SysTime.Date.Year  / 10 + '0') &&
 			(sdValue.loadFileName[ 3] == SysTime.Date.Year  % 10 + '0') &&
 			(sdValue.loadFileName[ 5] == SysTime.Date.Month / 10 + '0') &&
 			(sdValue.loadFileName[ 6] == SysTime.Date.Month % 10 + '0') &&
 			(sdValue.loadFileName[ 8] == SysTime.Date.Date  / 10 + '0') &&
-			(sdValue.loadFileName[ 9] == SysTime.Date.Date  % 10 + '0') &&		//³¯Â¥ ºñ±³
+			(sdValue.loadFileName[ 9] == SysTime.Date.Date  % 10 + '0') &&		//ë‚ ì§œ ë¹„êµ
 			(sdValue.loadFileName[18] == SysTime.Time.Hours / 10 + '0') &&
-			(sdValue.loadFileName[19] == SysTime.Time.Hours % 10 + '0') )		//½Ã°£ È®ÀÎ
+			(sdValue.loadFileName[19] == SysTime.Time.Hours % 10 + '0') )		//ì‹œê°„ í™•ì¸
 		{
 			osDelay(1);
 		}
-		else		//½Ã°£ÀÌ º¯°æµÈ °æ¿ì
+		else		//ì‹œê°„ì´ ë³€ê²½ëœ ê²½ìš°
 		{
 			DoFileClose();
 			DoMakeLoadFileName();
@@ -144,19 +144,19 @@ void DoFileCheck(void)
 
 /*********************************************************************
 *	DoMakeFile
-*	»ı¼ºµÈ ÆÄÀÏÀÌ ÀÖ´ÂÁö È®ÀÎÇÑ ÈÄ ÆÄÀÏÀ» ¸¸µç´Ù.
-*	ÆÄÀÏÀº ÇöÀç ½Ã°£À» ±âÁØÀ¸·Î ½Ã°£ ´ÜÀ§°¡ º¯°æµÇ¸é »õ·Î ¸¸µç´Ù.
-*	½Ã°£ÀÌ °°À¸¸é ±âÁ¸ ÆÄÀÏÀÇ ¸¶Áö¸·¿¡ ÀÌ¾î¼­ ¾´´Ù.
+*	ìƒì„±ëœ íŒŒì¼ì´ ìˆëŠ”ì§€ í™•ì¸í•œ í›„ íŒŒì¼ì„ ë§Œë“ ë‹¤.
+*	íŒŒì¼ì€ í˜„ì¬ ì‹œê°„ì„ ê¸°ì¤€ìœ¼ë¡œ ì‹œê°„ ë‹¨ìœ„ê°€ ë³€ê²½ë˜ë©´ ìƒˆë¡œ ë§Œë“ ë‹¤.
+*	ì‹œê°„ì´ ê°™ìœ¼ë©´ ê¸°ì¡´ íŒŒì¼ì˜ ë§ˆì§€ë§‰ì— ì´ì–´ì„œ ì“´ë‹¤.
 **********************************************************************/
 void DoMakeFile(void)
 {
 	FRESULT res = FR_OK;
 
 	res = f_stat(sdValue.loadFileName, &sdValue.fno);
-	if(res != FR_OK)	//ÆÄÀÏÀÌ ¾øÀ¸¸é
+	if(res != FR_OK)	//íŒŒì¼ì´ ì—†ìœ¼ë©´
 	{
 		res = f_open(&sdValue.fileObject, (const TCHAR*)sdValue.loadFileName, FA_OPEN_ALWAYS | FA_WRITE);
-		if(res != FR_OK)	//ÆÄÀÏ ¿­±â ¿À·ù
+		if(res != FR_OK)	//íŒŒì¼ ì—´ê¸° ì˜¤ë¥˜
 		{
 			sdValue.sdState = SCS_OPEN_ERROR;
 			doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
@@ -169,10 +169,10 @@ void DoMakeFile(void)
 		}
 		DoWriteFileHeader();
 	}
-	else		//ÆÄÀÏÀÌ ÀÖÀ»¶§,  ºÎÆÃÀ» Çß´Âµ¥ ¿¹Àü ÆÄÀÏÀÌ ÀÌ¸§ÀÌ °°À»¶§
+	else		//íŒŒì¼ì´ ìˆì„ë•Œ,  ë¶€íŒ…ì„ í–ˆëŠ”ë° ì˜ˆì „ íŒŒì¼ì´ ì´ë¦„ì´ ê°™ì„ë•Œ
 	{
-		res = f_open(&sdValue.fileObject, (const TCHAR*)sdValue.loadFileName, FA_OPEN_APPEND | FA_WRITE);	//ÀÌ¾î ¾²±â ÇÑ´Ù.
-		if(res != FR_OK)	//ÆÄÀÏ ¿­±â ¿À·ù
+		res = f_open(&sdValue.fileObject, (const TCHAR*)sdValue.loadFileName, FA_OPEN_APPEND | FA_WRITE);	//ì´ì–´ ì“°ê¸° í•œë‹¤.
+		if(res != FR_OK)	//íŒŒì¼ ì—´ê¸° ì˜¤ë¥˜
 		{
 			sdValue.sdState = SCS_OPEN_ERROR;
 			doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
@@ -188,7 +188,7 @@ void DoMakeFile(void)
 
 /*********************************************************************
 *	DoFileClose
-*	ÆÄÀÏÀº ´İ°í ÆÄÀÏ ÀÌ¸§À» Å¬¸®¾î ÇÏ¿© ¿­¸° ÆÄÀÏÀÌ ¾ø´Ù°í Ç¥½Ã ÇÑ´Ù.
+*	íŒŒì¼ì€ ë‹«ê³  íŒŒì¼ ì´ë¦„ì„ í´ë¦¬ì–´ í•˜ì—¬ ì—´ë¦° íŒŒì¼ì´ ì—†ë‹¤ê³  í‘œì‹œ í•œë‹¤.
 **********************************************************************/
 void DoFileClose(void)
 {
@@ -198,9 +198,9 @@ void DoFileClose(void)
 
 /*********************************************************************
 *	DoMakeLoadFileName
-*	½Ã°£À¸·Î ÆÄÀÏ ÀÌ¸§À» »ı¼º ÇÑ´Ù.
+*	ì‹œê°„ìœ¼ë¡œ íŒŒì¼ ì´ë¦„ì„ ìƒì„± í•œë‹¤.
 **********************************************************************/
-void DoMakeLoadFileName(void)	//ÇöÁ¦½Ã°£À¸·Î ÆÄÀÏ ¸¸µé±â
+void DoMakeLoadFileName(void)	//í˜„ì œì‹œê°„ìœ¼ë¡œ íŒŒì¼ ë§Œë“¤ê¸°
 {
 	sprintf(sdValue.loadFileName,	"20%02d/%02d/%02d/%02d%02d%02d_%02d%02d%02d.ske",
 									(char)SysTime.Date.Year,		//dir
@@ -217,7 +217,7 @@ void DoMakeLoadFileName(void)	//ÇöÁ¦½Ã°£À¸·Î ÆÄÀÏ ¸¸µé±â
 
 /*********************************************************************
 *	DoWriteFileHeader
-*	ÆÄÀÏ ÇØ´õ ÀÛ¼º
+*	íŒŒì¼ í•´ë” ì‘ì„±
 **********************************************************************/
 void DoWriteFileHeader(void)
 {
@@ -226,7 +226,7 @@ void DoWriteFileHeader(void)
 	//uint8_t 	temp[4];
 	uni4Byte	timezone;
 
-	res = f_lseek(&sdValue.fileObject, 0x0000);							//File È®Àå
+	res = f_lseek(&sdValue.fileObject, 0x0000);							//File í™•ì¥
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
@@ -241,7 +241,7 @@ void DoWriteFileHeader(void)
 
 	for(i = 0; i < FILE_HEADER_SIZE; i++)
 	{
-		f_putc(0x00, &sdValue.fileObject);								//File Header ÃÊ±âÈ­
+		f_putc(0x00, &sdValue.fileObject);								//File Header ì´ˆê¸°í™”
 	}
 
 	res = f_lseek(&sdValue.fileObject, FILE_ADD_FILE_CONFIRMATION);		//File Confirmation
@@ -425,7 +425,7 @@ void DoWriteFileHeader(void)
 
 /*********************************************************************
 *	DoDataWrite
-*	Å×½ºÆ® Á¤º¸¸¦ ÆÄÀÏ¿¡ ÀÌ¾î ¾²±â ÇÑ´Ù.
+*	í…ŒìŠ¤íŠ¸ ì •ë³´ë¥¼ íŒŒì¼ì— ì´ì–´ ì“°ê¸° í•œë‹¤.
 **********************************************************************/
 void DoDataWrite(void)
 {
@@ -437,10 +437,10 @@ void DoDataWrite(void)
 	FRESULT 	res;
 	//FSIZE_t size;
 
-	//¸Ş¸ğ¸® ÃÊ±âÈ­
+	//ë©”ëª¨ë¦¬ ì´ˆê¸°í™”
 	util_mem_set(wData, 0x00, sizeof(wData));
 
-	//½Ã°£
+	//ì‹œê°„
 	wData[ 0] = SysTime.Date.Year;
 	wData[ 1] = SysTime.Date.Month;
 	wData[ 2] = SysTime.Date.Date;
@@ -450,34 +450,34 @@ void DoDataWrite(void)
 	wData[ 6] = (uint8_t)((SysTime.Time.SubSeconds & 0x0000FF00) >> 8);
 	wData[ 7] = (uint8_t)(SysTime.Time.SubSeconds & 0x000000FF);
 
-	//Ã¤³Î
+	//ì±„ë„
 	for(j = 0; j < 4; j++)
 	{
 		for(i = 0; i < 16; i++)
 		{
 			if(TestData.sensorState[j][i] != LDM_DONOT_CONNECT)
 			{
-				wData[34 + (sensorCount * 6)] = j * 16 + i;											// Ã¤³Î ¹øÈ£
-				wData[35 + (sensorCount * 6)] = TestData.sensorState[j][i];							// ¼¾¼­ »óÅÂ
-				util_mem_cpy(&wData[36 + (sensorCount * 6)], &TestData.temperature[j][i].UI8[0], 4);	// ¼¾¼­°ª ÀúÀå
-				sensorCount++;																		// »ç¿ë Ã¤³Î¼ö È®ÀÎ
+				wData[34 + (sensorCount * 6)] = j * 16 + i;											// ì±„ë„ ë²ˆí˜¸
+				wData[35 + (sensorCount * 6)] = TestData.sensorState[j][i];							// ì„¼ì„œ ìƒíƒœ
+				util_mem_cpy(&wData[36 + (sensorCount * 6)], &TestData.temperature[j][i].UI8[0], 4);	// ì„¼ì„œê°’ ì €ì¥
+				sensorCount++;																		// ì‚¬ìš© ì±„ë„ìˆ˜ í™•ì¸
 			}
 		}
 	}
 
-	if(sensorCount == 0)	//¼¾¼­°¡ ¸ğµÎ ¿¬°á ¾ÈµÇÀÖÀ»¶§´Â Åë°ú
+	if(sensorCount == 0)	//ì„¼ì„œê°€ ëª¨ë‘ ì—°ê²° ì•ˆë˜ìˆì„ë•ŒëŠ” í†µê³¼
 	{
 		return;
 	}
 
 	wData[ 8] = sensorCount;
 
-	//º¸µå ¼¾¼­ º¹»ç
+	//ë³´ë“œ ì„¼ì„œ ë³µì‚¬
 	for(i = 0; i < 4; i++)
 	{
-		wData[10 + (i * 6)] = MCU_BOARD_BATTERY + i;							//Ã¤³Î ¹øÈ£, 0xEB ~ 0xEE
-		wData[11 + (i * 6)] = 0x00;												//º¸µå ¼¾¼­ÀÇ »óÅÂ°ªÀº ¾øÀ½.
-		util_mem_cpy(&wData[12 + (i * 6)], &TestData.mainBoard[i].UI8[0], 4);	//¼¾¼­°ª ÀúÀå
+		wData[10 + (i * 6)] = MCU_BOARD_BATTERY + i;							//ì±„ë„ ë²ˆí˜¸, 0xEB ~ 0xEE
+		wData[11 + (i * 6)] = 0x00;												//ë³´ë“œ ì„¼ì„œì˜ ìƒíƒœê°’ì€ ì—†ìŒ.
+		util_mem_cpy(&wData[12 + (i * 6)], &TestData.mainBoard[i].UI8[0], 4);	//ì„¼ì„œê°’ ì €ì¥
 	}
 
 	res = f_lseek(&sdValue.fileObject, f_size(&sdValue.fileObject));
@@ -523,9 +523,9 @@ void DoDataWrite(void)
 
 /*********************************************************************
 *	scan_files
-*	ÆÄÀÏ ¸®½ºÆ® Àü¼Û, ÁöÁ¤µÈ °æ·ÎÀÇ ÆÄÀÏ¸¸ º¸³½´Ù.
-*	(ÆÄÀÏ°ú Æú´õ¸¦ ±¸ºĞÇØ¼­ º¸³»Áö ¸øÇÑ´Ù.)
-*	path : ÆÄÀÏ ¸®½ºÆ®¸¦ È®ÀÎÇÒ °æ·Î¸¦ º¸³½´Ù.
+*	íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ì „ì†¡, ì§€ì •ëœ ê²½ë¡œì˜ íŒŒì¼ë§Œ ë³´ë‚¸ë‹¤.
+*	(íŒŒì¼ê³¼ í´ë”ë¥¼ êµ¬ë¶„í•´ì„œ ë³´ë‚´ì§€ ëª»í•œë‹¤.)
+*	path : íŒŒì¼ ë¦¬ìŠ¤íŠ¸ë¥¼ í™•ì¸í•  ê²½ë¡œë¥¼ ë³´ë‚¸ë‹¤.
 **********************************************************************/
 FRESULT scan_files (char* path)        /* Start node to be scanned (***also used as work area***) */
 {

@@ -1,8 +1,8 @@
 /*********************************************************************
 *	IS31FL3726 dirver
 *	16-BIT COLOR LED DRIVER WITH PWM CONTROL
-*	clock ¿Í dataÀÇ ½ÅÈ£·Î 16°³ÀÇ led Á¦¾î 
-*	16-Segment Á¦¾î¸¦ À§ÇØ »ç¿ë ÇÔ 
+*	clock ì™€ dataì˜ ì‹ í˜¸ë¡œ 16ê°œì˜ led ì œì–´ 
+*	16-Segment ì œì–´ë¥¼ ìœ„í•´ ì‚¬ìš© í•¨ 
 **********************************************************************/
 #include "0_16Segment.h"
 #include "0_Util.h"
@@ -59,8 +59,8 @@ uint16_t SG_SPECIAL[8] = {		0x0000,		// NULL
 
 /*********************************************************************
 *	SegmentDisplay
-*	digit : 1, 2·Î º¸³»¸ç Ã¹¹ø¤¸Àç segment¿Í 2¹ø¤¸Àç segment ¸¦ ¼±ÅÃÇÔ 
-*	text : ascii ¹®ÀÚ¸¦ ÀÔ·Â ÇÏ¸é ÇØ´çÇÏ´Â ¹®ÀÚ Ç¥½Ã 
+*	digit : 1, 2ë¡œ ë³´ë‚´ë©° ì²«ë²ˆã…ˆì¬ segmentì™€ 2ë²ˆã…ˆì¬ segment ë¥¼ ì„ íƒí•¨ 
+*	text : ascii ë¬¸ìë¥¼ ì…ë ¥ í•˜ë©´ í•´ë‹¹í•˜ëŠ” ë¬¸ì í‘œì‹œ 
 **********************************************************************/	
 void SegmentDisplay(uint8_t digit, uint16_t data)
 {
@@ -130,8 +130,8 @@ void SegmentDisplay(uint8_t digit, uint16_t data)
 
 /*********************************************************************
 *	doTextToDigitdata
-*	text : ascii ¹®ÀÚ¸¦ ÀÔ·Â 
-* 	ÇØ´ç ¹®ÀÚ¸¦ Font ·Î Ä¡È¯ 
+*	text : ascii ë¬¸ìë¥¼ ì…ë ¥ 
+* 	í•´ë‹¹ ë¬¸ìë¥¼ Font ë¡œ ì¹˜í™˜ 
 **********************************************************************/	
 uint16_t doTextToDigitdata(char text)
 {
@@ -146,7 +146,7 @@ uint16_t doTextToDigitdata(char text)
 	{
 		return SG_NUMBER[text - '0'];
 	}
-	else		// Æ¯¼ö¹®ÀÚ Ã³¸® 
+	else		// íŠ¹ìˆ˜ë¬¸ì ì²˜ë¦¬ 
 	{
 		switch(text)
 		{
@@ -174,7 +174,7 @@ uint16_t doTextToDigitdata(char text)
 
 /*********************************************************************
 *	doNumberToDigitdata
-*	number : ¼ıÀÚ¸¦ Àû´Â´Ù. ÇØ´ç ¹®ÀÚ¿­À» ¹İÈ¯ÇÑ´Ù.  
+*	number : ìˆ«ìë¥¼ ì ëŠ”ë‹¤. í•´ë‹¹ ë¬¸ìì—´ì„ ë°˜í™˜í•œë‹¤.  
 **********************************************************************/	
 uint16_t doNumberToDigitdata(SEGMENT_SPECIAL_FONT number)
 {

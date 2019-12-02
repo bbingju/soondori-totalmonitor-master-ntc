@@ -183,12 +183,12 @@ int main(void)
 
   	read = ReadFlash(FLASH_SAVE_CHK);
 
-	if(read != FLASH_SAVE_FLAG)		//ÇÃ·¡½Ã¿¡ ±â·ÏÀÌ ¾øÀ»°æ¿ì 
+	if(read != FLASH_SAVE_FLAG)		//í”Œë˜ì‹œì— ê¸°ë¡ì´ ì—†ì„ê²½ìš° 
 	{
 		TestData.rtdCalibrationConst.Float = (float)0;
 		doFlashWriteRevision();		
 	}
-	else		//Flash ¿¡ ÀúÀåµÈ °ªÀÌ åÀÖ´? °æ¿ì 
+	else		//Flash ì— ì €ì¥ëœ ê°’ì´ æšçµ? ê²½ìš° 
 	{
 		TestData.rtdCalibrationConst.UI32= ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
 	}

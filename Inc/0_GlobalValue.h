@@ -15,11 +15,11 @@
 #endif
 
 /**********************************************************
-* º¯¼ö´Â ¼Ò¹®ÀÚ·Î ½ÃÀÛ
-* struct º¯¼ö´Â ´ë¹®ÀÚ·Î ½ÃÀÛ 
-* struct´Â ´ë¹®ÀÚ·Î¸¸ ÀÛ¼º 
-* ÇÔ¼ö´Â ´ë¹®ÀÚ·Î ½ÃÀÛ
-* enum Àº ´ë¹®ÀÚ·Î¸¸ ÀÛ¼º 
+* ë³€ìˆ˜ëŠ” ì†Œë¬¸ìë¡œ ì‹œì‘
+* struct ë³€ìˆ˜ëŠ” ëŒ€ë¬¸ìë¡œ ì‹œì‘ 
+* structëŠ” ëŒ€ë¬¸ìë¡œë§Œ ì‘ì„± 
+* í•¨ìˆ˜ëŠ” ëŒ€ë¬¸ìë¡œ ì‹œì‘
+* enum ì€ ëŒ€ë¬¸ìë¡œë§Œ ì‘ì„± 
 ***********************************************************/
 
 #include "ff.h"
@@ -62,7 +62,7 @@ typedef union{
 
 /*********************************************************************
 *	Test Data
-* Main board ¿Í Sensor board ¿¡¼­ ÀĞ¾î³½ µ¥ÀÌÅÍ ÀúÀå °ø°£ 
+* Main board ì™€ Sensor board ì—ì„œ ì½ì–´ë‚¸ ë°ì´í„° ì €ì¥ ê³µê°„ 
 **********************************************************************/
 typedef enum {
 	MBS_BATTERY = 0,
@@ -93,37 +93,37 @@ typedef enum {
 }RETURNSPI; 
 
 typedef enum {
-	LDM_NORMAL_TEMP = 0,	//Á¤»ó
-	LDM_OVER_TEMP,			//°æ°í¿Âµµ ÃÊ°ú
-	LDM_SENSOR_CLOSE,		//¼¾¼­ ¼îÆ®
-	LDM_DONOT_CONNECT		//¼¾¼­ ¾øÀ½ 
+	LDM_NORMAL_TEMP = 0,	//ì •ìƒ
+	LDM_OVER_TEMP,			//ê²½ê³ ì˜¨ë„ ì´ˆê³¼
+	LDM_SENSOR_CLOSE,		//ì„¼ì„œ ì‡¼íŠ¸
+	LDM_DONOT_CONNECT		//ì„¼ì„œ ì—†ìŒ 
 }LED_DIPLAY_MODE;
 
 typedef struct 
 {
-	uni4Byte		mainBoard[4];				// MAINBOARDSENSOR »ç¿ë ÇØ¼­ ¼±ÅÃ 
-	uint32_t		mainBoardADC[4];			// main board ³»ºÎ ¼¾¼­ adc °ª 
-	uni4Byte		temperature[4][32];			// adc ¿Ï·áÈÄ ¿Âµµ°ªÀ¸·Î È¯»êµÈ °ª, 0 : ÇÇ´ë»ó¹° ¿Âµµ, 1 : È¯°æ¿Âµµ , 0~15Ã¤³Î 
-	uni4Byte		adcMidValue[4][32];			// ÄÁ¹öÆÃ ¿Ï·áµÈ ADC °ªÁß Áß°£ °ª,  0 : ÇÇ´ë»ó¹° ¿Âµµ, 1 : È¯°æ¿Âµµ, 0~15Ã¤³Î 
-	uni4Byte		threshold[4][32];			// °æ°í ¿Âµµ ÀúÀå 
-	LED_DIPLAY_MODE	sensorState[4][32];			// ¼¾¼­ »óÅÂ ÀúÀå¿ë 
-	uni4Byte		ntcCalibrationTable[4][32];	// NTC ±³Á¤»ó¼ö Å×ÀÌºí, RTD - NTC ·Î °è»êµÇ´Â »ó¼ö 
-	uni4Byte		rtdCalibrationConst;		// RTD ±³Á¤»ó¼ö 
-	uni4Byte		ntcCalibrationConst;		// NTC Áõ°¨ »ó¼ö, NTC board ¿¡¼­ NTC + ntcCalibration + ntcCalibrationConst ÇØ¼­ NTC °ªÀÌ »ı¼ºµÊ 
-	uint8_t			revisionApply[4];			// º¸Á¤ Àû¿ë »óÅÂ, 1: Ç¥¸é¿Âµµ¸ğµå(º¸Á¤ Àû¿ë) 0 : ÃøÁ¤¿Âµµ ¸ğµå(º¸Á¤ ¹ÌÀû¿ë)
-	uni4Byte		revisionConstant[4];		// º¸Á¤¿ë Á¢ÃË»ó¼ö ÀúÀå 
+	uni4Byte		mainBoard[4];				// MAINBOARDSENSOR ì‚¬ìš© í•´ì„œ ì„ íƒ 
+	uint32_t		mainBoardADC[4];			// main board ë‚´ë¶€ ì„¼ì„œ adc ê°’ 
+	uni4Byte		temperature[4][32];			// adc ì™„ë£Œí›„ ì˜¨ë„ê°’ìœ¼ë¡œ í™˜ì‚°ëœ ê°’, 0 : í”¼ëŒ€ìƒë¬¼ ì˜¨ë„, 1 : í™˜ê²½ì˜¨ë„ , 0~15ì±„ë„ 
+	uni4Byte		adcMidValue[4][32];			// ì»¨ë²„íŒ… ì™„ë£Œëœ ADC ê°’ì¤‘ ì¤‘ê°„ ê°’,  0 : í”¼ëŒ€ìƒë¬¼ ì˜¨ë„, 1 : í™˜ê²½ì˜¨ë„, 0~15ì±„ë„ 
+	uni4Byte		threshold[4][32];			// ê²½ê³  ì˜¨ë„ ì €ì¥ 
+	LED_DIPLAY_MODE	sensorState[4][32];			// ì„¼ì„œ ìƒíƒœ ì €ì¥ìš© 
+	uni4Byte		ntcCalibrationTable[4][32];	// NTC êµì •ìƒìˆ˜ í…Œì´ë¸”, RTD - NTC ë¡œ ê³„ì‚°ë˜ëŠ” ìƒìˆ˜ 
+	uni4Byte		rtdCalibrationConst;		// RTD êµì •ìƒìˆ˜ 
+	uni4Byte		ntcCalibrationConst;		// NTC ì¦ê° ìƒìˆ˜, NTC board ì—ì„œ NTC + ntcCalibration + ntcCalibrationConst í•´ì„œ NTC ê°’ì´ ìƒì„±ë¨ 
+	uint8_t			revisionApply[4];			// ë³´ì • ì ìš© ìƒíƒœ, 1: í‘œë©´ì˜¨ë„ëª¨ë“œ(ë³´ì • ì ìš©) 0 : ì¸¡ì •ì˜¨ë„ ëª¨ë“œ(ë³´ì • ë¯¸ì ìš©)
+	uni4Byte		revisionConstant[4];		// ë³´ì •ìš© ì ‘ì´‰ìƒìˆ˜ ì €ì¥ 
 }TEST_DATA;
 extern TEST_DATA TestData;
 
 typedef struct
 {
-	uint8_t readTemp;									//ÀÀ´äÀÌ ¿Ô´ÂÁö È®ÀÎ ÇÏ´Â ÇÃ·¡±× 
+	uint8_t readTemp;									//ì‘ë‹µì´ ì™”ëŠ”ì§€ í™•ì¸ í•˜ëŠ” í”Œë˜ê·¸ 
 }UPDATA_FLAG;
 extern UPDATA_FLAG Updata_Flag;
 
 /*********************************************************************
 *	System Properties
-* ½Ã½ºÅÛ¿¡¼­ °ø¿ëÀ¸·Î »ç¿ë µÇ´Â º¯¼ö ÀúÀå  
+* ì‹œìŠ¤í…œì—ì„œ ê³µìš©ìœ¼ë¡œ ì‚¬ìš© ë˜ëŠ” ë³€ìˆ˜ ì €ì¥  
 **********************************************************************/
 typedef enum {
 	DPM_NORMAL = 0,
@@ -134,18 +134,18 @@ typedef enum {
 
 typedef struct 
 {						
-    uint8_t         bootingWate[4];     //°¢ ¹ÙÀÌÆ®¿¡ Taskº° ºÎÆÃ ¿Ï·á¸¦ Ç¥½Ã ÇÑ´Ù. 
+    uint8_t         bootingWate[4];     //ê° ë°”ì´íŠ¸ì— Taskë³„ ë¶€íŒ… ì™„ë£Œë¥¼ í‘œì‹œ í•œë‹¤. 
                                         // 0 : StartDiaplayTask, 1 : StartRs485Task, 2 : StartSlotUartTask, 3 : StartRateTask
-    DISPLAYMODE 	displayMode;        // DISPLAYMODE »ç¿ëÇØ¼­ ¼±ÅÃ, 
-    									// NORMAL MODE ¿¡¼­´Â -, \, |, / À» ¼øÂ÷ÀûÀ¸·Î Ç¥½Ã ÇÑ´Ù. 
-    									// SETTING MODE ¿¡¼­´Â ¼³Á¤ °ªµéÀ» º¯°æ ÇÑ´Ù.
-    uint8_t         slotType[4];        // SENSORBOARDTYPE »ç¿ë ÇØ¼­ ¼±ÅÃ, sensor board Á¾·ù ±â·Ï 
-    uint8_t         slotInsert[4];      // slot »ğÀÔ‰ç´ÂÁö È®ÀÎ 
-    uni4Byte		intervalTime;       // sample rate ¸¦ ¸¸µé±â À§ÇÑ task delay time ¼³Á¤ 
-    uint8_t         start_flag;         // ¿Âµµ ½Ç½Ã°£ °¨½Ã ÇÃ·¹
-	uint8_t 		InterfaceStep;		// ÃÊ±âÈ­ ´Ü°è Ç¥½Ã¿ë 
+    DISPLAYMODE 	displayMode;        // DISPLAYMODE ì‚¬ìš©í•´ì„œ ì„ íƒ, 
+    									// NORMAL MODE ì—ì„œëŠ” -, \, |, / ì„ ìˆœì°¨ì ìœ¼ë¡œ í‘œì‹œ í•œë‹¤. 
+    									// SETTING MODE ì—ì„œëŠ” ì„¤ì • ê°’ë“¤ì„ ë³€ê²½ í•œë‹¤.
+    uint8_t         slotType[4];        // SENSORBOARDTYPE ì‚¬ìš© í•´ì„œ ì„ íƒ, sensor board ì¢…ë¥˜ ê¸°ë¡ 
+    uint8_t         slotInsert[4];      // slot ì‚½ì…ë¬ëŠ”ì§€ í™•ì¸ 
+    uni4Byte		intervalTime;       // sample rate ë¥¼ ë§Œë“¤ê¸° ìœ„í•œ task delay time ì„¤ì • 
+    uint8_t         start_flag;         // ì˜¨ë„ ì‹¤ì‹œê°„ ê°ì‹œ í”Œë ˆ
+	uint8_t 		InterfaceStep;		// ì´ˆê¸°í™” ë‹¨ê³„ í‘œì‹œìš© 
 	uni4Byte		mcuUUID[3];			// MCU UUID
-	uint8_t			smpsState;			// smps ½ÅÈ£ È®ÀÎ 
+	uint8_t			smpsState;			// smps ì‹ í˜¸ í™•ì¸ 
 }SYSTEM_STRUCT;
 extern SYSTEM_STRUCT SysProperties;
 
@@ -158,7 +158,7 @@ extern SYSTEM_TIME  SysTime;
 
 
 /*********************************************************************
-*	Button Ã³¸®¿ë 
+*	Button ì²˜ë¦¬ìš© 
 **********************************************************************/
 typedef enum {
 	BTN_NORMAL = 0,
@@ -235,25 +235,25 @@ typedef struct
 	FIL 			fileObject; 			// File object 
 	TCHAR			loadFileName[40];
 	char			diskPath[4];			// User logical drive path 
-	SD_CARD_STATE	sdState;				// ¿¡·¯ Ã¼Å©¿ë
+	SD_CARD_STATE	sdState;				// ì—ëŸ¬ ì²´í¬ìš©
 	SD_CARD_STATE 	sdMountState;
-	FILINFO			fno;					// ÆÄÀÏ Á¤º¸ ¸®ÅÏ¿ë 
+	FILINFO			fno;					// íŒŒì¼ ì •ë³´ ë¦¬í„´ìš© 
 
-	DIR				scanDir[5];				// ÆÄÀÏ ¸®½ºÆ® Àü¼Û¿ë
+	DIR				scanDir[5];				// íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ì „ì†¡ìš©
 	FIL 			sendFileObject; 
 	uint8_t			scanDirDeep;
 	uint8_t			scanFilePath[50];
 	uint32_t		scanFileListCount;
 	uint8_t			scanReadFileName[50];
 
-	uint8_t 		sendFileName[50];		// ÆÄÀÏ ´Ù¿î·Îµå¿ë 
+	uint8_t 		sendFileName[50];		// íŒŒì¼ ë‹¤ìš´ë¡œë“œìš© 
 	uint8_t			sendFileNameLen;
 	
-	//uint8_t			errorState;		// ¿¡·¯ Ã¼Å©¿ë
+	//uint8_t			errorState;		// ì—ëŸ¬ ì²´í¬ìš©
 }SD_CARD_VALUE;
 extern SD_CARD_VALUE	sdValue;
 
-extern uint8_t			FindFilelistFlag;		//0 : ÆÄÀÏ ¸®½ºÆ® °Ë»ö ¾ÈÇÏ´ÂÁß / 1 : ÆÄÀÏ ¸®½ºÆ® °Ë»öÁß 
+extern uint8_t			FindFilelistFlag;		//0 : íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ê²€ìƒ‰ ì•ˆí•˜ëŠ”ì¤‘ / 1 : íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ê²€ìƒ‰ì¤‘ 
 
 extern GPIO_TypeDef *	SLAVE_CS_PORT[4];
 extern uint16_t			SLAVE_CS_PIN[4];
@@ -262,8 +262,8 @@ extern uint16_t			SLAVE_CS_PIN[4];
 //extern uint8_t 		txDataBuffer[UART_TX_BUF_MAX];
 extern uint8_t          sendSlotNumber;
 
-extern uint8_t          rx485DataDMA[320];     			 	//dma ¿ëµµ 
-extern uint8_t			tx485DataDMA[MAX_485_BUF_LEN];      //dma ¿ëµµ 
+extern uint8_t          rx485DataDMA[320];     			 	//dma ìš©ë„ 
+extern uint8_t			tx485DataDMA[MAX_485_BUF_LEN];      //dma ìš©ë„ 
 extern uint8_t 			ReadFileBuf[MAX_485_BUF_LEN];
 
 #endif

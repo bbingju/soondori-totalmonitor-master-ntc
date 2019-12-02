@@ -89,7 +89,7 @@ uint8_t doAT_ATZ(uint8_t* rxDataBuffer)
 	HAL_UART_Receive_IT(&huart2, rxDataBuffer, 2);
 	HAL_UART_Transmit(&huart2, sendData, 4, 100);
 	osDelay(2000);
-	//°°Àº ¸í·É µÎ¹ø ¾ÈÁÖ¸é º¸·¹ÀÌÆ® ¾È¹Ù¤¡±ÅÁü. 
+	//ê°™ì€ ëª…ë ¹ ë‘ë²ˆ ì•ˆì£¼ë©´ ë³´ë ˆì´íŠ¸ ì•ˆë°”ã„±ê¶ˆì§. 
 	HAL_UART_Receive_IT(&huart2, rxDataBuffer, 2);
 	HAL_UART_Transmit(&huart2, sendData, 4, 100);
 	osDelay(2000);

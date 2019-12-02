@@ -22,7 +22,7 @@ extern Disk_drvTypeDef disk;
 
 /*********************************************************************
 *	StartDisplayTask
-*	16-SEGMENT, LED, BUTTON INPUT µîÀ» Ã³¸® ÇÏ´Â TASK
+*	16-SEGMENT, LED, BUTTON INPUT ë“±ì„ ì²˜ë¦¬ í•˜ëŠ” TASK
 **********************************************************************/
 void StartRateTask(void const * argument)
 {
@@ -34,7 +34,7 @@ void StartRateTask(void const * argument)
 	/* init code for FATFS */
 	MX_FATFS_Init();
 
-	//½Ã°£ ÃÊ±âÈ­ 
+	//ì‹œê°„ ì´ˆê¸°í™” 
 	HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
 	HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
 	
@@ -53,7 +53,7 @@ void StartRateTask(void const * argument)
 		HAL_RTC_SetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
 	}
 
-	//Task ºÎÆÃ ¿Ï·á ÇÃ·¹±× 
+	//Task ë¶€íŒ… ì™„ë£Œ í”Œë ˆê·¸ 
 	SysProperties.bootingWate[3] = TRUE;
 
 	while(1)
@@ -68,9 +68,9 @@ void StartRateTask(void const * argument)
 		osDelay(100);
 	}
 
-	if(sdValue.sdMountState == SCS_OK)		//sd card Link È®ÀÎ 
+	if(sdValue.sdMountState == SCS_OK)		//sd card Link í™•ì¸ 
 	{
-		if(MountSDIO() != FR_OK)			//sd card mount È®ÀÎ 
+		if(MountSDIO() != FR_OK)			//sd card mount í™•ì¸ 
 		{
 			sdValue.sdMountState = SCS_MOUNT_ERROR;
 			doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
@@ -93,14 +93,14 @@ void StartRateTask(void const * argument)
 	{
 		xLastWakeTime = osKernelSysTick();
 
-		if(!FindFilelistFlag)	//ÆÄÀÏ ¸®½ºÆ® °Ë»öÁß ÀÏ ¤§´ë ¤µ½º±â ¾ÈÇÔ 
+		if(!FindFilelistFlag)	//íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ê²€ìƒ‰ì¤‘ ì¼ ã„·ëŒ€ ã……ìŠ¤ê¸° ì•ˆí•¨ 
 			{
 			if(SysProperties.InterfaceStep == STEP_TEMP_READ)
 			{
-				if(sdValue.sdMountState == SCS_OK)	// Mount ±îÁö ¼º°ø ÇßÀ»¶§¸¸ ½ÃµµÇÔ. 
+				if(sdValue.sdMountState == SCS_OK)	// Mount ê¹Œì§€ ì„±ê³µ í–ˆì„ë•Œë§Œ ì‹œë„í•¨. 
 				{
 					DoSdCardFunction();
-					DoSdCardFreeSpace();			// sd card °ø°£ ºÎÁ· ¿¡·¯ ¹ß»ı È®ÀÎ 
+					DoSdCardFreeSpace();			// sd card ê³µê°„ ë¶€ì¡± ì—ëŸ¬ ë°œìƒ í™•ì¸ 
 				}
 				else
 				{
@@ -112,16 +112,16 @@ void StartRateTask(void const * argument)
 		
 		if(SysProperties.start_flag == TRUE)
 		{
-			DoMCUboardInfo();		//mcu board Á¤º¸ Àü¼Û 
+			DoMCUboardInfo();		//mcu board ì •ë³´ ì „ì†¡ 
 			osDelay(10);
 
 			for(i = 0; i < 4; i++)
 			{
-				DoSlotInfo(i);		//½½·Ô Á¤º¸ Àü¼Û 
+				DoSlotInfo(i);		//ìŠ¬ë¡¯ ì •ë³´ ì „ì†¡ 
 				osDelay(10);
-				DoChannelInfo(i);	//Ã¤³Î Á¤º¸ Àü¼Û
+				DoChannelInfo(i);	//ì±„ë„ ì •ë³´ ì „ì†¡
 				osDelay(10);
-				DoChannelValue(i);	//Ã¤³Î ¿Âµµ Àü¼Û 
+				DoChannelValue(i);	//ì±„ë„ ì˜¨ë„ ì „ì†¡ 
 				osDelay(10);
 
 			}
@@ -160,8 +160,8 @@ void DoSdCardFreeSpace(void)
 	float    persent = 0.0f;
 
 	ss   = (uint64_t)_MAX_SS;	
-	all  = (uint64_t)(ss * (uint64_t)sdValue.sdFatFs.n_fatent);  	// ÀüÃ¼¿ë·® 
-    free = (uint64_t)(ss * (uint64_t)sdValue.sdFatFs.free_clst);	// ³²Àº °ø°£
+	all  = (uint64_t)(ss * (uint64_t)sdValue.sdFatFs.n_fatent);  	// ì „ì²´ìš©ëŸ‰ 
+    free = (uint64_t)(ss * (uint64_t)sdValue.sdFatFs.free_clst);	// ë‚¨ì€ ê³µê°„
 	persent = (float)((float)free / (float)all);
 
 	if(persent < SD_CARD_FULL_ERROR_RATE)
@@ -181,10 +181,10 @@ void DoSdCardFunction(void)
     HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
 	
-	if(DoFolderCheck() == FR_OK)		// µğ·ºÅä¸® »ı¼º ¹× È®ÀÎ 
+	if(DoFolderCheck() == FR_OK)		// ë””ë ‰í† ë¦¬ ìƒì„± ë° í™•ì¸ 
 	{
 		sdValue.sdState = SCS_OK;
-		DoFileCheck();		// ÆÄÀÏ »óÅÂ¸¦ È®ÀÎÇÏ°í ÆÄÀÏ ÇØ´õ »ı¼º ±îÁö ÇÑ´Ù. , ÆÄÀÏÀÌ ÀÖÀ»°æ¿ì ±âÁ¸ ÆÄÀÏ·Î ÀÌ¾î¼­ ¾´´Ù. 
+		DoFileCheck();		// íŒŒì¼ ìƒíƒœë¥¼ í™•ì¸í•˜ê³  íŒŒì¼ í•´ë” ìƒì„± ê¹Œì§€ í•œë‹¤. , íŒŒì¼ì´ ìˆì„ê²½ìš° ê¸°ì¡´ íŒŒì¼ë¡œ ì´ì–´ì„œ ì“´ë‹¤. 
 		DoDataWrite();
 	}
 	else
@@ -198,7 +198,7 @@ void DoSdCardFunction(void)
 
 void DoMCUboardInfo(void)
 {
-	RealTimeSendData[0] = 0;		//ºÎ¸ğ ID (MCU Board ID´Â 0À¸·Î ÀÏ´Ü °íÁ¤)
+	RealTimeSendData[0] = 0;		//ë¶€ëª¨ ID (MCU Board IDëŠ” 0ìœ¼ë¡œ ì¼ë‹¨ ê³ ì •)
 	util_mem_cpy(&RealTimeSendData[1], &TestData.mainBoard[MBS_BATTERY].UI8[0], 16);	
 	RealTimeSendData[17] = sdValue.sdState;
 		
@@ -208,9 +208,9 @@ void DoMCUboardInfo(void)
 
 void DoSlotInfo(uint8_t slot)
 {
-	RealTimeSendData[0] = 0;		//ºÎ¸ğ ID (MCU Board ID´Â 0À¸·Î ÀÏ´Ü °íÁ¤)
+	RealTimeSendData[0] = 0;		//ë¶€ëª¨ ID (MCU Board IDëŠ” 0ìœ¼ë¡œ ì¼ë‹¨ ê³ ì •)
 	RealTimeSendData[1] = slot;
-	RealTimeSendData[2] = SBT_NTC;	//todo : slotÀÇ Á¾·ù°¡ ¸¹¾ÆÁö¸é Á¤º¸ ÀĞ¾î¼­ ±â·Ï ÇØ¾ß ÇÔ 
+	RealTimeSendData[2] = SBT_NTC;	//todo : slotì˜ ì¢…ë¥˜ê°€ ë§ì•„ì§€ë©´ ì •ë³´ ì½ì–´ì„œ ê¸°ë¡ í•´ì•¼ í•¨ 
 	RealTimeSendData[3] = TestData.revisionApply[slot];
 
 	doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &RealTimeSendData[0], 4, 32, 52);	

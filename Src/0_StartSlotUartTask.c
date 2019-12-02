@@ -1,7 +1,7 @@
 #include "math.h"
 #include "0_StartSlotUartTask.h"
 #include "0_GlobalValue.h"
-#include "string.h"           //memset ¿ë include
+#include "string.h"           //memset ìš© include
 #include "0_soonQueue.h"
 #include "0_UartCallback.h"
 #include "0_StartRs485Task.h"
@@ -11,13 +11,13 @@
 **********************************************************************/
 //UPDATA_FLAG     Updata_Flag;
 
-GPIO_TypeDef *  SLAVE_CS_PORT[4] = {SLAVE_CS0_GPIO_Port,  SLAVE_CS1_GPIO_Port,  SLAVE_CS2_GPIO_Port,  SLAVE_CS3_GPIO_Port}; //todo : ¼ø¼­¸¦ 0123 À¸·Î ¹Ù²ã¾ßÇÔ 
-uint16_t        SLAVE_CS_PIN[4]  = {SLAVE_CS0_Pin,        SLAVE_CS1_Pin,        SLAVE_CS2_Pin,        SLAVE_CS3_Pin};       // back plate ÀÇ ÄÁ³ØÅÍ°¡ Àß¸ø µÇ¾î ÀÖÀ½ 
+GPIO_TypeDef *  SLAVE_CS_PORT[4] = {SLAVE_CS0_GPIO_Port,  SLAVE_CS1_GPIO_Port,  SLAVE_CS2_GPIO_Port,  SLAVE_CS3_GPIO_Port}; //todo : ìˆœì„œë¥¼ 0123 ìœ¼ë¡œ ë°”ê¿”ì•¼í•¨ 
+uint16_t        SLAVE_CS_PIN[4]  = {SLAVE_CS0_Pin,        SLAVE_CS1_Pin,        SLAVE_CS2_Pin,        SLAVE_CS3_Pin};       // back plate ì˜ ì»¨ë„¥í„°ê°€ ì˜ëª» ë˜ì–´ ìˆìŒ 
 
-uint8_t 		TxDataBuffer[UART_TX_BUF_MAX] = { 0 };  //dma ¿ëµµ 
-uint8_t         RxDataDMA[1340]	 = { 0 };  				//dma ¿ëµµ 
+uint8_t 		TxDataBuffer[UART_TX_BUF_MAX] = { 0 };  //dma ìš©ë„ 
+uint8_t         RxDataDMA[1340]	 = { 0 };  				//dma ìš©ë„ 
 
-uint8_t         RxSlotData[140]	 = { 0 };    			//parsing ¿ëµµ 
+uint8_t         RxSlotData[140]	 = { 0 };    			//parsing ìš©ë„ 
 uint8_t         RxSlotDataLength = 0;
 uint8_t         RxReadCount		 = 0;
 
@@ -40,33 +40,33 @@ RX_QUEUE_STRUCT RxQueue;
 
 /*********************************************************************
 *	StartSlaveInterfaceTask
-* BLUETOOTH AND SLAVE ¿ë USART Åë½Å TASK
+* BLUETOOTH AND SLAVE ìš© USART í†µì‹  TASK
 **********************************************************************/
 void StartSlotUartTask(void const * argument)
 {
     //uint8_t     rxLoopCount;
-	uint8_t		ReqSwitch = 0;
+    uint8_t		ReqSwitch = 0;
 
-	SysProperties.InterfaceStep = STEP_SLOT_ID;
+    SysProperties.InterfaceStep = STEP_SLOT_ID;
     
-	HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(SLAVE_OE1_GPIO_Port, SLAVE_OE1_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(UART_EN_BT_GPIO_Port, UART_EN_BT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SLAVE_OE1_GPIO_Port, SLAVE_OE1_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(UART_EN_BT_GPIO_Port, UART_EN_BT_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_SET);
 
     DoSlotReset(ALL_SLOT);    
-	DoRejectSlot();
+    DoRejectSlot();
     osDelay(100);
     HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
 
-	//todo : ¼¾¼­ Å¸ÀÔÀ» ½½·¹ÀÌºê º¸µå¿¡¼­ ÀĞ¾î ¿Í¾ß ÇÔ. 
-	SysProperties.slotType[0] = SBT_NTC;
-	SysProperties.slotType[1] = SBT_NTC;
-	SysProperties.slotType[2] = SBT_NTC;
-	SysProperties.slotType[3] = SBT_NTC;
+    //todo : ì„¼ì„œ íƒ€ì…ì„ ìŠ¬ë ˆì´ë¸Œ ë³´ë“œì—ì„œ ì½ì–´ ì™€ì•¼ í•¨. 
+    SysProperties.slotType[0] = SBT_NTC;
+    SysProperties.slotType[1] = SBT_NTC;
+    SysProperties.slotType[2] = SBT_NTC;
+    SysProperties.slotType[3] = SBT_NTC;
 
 
-    //Task ºÎÆÃ ¿Ï·á ÇÃ·¹±× 
+    //Task ë¶€íŒ… ì™„ë£Œ í”Œë ˆê·¸ 
     SysProperties.bootingWate[2] = TRUE;
 
     while(1)
@@ -84,25 +84,25 @@ void StartSlotUartTask(void const * argument)
     /* Infinite loop */
     for(;;)
     {
-		osDelay(1);
+        osDelay(1);
 		
         //RX FUNCTION
         do
         {
-			SlotRxFunction();
-			UnpackingRxQueue();
-			semCount = osSemaphoreGetCount(CountingSemSlaveRxHandle);
+	    SlotRxFunction();
+	    UnpackingRxQueue();
+	    semCount = osSemaphoreGetCount(CountingSemSlaveRxHandle);
 			
-			if((RxReadCount == 11) || (RxReadCount == 37) || (RxReadCount == 133))
-	        {
-	            DoSlotJumpFunction();
-				RxReadCount = 0;
-	        }
-        }while((RxQueue_Count(&RxQueue) > 0) || (semCount > 0));
+	    if((RxReadCount == 11) || (RxReadCount == 37) || (RxReadCount == 133))
+	    {
+	        DoSlotJumpFunction();
+		RxReadCount = 0;
+	    }
+        } while((RxQueue_Count(&RxQueue) > 0) || (semCount > 0));
         
         switch(SysProperties.InterfaceStep)
         {
-            case STEP_SLOT_ID:                  // ºÎÆÃ ÇÏ¸é °¢ ½½·ÔÀÇ id ¸¦ ÁöÁ¤ ÇÑ´Ù. id ´Â '0'¿¡¼­ ½ÃÀÛÇÑ´Ù. 
+            case STEP_SLOT_ID:                  // ë¶€íŒ… í•˜ë©´ ê° ìŠ¬ë¡¯ì˜ id ë¥¼ ì§€ì • í•œë‹¤. id ëŠ” '0'ì—ì„œ ì‹œì‘í•œë‹¤. 
                 DoReqSlotID(SendSlotNumber);
                 osDelay(100);
                 if(noReturnSendCt > 10)
@@ -112,11 +112,11 @@ void StartSlotUartTask(void const * argument)
 					//SysProperties.slotInsert[0] = TRUE;
                 }
                 break;
-        	case STEP_READ_THRESHOLD:			//°¢ ½½·ÔÀÇ °æ°í ¿Âµµ °ªÀ» ºÒ·¯ ¿Â´Ù. 
+        	case STEP_READ_THRESHOLD:			//ê° ìŠ¬ë¡¯ì˜ ê²½ê³  ì˜¨ë„ ê°’ì„ ë¶ˆëŸ¬ ì˜¨ë‹¤. 
 				startThreshold = TRUE;
 				DoThresholdReq(SendSlotNumber);
 				break;
-            case STEP_TEMP_READ:                // °¢ ½½·ÔÀÇ id ¼³Á¤ ¿Ï·á ÈÄ ¿Âµµ¼¾¼­ÀÇ ¿Âµµ¸¦ ¿äÃ» ÇÑ´Ù. 
+            case STEP_TEMP_READ:                // ê° ìŠ¬ë¡¯ì˜ id ì„¤ì • ì™„ë£Œ í›„ ì˜¨ë„ì„¼ì„œì˜ ì˜¨ë„ë¥¼ ìš”ì²­ í•œë‹¤. 
             	if((ReqSwitch & 0x01) == 0)
             	{
 					DoReqTemperature(SendSlotNumber);
@@ -135,7 +135,7 @@ void StartSlotUartTask(void const * argument)
         }        
         
         osDelay(30);
-//        osDelayUntil(&xLastWakeTime, 200);      //osDelay »ç¿ë½Ã HardFaul ¹ß»ı ÇÔ. 
+//        osDelayUntil(&xLastWakeTime, 200);      //osDelay ì‚¬ìš©ì‹œ HardFaul ë°œìƒ í•¨. 
     }
     /* USER CODE END 5 */ 
 }
@@ -150,7 +150,7 @@ void SlotRxFunction(void)
 		{		 
 			for(i = 0; i < huart2.RxXferSize; i++)
 			{
-				osDelay(1); 	  // nop ·Î º¯°æ½Ã HardFault ¹ß»ı ÇÔ. osDelayUntil(&xLastWakeTime, 180); ¿Í °°ÀÌ »ç¿ë ÇØ¾ß ÇÔ. 
+				osDelay(1); 	  // nop ë¡œ ë³€ê²½ì‹œ HardFault ë°œìƒ í•¨. osDelayUntil(&xLastWakeTime, 180); ì™€ ê°™ì´ ì‚¬ìš© í•´ì•¼ í•¨. 
 				RxQueue_Send(&RxQueue, RxDataDMA[i]);
 			}
 			noReturnSendCt = 0;
@@ -163,7 +163,7 @@ void UnpackingRxQueue(void)
     uint16_t    etxLength  = 0;
     //uint16_t	etxCheck = 0;
 
-	if(RxQueue_empty(&RxQueue) == FALSE)  //Rx ¹öÆÛ¿¡ ÀÔ·Â µ¥ÀÌÅÍ°¡ ÀÕ´ÂÁö È®ÀÎ 
+	if(RxQueue_empty(&RxQueue) == FALSE)  //Rx ë²„í¼ì— ì…ë ¥ ë°ì´í„°ê°€ ì‡ëŠ”ì§€ í™•ì¸ 
 	{			 
 		if((RxQueue.tail + huart2.RxXferSize - 1) >= UART_RX_BUF_MAX)  
 		{	
@@ -206,8 +206,8 @@ void UnpackingRxQueue(void)
 
 /*********************************************************************
 *	doSlotReset
-*	SLOT Åë½Å ¹®Á¦°¡ ¹ß»ı ‰çÀ» ¶§ SLOT °­Á¦ ¸®¼Â ½ÃÅ´
-*   slot : SLOT ¹øÈ£, ALL_SLOT : ¸ğµç SLOT RESET
+*	SLOT í†µì‹  ë¬¸ì œê°€ ë°œìƒ ë¬ì„ ë•Œ SLOT ê°•ì œ ë¦¬ì…‹ ì‹œí‚´
+*   slot : SLOT ë²ˆí˜¸, ALL_SLOT : ëª¨ë“  SLOT RESET
 **********************************************************************/
 void DoSlotReset(uint8_t slot)
 {
@@ -233,8 +233,8 @@ void DoSlotReset(uint8_t slot)
 
 /*********************************************************************
 *	doSelectSlot
-*	SLOT ¼±ÅÃ ÇÏ´Â ÇÔ¼ö 
-*   slot : SLOT ¹øÈ£
+*	SLOT ì„ íƒ í•˜ëŠ” í•¨ìˆ˜ 
+*   slot : SLOT ë²ˆí˜¸
 **********************************************************************/
 void DoSelectSlot(uint8_t slot)
 {
@@ -249,7 +249,7 @@ void DoSelectSlot(uint8_t slot)
 
 /*********************************************************************
 *	doRejectSlot
-*	SLOT ¼±ÅÃ Á¦°Å ÇÔ¼ö 
+*	SLOT ì„ íƒ ì œê±° í•¨ìˆ˜ 
 **********************************************************************/
 void DoRejectSlot(void)
 {
@@ -262,17 +262,17 @@ void DoRejectSlot(void)
 /*********************************************************************
 **********************************************************************
 *
-*	Tx °ü·Ã ÇÔ¼ö 
+*	Tx ê´€ë ¨ í•¨ìˆ˜ 
 *
-*   doSet À¸·Î ½ÃÀÛ ÇÏ´Â ÇÔ¼ö : slot¿¡ ¼³Á¤À» ÇÏ´Â ÇÔ¼ö 
-*   doReq À¸·Î ½ÃÀÛ ÇÏ´Â ÇÔ¼ö : slot¿¡ °ªÀ» ¿äÃ» ÇÏ´Â ÇÔ¼ö 
+*   doSet ìœ¼ë¡œ ì‹œì‘ í•˜ëŠ” í•¨ìˆ˜ : slotì— ì„¤ì •ì„ í•˜ëŠ” í•¨ìˆ˜ 
+*   doReq ìœ¼ë¡œ ì‹œì‘ í•˜ëŠ” í•¨ìˆ˜ : slotì— ê°’ì„ ìš”ì²­ í•˜ëŠ” í•¨ìˆ˜ 
 **********************************************************************
 **********************************************************************/
 
 /*********************************************************************
 *	txFunction
-*	TX Àü¼Û °ü¸® ÇÔ¼ö
-*   slotNumber : SLOT ÁöÁ¤ 
+*	TX ì „ì†¡ ê´€ë¦¬ í•¨ìˆ˜
+*   slotNumber : SLOT ì§€ì • 
 **********************************************************************/
 void UartInternalTxFunction(uint8_t* datas, uint16_t length)
 {
@@ -281,7 +281,7 @@ void UartInternalTxFunction(uint8_t* datas, uint16_t length)
     {
         if(osSemaphoreWait(BinarySemSlaveTxHandle, 0) == osOK)
         {        
-            // ¿Âµµ°ª ¿äÃ» 
+            // ì˜¨ë„ê°’ ìš”ì²­ 
             noReturnSendCt++;
 			HAL_UART_Transmit_DMA(&BLUETOOTH_HANDEL, datas, length);
 			osDelay(1);
@@ -294,7 +294,7 @@ void DoCalibrationNTCTableCal(uint8_t slotNumber)
 	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
 	doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
-	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// ÀÀ´äÀº 134·Î µé¾î¿Â´Ù.			
+	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// ì‘ë‹µì€ 134ë¡œ ë“¤ì–´ì˜¨ë‹¤.			
 	osDelay(100);
 	return;
 }
@@ -314,7 +314,7 @@ void DoCalibrationNTCTableReq(uint8_t slotNumber)
 	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
 	doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
-	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// ÀÀ´äÀº 134·Î µé¾î¿Â´Ù.			
+	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// ì‘ë‹µì€ 134ë¡œ ë“¤ì–´ì˜¨ë‹¤.			
 	osDelay(100);
 }
 
@@ -342,7 +342,7 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
 
 	doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_SET, u, 5, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
-	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); 	// ÀÀ´äÀº 134·Î µé¾î¿Â´Ù.
+	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); 	// ì‘ë‹µì€ 134ë¡œ ë“¤ì–´ì˜¨ë‹¤.
 	osDelay(100);
 	return;
 }
@@ -351,14 +351,14 @@ void DoThresholdReq(uint8_t slotNumber)
 {
 	doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
-	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); 	// ÀÀ´äÀº 134·Î µé¾î¿Â´Ù.
+	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); 	// ì‘ë‹µì€ 134ë¡œ ë“¤ì–´ì˜¨ë‹¤.
 	osDelay(100);
 }
 
 /*********************************************************************
 *	doReqSlotID
-*	SLOT °¢ º¸µåÀÇ ID ¸¦ ¼³Á¤ 
-*   slotNumber : SLOT ÁöÁ¤ 
+*	SLOT ê° ë³´ë“œì˜ ID ë¥¼ ì„¤ì • 
+*   slotNumber : SLOT ì§€ì • 
 **********************************************************************/
 void DoReqSlotID(uint8_t slotNumber)
 {
@@ -379,8 +379,8 @@ void DoReqSlotID(uint8_t slotNumber)
 
 /*********************************************************************
 *	doReqTemperature
-*	½½·Ô¿¡ ¼¾¼­ ¿Âµµ¸¦ ¿äÃ» ÇÔ, Àü¼Û ¹Ş´Â °ªÀº flot(4byte)À¸·Î ÇÑ´Ù. 
-*   slotNumber : SLOT ÁöÁ¤ 
+*	ìŠ¬ë¡¯ì— ì„¼ì„œ ì˜¨ë„ë¥¼ ìš”ì²­ í•¨, ì „ì†¡ ë°›ëŠ” ê°’ì€ flot(4byte)ìœ¼ë¡œ í•œë‹¤. 
+*   slotNumber : SLOT ì§€ì • 
 **********************************************************************/
 void DoReqTemperature(uint8_t slotNumber)
 {
@@ -412,7 +412,7 @@ void DoReqTeameratureState(uint8_t slotNumber)
 	return;
 }
 
-void DoRevisionApplySet(uint8_t slotNumber, uint8_t mode)		//slot ¹øÈ£ Àü´Ş , 0: ÃøÁ¤¿Âµµ ¸ğµå, 1: º¸Á¤¿Âµµ ¸ğµå 
+void DoRevisionApplySet(uint8_t slotNumber, uint8_t mode)		//slot ë²ˆí˜¸ ì „ë‹¬ , 0: ì¸¡ì •ì˜¨ë„ ëª¨ë“œ, 1: ë³´ì •ì˜¨ë„ ëª¨ë“œ 
 {	
 	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 	
@@ -462,8 +462,8 @@ void DoRevisionConstantReq(uint8_t slotNumber)
 
 /*********************************************************************
 *	doIncSlotIdStep
-*	½½·ÔÀÌ 4°³(Â÷ÈÄ 6°³·Î Áõ°¡ ¿¹Á¤)¸¦ ¼øÂ÷ÀûÀ¸·Î ¿äÃ» ÇÏ½Ã À§ÇÑ ÇÔ¼ö 
-*   slotNumber : SLOT ÁöÁ¤ 
+*	ìŠ¬ë¡¯ì´ 4ê°œ(ì°¨í›„ 6ê°œë¡œ ì¦ê°€ ì˜ˆì •)ë¥¼ ìˆœì°¨ì ìœ¼ë¡œ ìš”ì²­ í•˜ì‹œ ìœ„í•œ í•¨ìˆ˜ 
+*   slotNumber : SLOT ì§€ì • 
 **********************************************************************/
 void DoIncSlotIdStep(uint8_t slotNumber)
 {
@@ -485,7 +485,7 @@ void DoIncSlotIdStep(uint8_t slotNumber)
 				}
             }
             break;
-		case STEP_READ_THRESHOLD:			//°¢ ½½·ÔÀÇ °æ°í ¿Âµµ °ªÀ» ºÒ·¯ ¿Â´Ù. 
+		case STEP_READ_THRESHOLD:			//ê° ìŠ¬ë¡¯ì˜ ê²½ê³  ì˜¨ë„ ê°’ì„ ë¶ˆëŸ¬ ì˜¨ë‹¤. 
 	         do{
                 SendSlotNumber = ++slotNumber;
                 if(SendSlotNumber > 3)  {
@@ -514,15 +514,15 @@ void DoIncSlotIdStep(uint8_t slotNumber)
 /*********************************************************************
 **********************************************************************
 *
-*	Rx °ü·Ã ÇÔ¼ö 
+*	Rx ê´€ë ¨ í•¨ìˆ˜ 
 *
-*   doAns À¸·Î ½ÃÀÛ ÇÏ´Â ÇÔ¼ö : ¿äÃ»ÇÑ ÀÀ´äÀÌ ÀÖ°Å³ª, ¼³Á¤ ¿Ï·á¿¡ ´ëÇÑ ÀÀ´ä 
+*   doAns ìœ¼ë¡œ ì‹œì‘ í•˜ëŠ” í•¨ìˆ˜ : ìš”ì²­í•œ ì‘ë‹µì´ ìˆê±°ë‚˜, ì„¤ì • ì™„ë£Œì— ëŒ€í•œ ì‘ë‹µ 
 **********************************************************************
 **********************************************************************/
 
 /*********************************************************************
 *	doSlotJumpFunction
-*	Rx Data ¸¦ Parsing ÇÏ±â À§ÇÑ ºĞ±â ÇÔ¼ö 
+*	Rx Data ë¥¼ Parsing í•˜ê¸° ìœ„í•œ ë¶„ê¸° í•¨ìˆ˜ 
 **********************************************************************/
 void DoSlotJumpFunction(void)
 {
@@ -612,7 +612,7 @@ void DoSlotJumpFunction(void)
 
 /*********************************************************************
 *	doAnsBoardType
-*	º¸µå Å¸ÀÔ ÀÀ´ä ÇÔ¼ö 
+*	ë³´ë“œ íƒ€ì… ì‘ë‹µ í•¨ìˆ˜ 
 **********************************************************************/
 void DoAnsBoardType(void)
 {
@@ -621,7 +621,7 @@ void DoAnsBoardType(void)
 
 /*********************************************************************
 *	doAnsReqSlotID
-*	½½·Ô id ¼³Á¤ È®ÀÎ ÇÔ¼ö 
+*	ìŠ¬ë¡¯ id ì„¤ì • í™•ì¸ í•¨ìˆ˜ 
 **********************************************************************/
 void DoAnsReqSlotID(void)
 {
@@ -636,7 +636,7 @@ void DoAnsReqSlotID(void)
 
 /*********************************************************************
 *	doAnsTemperature
-*	¿Âµµ ¿äÃ»¿¡ ´ëÇÑ ÀÀ´ä, È¸½Å µÇ´Â ÀÀ´äÀº flotÀÓ.  
+*	ì˜¨ë„ ìš”ì²­ì— ëŒ€í•œ ì‘ë‹µ, íšŒì‹  ë˜ëŠ” ì‘ë‹µì€ flotì„.  
 **********************************************************************/
 void DoAnsTemperature(void)
 {
@@ -709,7 +709,7 @@ void DoAnsThresholdReq(void)
 		crcErrorCount++;
 	}
 
-	if(startThreshold != TRUE)	//ÃÊ±âÈ­ ÇÏ´Â µ¿¾ÈÀº 486 Àü¼Û ÇÏÁö ¾Ê´Â´Ù, ÃÊ±âÈ­ ÁßÀÏ¶§ startThreshold == TRUE ÀÓ.
+	if(startThreshold != TRUE)	//ì´ˆê¸°í™” í•˜ëŠ” ë™ì•ˆì€ 486 ì „ì†¡ í•˜ì§€ ì•ŠëŠ”ë‹¤, ì´ˆê¸°í™” ì¤‘ì¼ë•Œ startThreshold == TRUE ì„.
 	{
 		util_mem_cpy(&thresholdData[1], &TestData.threshold[thresholdData[0]][0].UI8[0], 128);
 		doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ, &thresholdData[0], 129, 132, 152);	
