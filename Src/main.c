@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include "0_GlobalValue.h"
 #include "0_StartDisplayTask.h"
 #include "0_StartRs485Task.h"
