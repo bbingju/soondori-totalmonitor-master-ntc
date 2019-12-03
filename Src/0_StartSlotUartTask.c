@@ -296,7 +296,6 @@ void DoCalibrationNTCTableCal(uint8_t slotNumber)
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
 	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// 응답은 134로 들어온다.			
 	osDelay(100);
-	return;
 }
 
 void DoCalibrationNTCConstantSet(uint8_t slotNumber)
@@ -306,7 +305,6 @@ void DoCalibrationNTCConstantSet(uint8_t slotNumber)
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
 	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);				
 	osDelay(100);
-	return;
 }
 
 void DoCalibrationNTCTableReq(uint8_t slotNumber)
@@ -343,7 +341,6 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
 	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); 	// 응답은 134로 들어온다.
 	osDelay(100);
-	return;
 }
 
 void DoThresholdReq(uint8_t slotNumber)
