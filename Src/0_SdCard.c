@@ -202,16 +202,17 @@ void DoFileClose(void)
 **********************************************************************/
 void DoMakeLoadFileName(void)	//현제시간으로 파일 만들기
 {
-	sprintf(sdValue.loadFileName,	"20%02d/%02d/%02d/%02d%02d%02d_%02d%02d%02d.ske",
-									(char)SysTime.Date.Year,		//dir
-									(char)SysTime.Date.Month,
-									(char)SysTime.Date.Date,
-									(char)SysTime.Date.Year,		//file
-									(char)SysTime.Date.Month,
-									(char)SysTime.Date.Date,
-									(char)SysTime.Time.Hours,
-									(char)SysTime.Time.Minutes,
-									(char)SysTime.Time.Seconds);
+    sprintf(sdValue.loadFileName,
+	    "20%02d/%02d/%02d/%02d%02d%02d_%02d%02d%02d.ske",
+	    SysTime.Date.Year, //dir
+	    SysTime.Date.Month,
+	    SysTime.Date.Date,
+	    SysTime.Date.Year, //file
+	    SysTime.Date.Month,
+	    SysTime.Date.Date,
+	    SysTime.Time.Hours,
+	    SysTime.Time.Minutes,
+	    SysTime.Time.Seconds);
 
 }
 

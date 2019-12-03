@@ -34,12 +34,10 @@ float ByteArrayToFloat(uint8_t *byteArray)
 *  CopyLength     : 복사할 길이
 *	 TotalLength    : 타겟 배열의 총 길이 
 **********************************************************************/
-uint8_t CopyToArray(	uint8_t* TagetArray, 	uint8_t* OriginalString, 
-							uint16_t CopyLength, 	uint16_t TotalLength)
+uint8_t CopyToArray(uint8_t* TagetArray, uint8_t* OriginalString, 
+		    uint16_t CopyLength, uint16_t TotalLength)
 {
-	uint16_t i = 0; 
-
-	for(i = 0; i < TotalLength; i++)
+	for(uint16_t i = 0; i < TotalLength; i++)
 	{
 		if(i < CopyLength)
 		{
@@ -87,9 +85,9 @@ void doMakeSendData(	uint8_t* SendData,
 }
 #endif 
 
-void doMakeSendSlotData(	uint8_t* SendData,	    uint8_t SlotNumber,
-                                uint8_t Command, 		uint8_t* Data, 			
-							    uint8_t  DataLength,	uint8_t BufferLength)
+void doMakeSendSlotData(uint8_t* SendData, uint8_t SlotNumber,
+			uint8_t Command, uint8_t* Data,
+			uint8_t  DataLength, uint8_t BufferLength)
 {
 	uni2Byte crc;
 	
@@ -99,7 +97,7 @@ void doMakeSendSlotData(	uint8_t* SendData,	    uint8_t SlotNumber,
 	CopyToArray(SendData, Data, DataLength, DATA_FULL_LENGTH);	
 	SendData -= 2;
 
-	crc.UI16 =	CRC16_Make(&SendData[0], BufferLength - 4);
+	crc.UI16 = CRC16_Make(&SendData[0], BufferLength - 4);
 	SendData += BufferLength - 4;
 
 	*SendData++ = crc.UI8[0];
@@ -108,10 +106,9 @@ void doMakeSendSlotData(	uint8_t* SendData,	    uint8_t SlotNumber,
 	*SendData = CMD_ETX;
 }
 
-void doMakeSend485Data(	uint8_t* SendData,	    uint8_t  Command,
-                                uint8_t  Option, 		uint8_t* Data, 			
-							    uint16_t DataWriteLen,	uint16_t DataLen,
-							    uint16_t BufferLen)
+void doMakeSend485Data(uint8_t* SendData, uint8_t  Command, uint8_t  Option, 
+		       uint8_t* Data, uint16_t DataWriteLen, uint16_t DataLen,
+		       uint16_t BufferLen)
 {
 	uni2Byte crc;
 	uni4Byte len;
@@ -143,9 +140,9 @@ void doMakeSend485Data(	uint8_t* SendData,	    uint8_t  Command,
 	*SendData++ = SysTime.Time.Seconds;
 	//util_mem_cpy(&SendData[17], Data, DataWriteLen);
 	CopyToArray(SendData, Data, DataWriteLen, DataLen);	
-    SendData -= 16;
+	SendData -= 16;
 
-	crc.UI16 =	CRC16_Make(&SendData[0], BufferLen - 4);
+	crc.UI16 = CRC16_Make(&SendData[0], BufferLen - 4);
 	SendData += BufferLen - 4;
 
 	*SendData++ = crc.UI8[0];
@@ -154,10 +151,9 @@ void doMakeSend485Data(	uint8_t* SendData,	    uint8_t  Command,
 	*SendData = RS_ETX;
 }
 
-void doMakeSend485DataDownLoad(	uint8_t* SendData,	    uint8_t  Command,
-                                			uint8_t  Option, 		uint8_t* Data, 			
-							    			uint16_t DataWriteLen,	uint16_t DataLen,
-							    			uint16_t BufferLen)
+void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Option,
+			       uint8_t* Data, uint16_t DataWriteLen, uint16_t DataLen,
+			       uint16_t BufferLen)
 {
 	uni2Byte crc;
 	uni4Byte len;

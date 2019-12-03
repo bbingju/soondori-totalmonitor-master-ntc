@@ -360,7 +360,7 @@ void DoReqSlotID(uint8_t slotNumber)
 {
     uint8_t u[1] = {0};
 
-	HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);    
     DoRejectSlot();
     memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
