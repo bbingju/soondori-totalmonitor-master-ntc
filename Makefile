@@ -161,6 +161,9 @@ C_DEFS =  \
 -DUSE_HAL_DRIVER \
 -DSTM32F405xx
 
+ifeq ($(USE_RTT_FOR_DEBUG), 1)
+C_DEFS += -DUSE_RTT_FOR_DEBUG
+endif
 
 # AS includes
 AS_INCLUDES =  \
