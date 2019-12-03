@@ -316,7 +316,7 @@ void DoSendFileOpen(void)
 	uint8_t	fileNameLen = 0;
 	FILINFO fno;
 
-	util_mem_set(&sdValue.sendFileName[0], 0x00, sizeof(sdValue.sendFileName));
+	memset(&sdValue.sendFileName[0], 0x00, sizeof(sdValue.sendFileName));
 	sdValue.sendFileName[0] = '0';
 	sdValue.sendFileName[1] = ':';
 
@@ -372,7 +372,7 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 		osSemaphoreRelease(CountingSem485TxHandle);
 
 	do{
-		util_mem_set(&ReadFileBuf[0], 0x00, sizeof(ReadFileBuf));
+		memset(&ReadFileBuf[0], 0x00, sizeof(ReadFileBuf));
 		temp.UI32 = Offset + (packetSize * i);
 		ReadFileBuf[0] = temp.UI8[0];
 		ReadFileBuf[1] = temp.UI8[1];
@@ -469,10 +469,10 @@ void DoReadFileList(void)
 	doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0, 12, 32);
 	SendUart485String(tx485DataDMA, 32);
 
-	util_mem_set(&sdValue.scanDir[0], 0x00, sizeof(sdValue.scanDir));
+	memset(&sdValue.scanDir[0], 0x00, sizeof(sdValue.scanDir));
 	osDelay(1);
 	sdValue.scanDirDeep = 0;
-	util_mem_set(&sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
+	memset(&sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
 	osDelay(1);
 
 	if(Rx485Data[7] == '.')	//루트를 요청 했을 경우
@@ -482,7 +482,7 @@ void DoReadFileList(void)
 	}
 	else	//경로 지정 했을 경우
 	{
-		util_mem_set(&sdValue.scanReadFileName[0], 0x00, sizeof(sdValue.scanReadFileName));
+		memset(&sdValue.scanReadFileName[0], 0x00, sizeof(sdValue.scanReadFileName));
 		sdValue.scanReadFileName[0] = '0';
 		sdValue.scanReadFileName[1] = ':';
 

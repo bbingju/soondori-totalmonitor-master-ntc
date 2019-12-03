@@ -291,7 +291,7 @@ void UartInternalTxFunction(uint8_t* datas, uint16_t length)
 
 void DoCalibrationNTCTableCal(uint8_t slotNumber)
 {
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 	doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
 	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// 응답은 134로 들어온다.			
@@ -301,7 +301,7 @@ void DoCalibrationNTCTableCal(uint8_t slotNumber)
 
 void DoCalibrationNTCConstantSet(uint8_t slotNumber)
 {
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 	doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
 	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);				
@@ -311,7 +311,7 @@ void DoCalibrationNTCConstantSet(uint8_t slotNumber)
 
 void DoCalibrationNTCTableReq(uint8_t slotNumber)
 {
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 	doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); 	
 	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// 응답은 134로 들어온다.			
@@ -331,7 +331,7 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
 {
 	uint8_t u[5] = {0};
 
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 
 	u[0] = channal;
 	u[1] = thresholdTemp.UI8[0];
@@ -366,7 +366,7 @@ void DoReqSlotID(uint8_t slotNumber)
 	HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);    
     DoRejectSlot();
-    util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
     u[0] = slotNumber + 0x30;
     
     doMakeSendSlotData(TxDataBuffer, u[0], CMD_SLOT_ID_REQ, u, 1, SEND_DATA_LENGTH);
@@ -387,7 +387,7 @@ void DoReqTemperature(uint8_t slotNumber)
 
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
     
-    util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 
     slotNumber += 0x30;
     doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_REQ, u, 0, SEND_DATA_LENGTH);
@@ -402,7 +402,7 @@ void DoReqTeameratureState(uint8_t slotNumber)
 
 	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 	
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 
 	slotNumber += 0x30;
 	doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_STATE_REQ, u, 0, SEND_DATA_LENGTH);
@@ -415,7 +415,7 @@ void DoRevisionApplySet(uint8_t slotNumber, uint8_t mode)		//slot 번호 전달 
 {	
 	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 	
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 
 	doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_APPLY_SET, &mode, 1, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
@@ -439,7 +439,7 @@ void DoRevisionApplyReq(uint8_t slotNumber)
 {
 	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 	
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 
 	doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_APPLY_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
@@ -451,12 +451,11 @@ void DoRevisionConstantReq(uint8_t slotNumber)
 {
 	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 	
-	util_mem_set((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+	memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 
 	doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
 	UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
 	HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);	
-	return;
 }
 
 /*********************************************************************
@@ -710,7 +709,7 @@ void DoAnsThresholdReq(void)
 
 	if(startThreshold != TRUE)	//초기화 하는 동안은 486 전송 하지 않는다, 초기화 중일때 startThreshold == TRUE 임.
 	{
-		util_mem_cpy(&thresholdData[1], &TestData.threshold[thresholdData[0]][0].UI8[0], 128);
+		memcpy(&thresholdData[1], &TestData.threshold[thresholdData[0]][0].UI8[0], 128);
 		doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ, &thresholdData[0], 129, 132, 152);	
 		SendUart485String(tx485DataDMA, 152);
 	}
@@ -750,7 +749,7 @@ void DoAnsThresholdSet(void)
 		crcErrorCount++;
 	}
 
-	util_mem_cpy(&thresholdData[1], &TestData.threshold[readSlotNumber][0].UI8[0], 128);
+	memcpy(&thresholdData[1], &TestData.threshold[readSlotNumber][0].UI8[0], 128);
 	doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &thresholdData[0], 129, 132, 152);	
 	SendUart485String(tx485DataDMA, 152);		
 }
@@ -967,7 +966,7 @@ void DoAnsCalibrationNTCTableReq(void)
 	}
 	
 	calData[0] = readSlotNumber;
-	util_mem_cpy((void*)&calData[1],(void*)&TestData.ntcCalibrationTable[readSlotNumber][0].UI8[0], 128);
+	memcpy(&calData[1], &TestData.ntcCalibrationTable[readSlotNumber][0].UI8[0], 128);
 
 	doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ, calData, 129, 132, 152);	
 	SendUart485String(tx485DataDMA, 152);

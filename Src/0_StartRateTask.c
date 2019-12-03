@@ -199,7 +199,7 @@ void DoSdCardFunction(void)
 void DoMCUboardInfo(void)
 {
 	RealTimeSendData[0] = 0;		//부모 ID (MCU Board ID는 0으로 일단 고정)
-	util_mem_cpy(&RealTimeSendData[1], &TestData.mainBoard[MBS_BATTERY].UI8[0], 16);	
+	memcpy(&RealTimeSendData[1], &TestData.mainBoard[MBS_BATTERY].UI8[0], 16);
 	RealTimeSendData[17] = sdValue.sdState;
 		
 	doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_MAIN_INFO, &RealTimeSendData[0], 17, 32, 52);	
@@ -220,7 +220,7 @@ void DoSlotInfo(uint8_t slot)
 void DoChannelInfo(uint8_t slot)
 {
 	RealTimeSendData[0] = slot;
-	util_mem_cpy(&RealTimeSendData[1], &TestData.sensorState[slot][0], 32);	
+	memcpy(&RealTimeSendData[1], &TestData.sensorState[slot][0], 32);
 	
 	doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_CHANNEL_INFO, &RealTimeSendData[0], 33, 36, 56);	
 	SendUart485String(tx485DataDMA, 56);
@@ -229,7 +229,7 @@ void DoChannelInfo(uint8_t slot)
 void DoChannelValue(uint8_t slot)
 {
 	RealTimeSendData[0] = slot;
-	util_mem_cpy(&RealTimeSendData[1], &TestData.temperature[slot][0].UI8[0], 128);	
+	memcpy(&RealTimeSendData[1], &TestData.temperature[slot][0].UI8[0], 128);
 
 	doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_CHANNEL_VALUE, &RealTimeSendData[0], 129, 132, 152); 
 	SendUart485String(tx485DataDMA, 152);

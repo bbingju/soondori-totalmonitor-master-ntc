@@ -7,7 +7,7 @@
 #endif 
 
 #ifndef _STDINT
-	#include "stdint.h"
+ #include <stdint.h>
 #endif
 
 #ifndef __STM32F4xx_HAL_UART_H

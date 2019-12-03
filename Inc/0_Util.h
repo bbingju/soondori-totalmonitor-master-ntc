@@ -3,7 +3,7 @@
 
 
 #ifndef _STDINT
-	#include "stdint.h"
+  #include <stdint.h>
 #endif
 
 #include "cmsis_os.h"
@@ -34,8 +34,6 @@ uint16_t CRC16_Make(uint8_t *byMsg, uint16_t len);
 float midADC_float(float * inData);
 void swap(float *a, float *b);
 void doRejectSlot(void);
-void util_mem_cpy (void* dst, const void* src, UINT cnt);
-void util_mem_set (void* dst, int val, UINT cnt);
 
 #endif
 

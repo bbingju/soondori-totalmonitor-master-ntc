@@ -1,7 +1,7 @@
 #include "0_Util.h"
 #include "0_StartSlotUartTask.h"
 #include "0_StartRs485Task.h"
-#include "string.h"           //memset 용 include
+#include <string.h>		//memset 용 include
 
 uint8_t *bytes;
 uint8_t BuzzerEnable;
@@ -187,7 +187,7 @@ void doMakeSend485DataDownLoad(	uint8_t* SendData,	    uint8_t  Command,
 	SendData[14] = SysTime.Time.Hours;
 	SendData[15] = SysTime.Time.Minutes;
 	SendData[16] = SysTime.Time.Seconds;
-	util_mem_cpy(&SendData[17], Data, DataWriteLen);
+	memcpy(&SendData[17], Data, DataWriteLen);
 	//CopyToArray(SendData, Data, DataWriteLen, DataLen);	
     //SendData -= 16;
 
@@ -334,25 +334,25 @@ float midADC_float(float * inData) /* using Bubble sort */
 /*-----------------------------------------------------------------------*/
 
 /* Copy memory to memory */
-void util_mem_cpy (void* dst, const void* src, UINT cnt) 
-{
-	BYTE *d = (BYTE*)dst;
-	const BYTE *s = (const BYTE*)src;
+/* void util_mem_cpy (void* dst, const void* src, UINT cnt)  */
+/* { */
+/* 	BYTE *d = (BYTE*)dst; */
+/* 	const BYTE *s = (const BYTE*)src; */
 
-	if (cnt) {
-		do {
-			*d++ = *s++;
-		} while (--cnt);
-	}
-}
+/* 	if (cnt) { */
+/* 		do { */
+/* 			*d++ = *s++; */
+/* 		} while (--cnt); */
+/* 	} */
+/* } */
 
 /* Fill memory block */
-void util_mem_set (void* dst, int val, UINT cnt) 
-{
-	BYTE *d = (BYTE*)dst;
+/* void util_mem_set (void* dst, int val, UINT cnt)  */
+/* { */
+/* 	BYTE *d = (BYTE*)dst; */
 
-	do {
-		*d++ = (BYTE)val;
-	} while (--cnt);
-}
+/* 	do { */
+/* 		*d++ = (BYTE)val; */
+/* 	} while (--cnt); */
+/* } */
 

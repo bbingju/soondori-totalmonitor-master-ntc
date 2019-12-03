@@ -193,7 +193,7 @@ void DoMakeFile(void)
 void DoFileClose(void)
 {
 	f_close(&sdValue.fileObject);
-	util_mem_set(sdValue.loadFileName, 0x00, sizeof(sdValue.loadFileName));
+	memset(sdValue.loadFileName, 0x00, sizeof(sdValue.loadFileName));
 }
 
 /*********************************************************************
@@ -438,7 +438,7 @@ void DoDataWrite(void)
 	//FSIZE_t size;
 
 	//메모리 초기화
-	util_mem_set(wData, 0x00, sizeof(wData));
+	memset(wData, 0x00, sizeof(wData));
 
 	//시간
 	wData[ 0] = SysTime.Date.Year;
@@ -459,7 +459,7 @@ void DoDataWrite(void)
 			{
 				wData[34 + (sensorCount * 6)] = j * 16 + i;											// 채널 번호
 				wData[35 + (sensorCount * 6)] = TestData.sensorState[j][i];							// 센서 상태
-				util_mem_cpy(&wData[36 + (sensorCount * 6)], &TestData.temperature[j][i].UI8[0], 4);	// 센서값 저장
+				memcpy(&wData[36 + (sensorCount * 6)], &TestData.temperature[j][i].UI8[0], 4);	// 센서값 저장
 				sensorCount++;																		// 사용 채널수 확인
 			}
 		}
@@ -477,7 +477,7 @@ void DoDataWrite(void)
 	{
 		wData[10 + (i * 6)] = MCU_BOARD_BATTERY + i;							//채널 번호, 0xEB ~ 0xEE
 		wData[11 + (i * 6)] = 0x00;												//보드 센서의 상태값은 없음.
-		util_mem_cpy(&wData[12 + (i * 6)], &TestData.mainBoard[i].UI8[0], 4);	//센서값 저장
+		memcpy(&wData[12 + (i * 6)], &TestData.mainBoard[i].UI8[0], 4);	//센서값 저장
 	}
 
 	res = f_lseek(&sdValue.fileObject, f_size(&sdValue.fileObject));
@@ -548,7 +548,7 @@ FRESULT scan_files (char* path)        /* Start node to be scanned (***also used
 	{
 		i = strlen(path);
 		for (;;) {
-			util_mem_set(sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
+			memset(sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
 			res = f_readdir(&sdValue.scanDir[sdValue.scanDirDeep], &fno);
 			if (res != FR_OK || fno.fname[0] == 0) {
 				//sdValue.sdState = SCS_READDIR_ERROR;
