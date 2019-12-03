@@ -1073,10 +1073,15 @@ void assert_failed(uint8_t *file, uint32_t line)
 
 void vApplicationIdleHook( void )
 {
-    DBG_LOG("%s before: %u\n", HAL_GetTick());
-    HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
-    HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
-    DBG_LOG("%s after: %u\n", HAL_GetTick());
+    static uint32_t elapsed_tick = 0;
+
+    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(500)) {
+        elapsed_tick = osKernelSysTick();
+	DBG_LOG("%s before: %u\n", __func__, elapsed_tick);
+        HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
+        HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
+	DBG_LOG("%s after: %u\n", __func__, osKernelSysTick());
+    }
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
