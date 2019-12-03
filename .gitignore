@@ -1,5 +1,6 @@
 build/
 _si/
+.ccls-cache/
 *~
 
 ### IAR ###
