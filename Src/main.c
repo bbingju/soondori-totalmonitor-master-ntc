@@ -1070,4 +1070,12 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 #endif /* USE_FULL_ASSERT */
 
+void vApplicationIdleHook( void )
+{
+    DBG_LOG("%s before: %u\n", HAL_GetTick());
+    HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
+    HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
+    DBG_LOG("%s after: %u\n", HAL_GetTick());
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
