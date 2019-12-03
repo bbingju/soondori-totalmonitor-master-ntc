@@ -8,7 +8,6 @@
 **********************************************************************/
 TEST_DATA TestData;
 
-uint8_t		ct = 0;
 uint32_t	adc_battery[110];
 uint32_t	adc_mainBoardSensor[310];
 uint32_t	adc_battert_add = 0;
@@ -62,12 +61,13 @@ void StartDisplayTask(void const * argument)
     /* Infinite loop */
     for(;;)
     {
+        static uint8_t ct = 0;
         xLastWakeTime = osKernelSysTick();
 
         if(ct++ % 2 == 0)	// 1초에 한번씩 점멸
         {
             HAL_GPIO_TogglePin(POWER_LED_GPIO_Port, POWER_LED_Pin);
-			DoDisplayModeChange();
+            DoDisplayModeChange();
             doSegmentDisplay(ct);
         }
 
@@ -103,13 +103,12 @@ void StartDisplayTask(void const * argument)
 **********************************************************************/
 void DoDisplayModeChange(void)
 {
-	uint8_t	i, j;
 	uint8_t errorCount = 0;
 
 	//온도 경고가 있는지 확인
-	for(j = 0; j < 4; j++)
+	for(int j = 0; j < 4; j++)
 	{
-		for(i = 0; i < 16; i++)
+		for(int i = 0; i < 16; i++)
 		{
 			if(TestData.sensorState[j][i] == LDM_OVER_TEMP)
 			{

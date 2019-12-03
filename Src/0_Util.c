@@ -264,22 +264,19 @@ void doBuzzerPlay(uint16_t delay)
 **********************************************************************/
 void doNOP(uint16_t count)
 {
-	uint16_t i;
-	for(i = 0; i < count; i++)
-		asm("NOP");
+    for (int i = 0; i < count; i++)
+        asm("NOP");
 }
 
 // CRC16 
 uint16_t CRC16_Make(uint8_t *byMsg, uint16_t len)
 {
-	uint16_t	crc = 0xFFFF;
-    uint16_t	i;
-    uint16_t	j;
+    uint16_t  crc = 0xFFFF;
     
-	for (i = 0; i < len; i++)
+	for (int i = 0; i < len; i++)
 	{
 		crc ^= byMsg[i];
-		for (j = 0; j < 8; j++)
+		for (int j = 0; j < 8; j++)
 		{
 			uint16_t flag = (uint16_t)(crc & 0x0001);
 			crc >>= 1;
@@ -299,7 +296,6 @@ void swap(float *a, float *b)
 
 float midADC_float(float * inData) /* using Bubble sort */ 
 {
-	uint8_t 	i, j; 
 	float	sortData[11];
 
 	sortData[0] 	= *(inData++);
@@ -314,12 +310,12 @@ float midADC_float(float * inData) /* using Bubble sort */
 	sortData[9] 	= *(inData++);
 	sortData[10]	= *(inData);
 
-	for(i = 0; i < 11 - 1; ++i) 
+	for(int i = 0; i < 11 - 1; ++i)
 	{ 
-		for(j = 11 - 1; i < j; --j) 
+		for(int j = 11 - 1; i < j; --j)
 		{
 			if(sortData[j - 1] > sortData[j]) 
-				swap(&sortData[j - 1], &sortData[j]); 
+			    swap(&sortData[j - 1], &sortData[j]);
 		} 
 	} 
 	return sortData[6]; 

@@ -11,51 +11,58 @@
 /*********************************************************************
 *	16-Segment Font
 **********************************************************************/
-uint16_t SG_NUMBER[10] = {		0xFF09,		// 0
-															0x3000,		// 1
-															0xEEC0,		// 2
-															0xFCC0,		// 3
-															0x31C0,		// 4
-															0xCD84,		// 5
-															0xDFC0,		// 6
-															0xF000,		// 7
-															0xFFC0,		// 8
-															0xFDC0 };	// 9
-uint16_t SG_ALPHABET[26] = {	0xF3C0,		// A
-															0xFC52,		// B
-															0xCF00,		// C
-															0xFC12,		// D
-															0xCFC0,		// E
-															0xC380,		// F
-															0xDF40,		// G
-															0x33C0,		// H
-															0xCC12,		// I
-															0x3E00,		// J
-															0x038C,		// K
-															0x0F00,		// L
-															0x3328,		// M
-															0x3324,		// N
-															0xFF00,		// O
-															0xE3C0,		// P
-															0xFF04,		// Q
-															0xE3C4,		// R
-															0xDDC0,		// S
-															0xC012,		// T
-															0x3F00,		// U
-															0x0F09,		// V
-															0x3305,		// W
-															0x002D,		// X
-															0x002A,		// Y
-															0xCC09 };	// Z
-uint16_t SG_SPECIAL[8] = {		0x0000,		// NULL
-															0x0C00,		// SSP_UNDERBAR
-															0x00C0,		// SSP_HYPHEN
-															0x0024, 	// SSP_BACKSLASH
-															0x0012,		// SSP_OR
-															0x0009,		// SSP_SLASH
-															0x00D2,		// SSP_PLUS
-															0x00FF };	// SSP_STAR
+static uint16_t SG_NUMBER[10] = {
+    0xFF09,    // 0
+    0x3000,    // 1
+    0xEEC0,    // 2
+    0xFCC0,    // 3
+    0x31C0,    // 4
+    0xCD84,    // 5
+    0xDFC0,    // 6
+    0xF000,    // 7
+    0xFFC0,    // 8
+    0xFDC0     // 9
+};
 
+static uint16_t SG_ALPHABET[26] = {
+    0xF3C0,  // A
+    0xFC52,  // B
+    0xCF00,  // C
+    0xFC12,  // D
+    0xCFC0,  // E
+    0xC380,  // F
+    0xDF40,  // G
+    0x33C0,  // H
+    0xCC12,  // I
+    0x3E00,  // J
+    0x038C,  // K
+    0x0F00,  // L
+    0x3328,  // M
+    0x3324,  // N
+    0xFF00,  // O
+    0xE3C0,  // P
+    0xFF04,  // Q
+    0xE3C4,  // R
+    0xDDC0,  // S
+    0xC012,  // T
+    0x3F00,  // U
+    0x0F09,  // V
+    0x3305,  // W
+    0x002D,  // X
+    0x002A,  // Y
+    0xCC09   // Z
+};
+
+static uint16_t SG_SPECIAL[8] = {
+    0x0000,  // NULL
+    0x0C00,  // SSP_UNDERBAR
+    0x00C0,  // SSP_HYPHEN
+    0x0024,  // SSP_BACKSLASH
+    0x0012,  // SSP_OR
+    0x0009,  // SSP_SLASH
+    0x00D2,  // SSP_PLUS
+    0x00FF,  // SSP_STAR
+}; 
 
 /*********************************************************************
 *	SegmentDisplay
@@ -67,13 +74,13 @@ void SegmentDisplay(uint8_t digit, uint16_t data)
 	uint8_t i;
 	
 	GPIO_TypeDef * 	LATCH_PORT;
-	uint16_t				LATCH_PIN;
+	uint16_t	LATCH_PIN;
 	GPIO_TypeDef * 	ENABLE_PORT;
-	uint16_t 				ENABLE_PIN;
+	uint16_t 	ENABLE_PIN;
 	GPIO_TypeDef * 	SCL_PORT;
-	uint16_t 				SCL_PIN;
+	uint16_t 	SCL_PIN;
 	GPIO_TypeDef * 	SDA_PORT;
-	uint16_t 				SDA_PIN;
+	uint16_t 	SDA_PIN;
 
 	if(digit == 1)
 	{
