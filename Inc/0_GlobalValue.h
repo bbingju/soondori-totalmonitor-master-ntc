@@ -25,6 +25,7 @@
 #include "ff.h"
 #include "main.h"
 #include "0_GlobalDefine.h"
+#include "debug.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
