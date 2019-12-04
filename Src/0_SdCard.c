@@ -4,7 +4,6 @@
 #include "0_StartRs485Task.h"
 
 
-TCHAR		makeDir[11] = {0};
 uint8_t 	wData[420];
 
 /*********************************************************************
@@ -39,74 +38,53 @@ FRESULT UnMountSDIO(void)
 	return res;
 }
 
+static FRESULT check_n_create_directory(const TCHAR *dirname)
+{
+    FRESULT result = FR_OK;
+    DIR dir;
+
+    result = f_opendir(&dir, dirname);
+    if (result == FR_OK) {
+        f_closedir(&dir);
+	return result;
+    }
+
+    return f_mkdir(dirname);
+}
+
 /*********************************************************************
 *	DoFolderCheck
 *	현재 시간을 기준으로 해당 폴더가 있는지 확인 하여 폴더를 생성 한다.
 **********************************************************************/
 FRESULT DoFolderCheck(void)
 {
-	FRESULT res = FR_OK;
-	DIR dir;
+    TCHAR dirname[16] = {0};
+    FRESULT res = FR_OK;
+    RTC_DateTypeDef *date = &SysTime.Date;
 
-	makeDir[0] = '2';
-	makeDir[1] = '0';
-	makeDir[2] = SysTime.Date.Year / 10 + '0';
-	makeDir[3] = SysTime.Date.Year % 10 + '0';
-	makeDir[4] = 0;
-	//f_closedir(&dir);
-	res = f_opendir(&dir, (const TCHAR *)makeDir);
-	if(res != FR_OK)
-	{
-		res = f_mkdir(makeDir);
-		if(res != FR_OK)
-		{
-			//sdValue.sdState = SCS_MKDIR_ERROR;
-			return res;
-		}
-	}
+    sprintf(dirname, "20%02d", date->Year);
+    res = check_n_create_directory(dirname);
+    if (res != FR_OK) {
+        DBG_LOG("%s: Error to create a directory!", __func__);
+	goto ret;
+    }
 
-	makeDir[4] = '/';
-	makeDir[5] = SysTime.Date.Month / 10 + '0';
-	makeDir[6] = SysTime.Date.Month % 10 + '0';
-	makeDir[7] = 0;
-	f_closedir(&dir);
-	res = f_opendir(&dir, (const TCHAR *)makeDir);
-	if(res != FR_OK)
-	{
-		res = f_mkdir(makeDir);
-		if(res != FR_OK)
+    sprintf(dirname, "20%02d/%02d", date->Year, date->Month);
+    res = check_n_create_directory(dirname);
+    if (res != FR_OK) {
+        DBG_LOG("%s: Error to create a directory!", __func__);
+	goto ret;
+    }
 
-		{
-			//sdValue.sdState = SCS_MKDIR_ERROR;
-			return res;
-		}
-	}
+    sprintf(dirname, "20%02d/%02d/%02d", date->Year, date->Month, date->Date);
+    res = check_n_create_directory(dirname);
+    if (res != FR_OK) {
+        DBG_LOG("%s: Error to create a directory!", __func__);
+	goto ret;
+    }
 
-	makeDir[7] = '/';
-	makeDir[8] = SysTime.Date.Date / 10 + '0';
-	makeDir[9] = SysTime.Date.Date % 10 + '0';
-	makeDir[10] = 0;
-	f_closedir(&dir);
-	res = f_opendir(&dir, (const TCHAR *)makeDir);
-	if(res != FR_OK)
-	{
-		res = f_mkdir(makeDir);
-		if(res != FR_OK)
-
-		{
-			//sdValue.sdState = SCS_MKDIR_ERROR;
-			return res;
-		}
-	}
-
-	f_closedir(&dir);
-	//res = f_opendir(&dir, (const TCHAR *)makeDir);
-	if(res != FR_OK)
-	{
-		//sdValue.sdState = SCS_OPEN_ERROR;
-		return res;
-	}
-	return res;
+ ret:
+    return res;
 }
 
 /*********************************************************************
