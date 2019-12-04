@@ -29,7 +29,6 @@ void StartRateTask(void const * argument)
 	/* USER CODE BEGIN 5 */
 	portTickType	xLastWakeTime;	  
 	portTickType	xLastWakeTimeChk;	 
-	uint8_t 		i;
 
 	/* init code for FATFS */
 	MX_FATFS_Init();
@@ -115,7 +114,7 @@ void StartRateTask(void const * argument)
 			DoMCUboardInfo();		//mcu board 정보 전송 
 			osDelay(10);
 
-			for(i = 0; i < 4; i++)
+			for(uint8_t i = 0; i < 4; i++)
 			{
 				DoSlotInfo(i);		//슬롯 정보 전송 
 				osDelay(10);
@@ -161,14 +160,14 @@ void DoSdCardFreeSpace(void)
 
 	ss   = (uint64_t)_MAX_SS;	
 	all  = (uint64_t)(ss * (uint64_t)sdValue.sdFatFs.n_fatent);  	// 전체용량 
-    free = (uint64_t)(ss * (uint64_t)sdValue.sdFatFs.free_clst);	// 남은 공간
+	free = (uint64_t)(ss * (uint64_t)sdValue.sdFatFs.free_clst);	// 남은 공간
 	persent = (float)((float)free / (float)all);
 
 	if(persent < SD_CARD_FULL_ERROR_RATE)
 	{
 		sdValue.sdState = SCS_DISK_FULL;
-	    doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32);
-	    SendUart485String(tx485DataDMA, 32);	
+		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32);
+		SendUart485String(tx485DataDMA, 32);
 	}
 	else
 	{
