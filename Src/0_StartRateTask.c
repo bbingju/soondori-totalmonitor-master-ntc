@@ -93,8 +93,8 @@ void StartRateTask(void const * argument)
 	{
 		xLastWakeTime = osKernelSysTick();
 
-		if(!FindFilelistFlag)	//파일 리스트 검색중 일 ㄷ대 ㅅ스기 안함 
-			{
+		if(!FindFilelistFlag)	//파일 리스트 검색중 일 때 쓰기 안함 
+		{
 			if(SysProperties.InterfaceStep == STEP_TEMP_READ)
 			{
 				if(sdValue.sdMountState == SCS_OK)	// Mount 까지 성공 했을때만 시도함. 
