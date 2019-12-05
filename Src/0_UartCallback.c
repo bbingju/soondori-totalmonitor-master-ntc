@@ -10,6 +10,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
     if(huart->Instance == USART2)       //Slot Interface & Bluetooth
     {
+        /* print_bytes(huart->pRxBuffPtr, huart->RxXferSize); */
         osSemaphoreRelease(CountingSemSlaveRxHandle);
     }
     else if(huart->Instance == USART1)

@@ -75,6 +75,8 @@ osThreadId myDisplayTaskHandle;
 osThreadId myRs485TaskHandle;
 osThreadId mySlotIUartTaskHandle;
 osThreadId myRateTaskHandle;
+osThreadId InternalRxTaskHandle;
+osThreadId InternalTxTaskHandle;
 osSemaphoreId myBinarySemModeHandle;
 osSemaphoreId myBinarySemUpHandle;
 osSemaphoreId myBinarySemDownHandle;
@@ -106,6 +108,8 @@ void StartDisplayTask(void const * argument);
 void StartRs485Task(void const * argument);
 void StartSlotUartTask(void const * argument);
 void StartRateTask(void const * argument);
+void internal_rx_task(void const * argument);
+void internal_tx_task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -183,12 +187,12 @@ int main(void)
 
   read = ReadFlash(FLASH_SAVE_CHK);
 
-  if(read != FLASH_SAVE_FLAG)		//ÌîåÎûòÏãúÏóê Í∏∞Î°ùÏù¥ ÏóÜÏùÑÍ≤ΩÏö∞
+  if(read != FLASH_SAVE_FLAG)		//«√∑°Ω√ø° ±‚∑œ¿Ã æ¯¿ª∞ÊøÏ
   {
       TestData.rtdCalibrationConst.Float = (float)0;
       doFlashWriteRevision();
   }
-  else		//Flash Ïóê Ï†ÄÏû•Îêú Í∞íÏù¥ ÊèöÁçµ? Í≤ΩÏö∞
+  else		//Flash ø° ¿˙¿Âµ» ∞™¿Ã Â¿÷¥? ∞ÊøÏ
   {
       TestData.rtdCalibrationConst.UI32= ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
   }
@@ -272,6 +276,14 @@ int main(void)
   /* definition and creation of myRateTask */
   osThreadDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512);
   myRateTaskHandle = osThreadCreate(osThread(myRateTask), NULL);
+
+  /* definition and creation of InternalRxTask */
+  osThreadDef(InternalRxTask, internal_rx_task, osPriorityNormal, 0, 256);
+  InternalRxTaskHandle = osThreadCreate(osThread(InternalRxTask), NULL);
+
+  /* definition and creation of InternalTxTask */
+  osThreadDef(InternalTxTask, internal_tx_task, osPriorityNormal, 0, 256);
+  InternalTxTaskHandle = osThreadCreate(osThread(InternalTxTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
@@ -695,6 +707,7 @@ static void MX_USB_OTG_FS_PCD_Init(void)
   */
 static void MX_DMA_Init(void) 
 {
+
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
@@ -954,7 +967,6 @@ __weak void StartDisplayTask(void const * argument)
 {
   /* init code for FATFS */
   MX_FATFS_Init();
-
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
@@ -1016,6 +1028,42 @@ __weak void StartRateTask(void const * argument)
     osDelay(1);
   }
   /* USER CODE END StartRateTask */
+}
+
+/* USER CODE BEGIN Header_internal_rx_task */
+/**
+* @brief Function implementing the InternalRxTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_internal_rx_task */
+__weak void internal_rx_task(void const * argument)
+{
+  /* USER CODE BEGIN internal_rx_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END internal_rx_task */
+}
+
+/* USER CODE BEGIN Header_internal_tx_task */
+/**
+* @brief Function implementing the InternalTxTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_internal_tx_task */
+__weak void internal_tx_task(void const * argument)
+{
+  /* USER CODE BEGIN internal_tx_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END internal_tx_task */
 }
 
 /**
