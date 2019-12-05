@@ -32,7 +32,6 @@
 #include "0_StartSlotUartTask.h"
 #include "0_StartRateTask.h"
 #include "0_soonFlashMemory.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -158,54 +157,54 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
-	
-	SysProperties.displayMode = DPM_NORMAL;
-	for(j = 0; j < 4; j++)
-	{
-		for(i = 0; i < 32; i++)
-		{
-			TestData.temperature[j][i].Float = (float)0.0;
-			TestData.sensorState[j][i] = LDM_DONOT_CONNECT;
-		}
-	}
 
-	SysProperties.bootingWate[0] = FALSE;
-	SysProperties.bootingWate[1] = FALSE;
-	SysProperties.bootingWate[2] = FALSE;
-	SysProperties.bootingWate[3] = FALSE;
+  SysProperties.displayMode = DPM_NORMAL;
+  for(j = 0; j < 4; j++)
+  {
+      for(i = 0; i < 32; i++)
+      {
+          TestData.temperature[j][i].Float = (float)0.0;
+          TestData.sensorState[j][i] = LDM_DONOT_CONNECT;
+      }
+  }
 
-	SysProperties.slotInsert[0] = FALSE;
-	SysProperties.slotInsert[1] = FALSE;
-	SysProperties.slotInsert[2] = FALSE;
-	SysProperties.slotInsert[3] = FALSE;
+  SysProperties.bootingWate[0] = FALSE;
+  SysProperties.bootingWate[1] = FALSE;
+  SysProperties.bootingWate[2] = FALSE;
+  SysProperties.bootingWate[3] = FALSE;
 
-	SysProperties.intervalTime.UI32 = 1000;
-	SysProperties.start_flag = FALSE;
+  SysProperties.slotInsert[0] = FALSE;
+  SysProperties.slotInsert[1] = FALSE;
+  SysProperties.slotInsert[2] = FALSE;
+  SysProperties.slotInsert[3] = FALSE;
 
-  	read = ReadFlash(FLASH_SAVE_CHK);
+  SysProperties.intervalTime.UI32 = 1000;
+  SysProperties.start_flag = FALSE;
 
-	if(read != FLASH_SAVE_FLAG)		//플래시에 기록이 없을경우 
-	{
-		TestData.rtdCalibrationConst.Float = (float)0;
-		doFlashWriteRevision();		
-	}
-	else		//Flash 에 저장된 값이 揚獵? 경우 
-	{
-		TestData.rtdCalibrationConst.UI32= ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
-	}
+  read = ReadFlash(FLASH_SAVE_CHK);
 
-	HAL_GPIO_WritePin(SLAVE_CS0_GPIO_Port, SLAVE_CS0_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(SLAVE_CS1_GPIO_Port, SLAVE_CS1_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(SLAVE_CS2_GPIO_Port, SLAVE_CS2_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(SLAVE_CS3_GPIO_Port, SLAVE_CS3_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(SLAVE_CS4_GPIO_Port, SLAVE_CS4_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(SLAVE_CS5_GPIO_Port, SLAVE_CS5_Pin, GPIO_PIN_RESET);
+  if(read != FLASH_SAVE_FLAG)		//플래시에 기록이 없을경우
+  {
+      TestData.rtdCalibrationConst.Float = (float)0;
+      doFlashWriteRevision();
+  }
+  else		//Flash 에 저장된 값이 揚獵? 경우
+  {
+      TestData.rtdCalibrationConst.UI32= ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
+  }
 
-	SysProperties.mcuUUID[0].UI32 = HAL_GetUIDw0();
-	SysProperties.mcuUUID[1].UI32 = HAL_GetUIDw1();
-	SysProperties.mcuUUID[2].UI32 = HAL_GetUIDw2();
-	
-	HAL_Delay(500);
+  HAL_GPIO_WritePin(SLAVE_CS0_GPIO_Port, SLAVE_CS0_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SLAVE_CS1_GPIO_Port, SLAVE_CS1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SLAVE_CS2_GPIO_Port, SLAVE_CS2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SLAVE_CS3_GPIO_Port, SLAVE_CS3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SLAVE_CS4_GPIO_Port, SLAVE_CS4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SLAVE_CS5_GPIO_Port, SLAVE_CS5_Pin, GPIO_PIN_RESET);
+
+  SysProperties.mcuUUID[0].UI32 = HAL_GetUIDw0();
+  SysProperties.mcuUUID[1].UI32 = HAL_GetUIDw1();
+  SysProperties.mcuUUID[2].UI32 = HAL_GetUIDw2();
+
+  HAL_Delay(500);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -923,22 +922,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void hard_fault_handler_c(unsigned int * hardfault_args, unsigned int r4, unsigned int r5, unsigned int r6)
 {
-  printf ("\n[Hard Fault]\n"); // After Joseph Yiu
- 
-  printf ("r0 = %08X, r1 = %08X, r2 = %08X, r3 = %08X\n",
+  DBG_LOG ("\n[Hard Fault]\n"); // After Joseph Yiu
+
+  DBG_LOG ("r0 = %08X, r1 = %08X, r2 = %08X, r3 = %08X\n",
     hardfault_args[0], hardfault_args[1], hardfault_args[2], hardfault_args[3]);
-  printf ("r4 = %08X, r5 = %08X, r6 = %08X, sp = %08X\n",
+  DBG_LOG ("r4 = %08X, r5 = %08X, r6 = %08X, sp = %08X\n",
     r4, r5, r6, (unsigned int)&hardfault_args[8]);
-  printf ("r12= %08X, lr = %08X, pc = %08X, psr= %08X\n",
+  DBG_LOG ("r12= %08X, lr = %08X, pc = %08X, psr= %08X\n",
     hardfault_args[4], hardfault_args[5], hardfault_args[6], hardfault_args[7]);
- 
-  printf ("bfar=%08X, cfsr=%08X, hfsr=%08X, dfsr=%08X, afsr=%08X\n",
+
+  DBG_LOG ("bfar=%08X, cfsr=%08X, hfsr=%08X, dfsr=%08X, afsr=%08X\n",
     *((volatile unsigned int *)(0xE000ED38)),
     *((volatile unsigned int *)(0xE000ED28)),
     *((volatile unsigned int *)(0xE000ED2C)),
     *((volatile unsigned int *)(0xE000ED30)),
     *((volatile unsigned int *)(0xE000ED3C)) );
- 
+
   while(1);
 }
 
@@ -1075,12 +1074,10 @@ void vApplicationIdleHook( void )
 {
     static uint32_t elapsed_tick = 0;
 
-    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(500)) {
+    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(200)) {
         elapsed_tick = osKernelSysTick();
-	DBG_LOG("%s before: %u\n", __func__, elapsed_tick);
         HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
         HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
-	DBG_LOG("%s after: %u\n", __func__, osKernelSysTick());
     }
 }
 

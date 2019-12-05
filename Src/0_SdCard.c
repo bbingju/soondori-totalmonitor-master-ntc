@@ -192,7 +192,6 @@ void DoMakeLoadFileName(void)	//현제시간으로 파일 만들기
 	    SysTime.Time.Hours,
 	    SysTime.Time.Minutes,
 	    SysTime.Time.Seconds);
-
 }
 
 /*********************************************************************
