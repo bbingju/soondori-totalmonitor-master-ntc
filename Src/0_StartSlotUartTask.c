@@ -342,8 +342,8 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
     u[4] = thresholdTemp.UI8[3];
 
     doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_SET, u, 5, SEND_DATA_LENGTH);
-    DBG_LOG("%s: ", __func__);
-    print_bytes(TxDataBuffer, SEND_DATA_LENGTH);
+    /* DBG_LOG("%s: ", __func__); */
+    /* print_bytes(TxDataBuffer, SEND_DATA_LENGTH); */
     UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
     HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);  // 응답은 134로 들어온다.
     osDelay(100);
@@ -750,8 +750,8 @@ void DoAnsThresholdSet(void)
 
     memcpy(&thresholdData[1], &TestData.threshold[readSlotNumber][0].UI8[0], 128);
     doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &thresholdData[0], 129, 132, 152);
-    DBG_LOG("%s: ", __func__);
-    print_bytes(tx485DataDMA, 152);
+    /* DBG_LOG("%s: ", __func__); */
+    /* print_bytes(tx485DataDMA, 152); */
     SendUart485String(tx485DataDMA, 152);
 }
 

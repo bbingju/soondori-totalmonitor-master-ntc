@@ -1,4 +1,5 @@
 #include "0_UartCallback.h"
+#include "internal_rx_task.h"
 
 /*********************************************************************
 *	Callback Function
@@ -10,7 +11,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
     if(huart->Instance == USART2)       //Slot Interface & Bluetooth
     {
-        /* print_bytes(huart->pRxBuffPtr, huart->RxXferSize); */
+        internal_rx_msg_push(huart->pRxBuffPtr, huart->RxXferSize);
         osSemaphoreRelease(CountingSemSlaveRxHandle);
     }
     else if(huart->Instance == USART1)

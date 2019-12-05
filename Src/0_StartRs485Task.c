@@ -115,7 +115,7 @@ void RxFunction(void)
     {
         if(osSemaphoreWait(BinarySem485RxHandle, 0) == osOK)
         {
-            print_bytes(rx485DataDMA, huart1.RxXferSize);
+            /* print_bytes(rx485DataDMA, huart1.RxXferSize); */
 
             for(uint8_t i = 0; i < huart1.RxXferSize; i++)
             {
