@@ -1,10 +1,10 @@
 #include "math.h"
 #include "0_StartSlotUartTask.h"
 #include "0_GlobalValue.h"
-#include "string.h"           //memset 용 include
 #include "0_soonQueue.h"
 #include "0_UartCallback.h"
 #include "0_StartRs485Task.h"
+#include <string.h>
 
 /*********************************************************************
 *       Private variables
@@ -14,7 +14,7 @@
 GPIO_TypeDef *  SLAVE_CS_PORT[4] = {SLAVE_CS0_GPIO_Port,  SLAVE_CS1_GPIO_Port,  SLAVE_CS2_GPIO_Port,  SLAVE_CS3_GPIO_Port}; //todo : 순서를 0123 으로 바꿔야함
 uint16_t        SLAVE_CS_PIN[4]  = {SLAVE_CS0_Pin,        SLAVE_CS1_Pin,        SLAVE_CS2_Pin,        SLAVE_CS3_Pin};       // back plate 의 컨넥터가 잘못 되어 있음
 
-uint8_t                 TxDataBuffer[UART_TX_BUF_MAX] = { 0 };  //dma 용도
+uint8_t         TxDataBuffer[UART_TX_BUF_MAX] = { 0 };  //dma 용도
 uint8_t         RxDataDMA[1340]  = { 0 };                               //dma 용도
 
 uint8_t         RxSlotData[140]  = { 0 };                       //parsing 용도
@@ -38,6 +38,9 @@ uint8_t                 semCount                 = 0;
 uint8_t                 startThreshold   = FALSE;
 RX_QUEUE_STRUCT RxQueue;
 
+extern struct internal_tx_msg_s *tx_received;
+extern osMailQId (internal_tx_pool_q_id);
+
 /*********************************************************************
 *       StartSlaveInterfaceTask
 * BLUETOOTH AND SLAVE 용 USART 통신 TASK
@@ -45,7 +48,6 @@ RX_QUEUE_STRUCT RxQueue;
 void StartSlotUartTask(void const * argument)
 {
     //uint8_t     rxLoopCount;
-    uint8_t             ReqSwitch = 0;
 
     SysProperties.InterfaceStep = STEP_SLOT_ID;
 
@@ -66,8 +68,15 @@ void StartSlotUartTask(void const * argument)
     SysProperties.slotType[3] = SBT_NTC;
 
 
+
     //Task 부팅 완료 플레그
     SysProperties.bootingWate[2] = TRUE;
+
+    /* for testing */
+    /* SysProperties.slotInsert[0] = TRUE; */
+    /* SysProperties.slotInsert[1] = FALSE; */
+    /* SysProperties.slotInsert[2] = TRUE; */
+    /* SysProperties.slotInsert[3] = TRUE; */
 
     while(1)
     {
@@ -87,25 +96,30 @@ void StartSlotUartTask(void const * argument)
         osDelay(1);
 
         //RX FUNCTION
-        do
-        {
-            SlotRxFunction();
-            UnpackingRxQueue();
-            semCount = osSemaphoreGetCount(CountingSemSlaveRxHandle);
+        /* do */
+        /* { */
+        /*     SlotRxFunction(); */
+        /*     UnpackingRxQueue(); */
+        /*     semCount = osSemaphoreGetCount(CountingSemSlaveRxHandle); */
 
-            if((RxReadCount == 11) || (RxReadCount == 37) || (RxReadCount == 133))
-            {
-                DoSlotJumpFunction();
-                RxReadCount = 0;
-            }
-        } while((RxQueue_Count(&RxQueue) > 0) || (semCount > 0));
+        /*     if((RxReadCount == 11) || (RxReadCount == 37) || (RxReadCount == 133)) */
+        /*     { */
+        /*         DoSlotJumpFunction(); */
+        /*         RxReadCount = 0; */
+        /*     } */
+        /* } while((RxQueue_Count(&RxQueue) > 0) || (semCount > 0)); */
 
+#if 1
         switch(SysProperties.InterfaceStep)
         {
         case STEP_SLOT_ID:                  // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다.
             DoReqSlotID(SendSlotNumber);
             osDelay(100);
-            if(noReturnSendCt > 10)
+            if (tx_received) {
+                osMailFree(internal_tx_pool_q_id, tx_received);
+                tx_received = NULL;
+            }
+            if (noReturnSendCt > 10)
             {
                 DoIncSlotIdStep(SendSlotNumber);
                 noReturnSendCt = 0;
@@ -116,27 +130,25 @@ void StartSlotUartTask(void const * argument)
             startThreshold = TRUE;
             DoThresholdReq(SendSlotNumber);
             break;
-        case STEP_TEMP_READ:                // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
-            if((ReqSwitch & 0x01) == 0)
-            {
+        case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
+            static int toggle = 0;
+            if (toggle %= 2)
                 DoReqTemperature(SendSlotNumber);
-            }
             else
-            {
                 DoReqTeameratureState(SendSlotNumber);
-            }
-            ReqSwitch++;
+            toggle++;
 
-            if(noReturnSendCt > 10)
-            {
+            if (noReturnSendCt > 10)
                 noReturnSendCt = 0;
-            }
             break;
+        }
         }
 
         osDelay(30);
 //        osDelayUntil(&xLastWakeTime, 200);      //osDelay 사용시 HardFaul 발생 함.
+#endif
     }
+
     /* USER CODE END 5 */
 }
 
@@ -148,14 +160,11 @@ void SlotRxFunction(void)
     {
         if(osSemaphoreWait(CountingSemSlaveRxHandle, 0) == osOK)
         {
-            /* DBG_LOG("%s: ", __func__); */
             for(i = 0; i < huart2.RxXferSize; i++)
             {
                 osDelay(1);       // nop 로 변경시 HardFault 발생 함. osDelayUntil(&xLastWakeTime, 180); 와 같이 사용 해야 함.
-                /* DBG_LOG("%02x ", RxDataDMA[i]); */
                 RxQueue_Send(&RxQueue, RxDataDMA[i]);
             }
-            /* DBG_LOG("\n"); */
             noReturnSendCt = 0;
         }
     }
@@ -280,60 +289,65 @@ void DoRejectSlot(void)
 void UartInternalTxFunction(uint8_t* datas, uint16_t length)
 {
     //TX FUNCTION
-    if(BinarySemSlaveTxHandle != NULL)  //TX
-    {
-        if(osSemaphoreWait(BinarySemSlaveTxHandle, 0) == osOK)
-        {
-            // 온도값 요청
-            noReturnSendCt++;
-            HAL_UART_Transmit_DMA(&BLUETOOTH_HANDEL, datas, length);
-            osDelay(1);
-        }
-    }
+    /* if(BinarySemSlaveTxHandle != NULL)  //TX */
+    /* { */
+    /*     if(osSemaphoreWait(BinarySemSlaveTxHandle, 0) == osOK) */
+    /*     { */
+    /*         // 온도값 요청 */
+    /*         noReturnSendCt++; */
+    /*         HAL_UART_Transmit_DMA(&BLUETOOTH_HANDEL, datas, length); */
+    /*         osDelay(1); */
+    /*     } */
+    /* } */
 }
 
 void DoCalibrationNTCTableCal(uint8_t slotNumber)
 {
+    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4);
 
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
-    doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// 응답은 134로 들어온다.
-    osDelay(100);
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+    /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// 응답은 134로 들어온다. */
+    /* osDelay(100); */
 }
 
 void DoCalibrationNTCConstantSet(uint8_t slotNumber)
 {
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
-    doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
-    osDelay(100);
+    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4);
+
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+    /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
+    /* osDelay(100); */
 }
 
 void DoCalibrationNTCTableReq(uint8_t slotNumber)
 {
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
-    doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);      // 응답은 134로 들어온다.
-    osDelay(100);
+    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CON_TABLE_REQ, NULL, 0);
+
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+    /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);      // 응답은 134로 들어온다. */
+    /* osDelay(100); */
 }
 
 void DoCalibrationNTCConstantReq(uint8_t slotNumber)
 {
-    memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
-    doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
-    osDelay(100);
+    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CONSTANT_REQ, NULL, 0);
+
+    /* memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer)); */
+    /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
+    /* osDelay(100); */
 }
 
 void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
 {
     uint8_t u[5] = {0};
-
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
 
     u[0] = channal;
     u[1] = thresholdTemp.UI8[0];
@@ -341,20 +355,28 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
     u[3] = thresholdTemp.UI8[2];
     u[4] = thresholdTemp.UI8[3];
 
-    doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_SET, u, 5, SEND_DATA_LENGTH);
-    /* DBG_LOG("%s: ", __func__); */
-    /* print_bytes(TxDataBuffer, SEND_DATA_LENGTH); */
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);  // 응답은 134로 들어온다.
-    osDelay(100);
+    send_internal_msg(slotNumber, CMD_THRESHOLD_SET, u, 5);
+
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_SET, u, 5, SEND_DATA_LENGTH); */
+    /* /\* DBG_LOG("%s: ", __func__); *\/ */
+    /* /\* print_bytes(TxDataBuffer, SEND_DATA_LENGTH); *\/ */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);  // 응답은 134로 들어온다. */
+    /* osDelay(100); */
 }
 
 void DoThresholdReq(uint8_t slotNumber)
 {
-    doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);  // 응답은 134로 들어온다.
-    osDelay(100);
+    if (SysProperties.slotInsert[slotNumber] == FALSE)
+        return;
+
+    send_internal_msg(slotNumber, CMD_THRESHOLD_REQ, NULL, 0);
+
+    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);  // 응답은 134로 들어온다. */
+    /* osDelay(100); */
 }
 
 /*********************************************************************
@@ -364,17 +386,18 @@ void DoThresholdReq(uint8_t slotNumber)
 **********************************************************************/
 void DoReqSlotID(uint8_t slotNumber)
 {
-    uint8_t u[1] = {0};
-
     HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
     DoRejectSlot();
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
-    u[0] = slotNumber + 0x30;
 
-    doMakeSendSlotData(TxDataBuffer, u[0], CMD_SLOT_ID_REQ, u, 1, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
+    send_internal_msg(slotNumber, CMD_SLOT_ID_REQ, slotNumber + 0x30, 1);
+
+    /* uint8_t u[1] = {0}; */
+    /* u[0] = slotNumber + 0x30; */
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+    /* doMakeSendSlotData(TxDataBuffer, u[0], CMD_SLOT_ID_REQ, u, 1, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
 }
 
 
@@ -385,30 +408,31 @@ void DoReqSlotID(uint8_t slotNumber)
 **********************************************************************/
 void DoReqTemperature(uint8_t slotNumber)
 {
-    uint8_t u[1] = {0};
-
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
+    send_internal_msg(slotNumber, CMD_TEMP_REQ, NULL, 0);
 
-    slotNumber += 0x30;
-    doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_REQ, u, 0, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);
+    /* uint8_t u[1] = {0}; */
+    /* slotNumber += 0x30; */
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+    /* doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_REQ, u, 0, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); */
 }
 
 void DoReqTeameratureState(uint8_t slotNumber)
 {
-    uint8_t u[1] = {0};
+    /* uint8_t u[1] = {0}; */
 
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
+    send_internal_msg(slotNumber, CMD_TEMP_STATE_REQ, NULL, 0);
 
-    slotNumber += 0x30;
-    doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_STATE_REQ, u, 0, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 38);
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+    /* slotNumber += 0x30; */
+    /* doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_STATE_REQ, u, 0, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 38); */
 }
 
 
@@ -416,22 +440,26 @@ void DoRevisionApplySet(uint8_t slotNumber, uint8_t mode)		//slot 번호 전달 
 {
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
+    send_internal_msg(slotNumber, CMD_REVISION_APPLY_SET, &mode, 1);
 
-    doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_APPLY_SET, &mode, 1, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+
+    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_APPLY_SET, &mode, 1, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
 }
 
 void DoRevisionConstantSet(uint8_t slotNumber)
 {
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer));
+    send_internal_msg(slotNumber, CMD_REVISION_CONSTANT_SET, TestData.revisionConstant[slotNumber].UI8, 4);
 
-    doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_CONSTANT_SET, &TestData.revisionConstant[slotNumber].UI8[0], 4, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
+    /* memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer)); */
+
+    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_CONSTANT_SET, &TestData.revisionConstant[slotNumber].UI8[0], 4, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
 }
 
 void DoRevisionApplyReq(uint8_t slotNumber)
@@ -439,23 +467,27 @@ void DoRevisionApplyReq(uint8_t slotNumber)
 
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
+    send_internal_msg(slotNumber, CMD_REVISION_APPLY_REQ, NULL, 0);
 
-    doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_APPLY_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
-    UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+
+    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_APPLY_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
 }
 
 void DoRevisionConstantReq(uint8_t slotNumber)
 {
 
-        HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-        memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer));
+    send_internal_msg(slotNumber, CMD_REVISION_CONSTANT_REQ, NULL, 0);
 
-        doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH);
-        UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH);
-        HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
+    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
+
+    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_REVISION_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
+    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
+    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
 }
 
 /*********************************************************************
@@ -623,7 +655,7 @@ void DoAnsBoardType(void)
 **********************************************************************/
 void DoAnsReqSlotID(void)
 {
-        noReturnSendCt = 0;
+    noReturnSendCt = 0;
 
     if(SendSlotNumber == (RxSlotData[1] - '0'))
     {
@@ -681,7 +713,6 @@ void DoAnsTemperatureState(void)
 
 void DoAnsThresholdReq(void)
 {
-    uint8_t         inc;
     uni2Byte        crc;
     uint8_t         thresholdData[130];
 
@@ -693,7 +724,7 @@ void DoAnsThresholdReq(void)
 
     if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132]))
     {
-        for(inc = 0; inc < 32; inc++)
+        for (int inc = 0; inc < 32; inc++)
         {
             TestData.threshold[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3];
             TestData.threshold[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4];

@@ -212,6 +212,7 @@ void JumpToFunction485(void)
                 switch(Rx485Data[2])
                 {
                 case OP_WARNING_TEMP_SET:
+                    /* send_threashold_set_req(Rx485Data[7], Rx485Data[8], bswap_32(*((float *) &Rx485Data[9]))); */
                     CmdWarningTempSet();
                     break;
                 case OP_WARNING_TEMP_REQ:
@@ -519,14 +520,7 @@ void doSaveIntervalTime(void)   //샘플레이트
 
 void CmdWarningTempSet(void)
 {
-    uni4Byte setThreshold;
-
-    setThreshold.UI8[0] = Rx485Data[ 9];		//설정 하는 온도
-    setThreshold.UI8[1] = Rx485Data[10];
-    setThreshold.UI8[2] = Rx485Data[11];
-    setThreshold.UI8[3] = Rx485Data[12];
-
-    DoThresholdSet(Rx485Data[7], Rx485Data[8], setThreshold);
+    send_threshold_set_req(Rx485Data[7], Rx485Data[8], &Rx485Data[9]);
 }
 
 void CmdWarningTempReq(void)

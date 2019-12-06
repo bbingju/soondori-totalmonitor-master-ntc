@@ -1127,6 +1127,15 @@ void vApplicationIdleHook( void )
         HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
         HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
     }
+
+    /* static uint32_t test_tick = 0; */
+    /* if (osKernelSysTick() - test_tick > osKernelSysTickMicroSec(3000)) { */
+    /*     test_tick = osKernelSysTick(); */
+    /*     send_slot_id_req(0); */
+    /*     /\* send_slot_id_req(1); *\/ */
+    /*     /\* send_slot_id_req(2); *\/ */
+    /*     send_slot_id_req(3); */
+    /* } */
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
