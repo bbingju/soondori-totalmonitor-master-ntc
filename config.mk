@@ -14,12 +14,12 @@ Src/0_BCD110DS.c \
 Src/0_SdCard.c \
 Src/0_SensorCal.c \
 Src/0_soonFlashMemory.c \
-Src/0_soonQueue.c \
 Src/0_StartDisplayTask.c \
 Src/0_StartRateTask.c \
 Src/0_StartRs485Task.c \
 Src/0_StartSlotUartTask.c \
-Src/internal_rx_task.c \
 Src/internal_tx_task.c \
 Src/0_UartCallback.c \
 Src/0_Util.c
+
+# Src/0_soonQueue.c

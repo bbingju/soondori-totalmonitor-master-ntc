@@ -26,14 +26,6 @@ float ByteArrayToFloat(uint8_t *byteArray)
     return	*((float*)&res);
 }
 
-void print_bytes(uint8_t *stream, int len)
-{
-    for (int i = 0; i < len; i++) {
-        DBG_LOG("%02x ", *(stream + i));
-    }
-    SEGGER_RTT_PutChar(0, '\n');
-}
-
 /*********************************************************************
 *  StringCopyToArray
 *  String 를 배열로 복사 한다. 복사한 뒤 남은 배열은 0으로 초기화 한다.

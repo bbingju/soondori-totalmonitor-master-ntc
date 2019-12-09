@@ -22,7 +22,7 @@ __PACKED_STRUCT ext_rx_msg_s {
     uint8_t crc[2];
 };
 
-osMailQDef(ext_rx_pool_q, 8, struct ext_rx_msg_s);
+osMailQDef(ext_rx_pool_q, 6, struct ext_rx_msg_s);
 osMailQId (ext_rx_pool_q_id);
 
 
@@ -31,7 +31,7 @@ __PACKED_STRUCT ext_tx_buffer_s {
     uint16_t bytes_to_transmit;
 };
 
-osMailQDef(ext_tx_pool_q, 8, struct ext_tx_buffer_s);
+osMailQDef(ext_tx_pool_q, 16, struct ext_tx_buffer_s);
 osMailQId (ext_tx_pool_q_id);
 
 
@@ -52,7 +52,7 @@ int push_external_rx(void *data, uint16_t length)
 
     if (validate_msg(data, length) < 0) {
         DBG_LOG("%s: error validate_msg\n", __func__);
-        print_bytes(data, length);
+        DBG_DUMP(data, length);
         return -1;
     }
 
@@ -221,7 +221,7 @@ static void handle_rx_msg(struct ext_rx_msg_s *received)
 {
     DBG_LOG("ext rx [%s::%s]: ", cmd_str(received->cmd),
             option_str(received->cmd, received->option));
-    print_bytes(received->data, 30);
+    DBG_DUMP(received->data, 30);
 
     switch (received->cmd) {
     case CMD_TEMP_TEST:
@@ -393,24 +393,7 @@ int ext_tx_completed;
 
 void external_tx_task(void const * arg)
 {
-    /* USER CODE BEGIN StartBluetooehTask */
-
-    HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
-
-    /* //Task 부팅 완료 플레그 */
-    /* SysProperties.bootingWate[1] = TRUE; */
-
-    /* while(1) */
-    /* { */
-    /*     if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask, */
-    /*         (SysProperties.bootingWate[1] == TRUE) &&   // 1 : StartRs485Task, */
-    /*         (SysProperties.bootingWate[2] == TRUE) &&   // 2 : StartSlotUartTask, */
-    /*         (SysProperties.bootingWate[3] == TRUE) )    // 3 : StartRateTask */
-    /*     { */
-    /*         break; */
-    /*     } */
-    /*     osDelay(100); */
-    /* } */
+     HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
 
     ext_tx_pool_q_id = osMailCreate(osMailQ(ext_tx_pool_q), NULL);
 
@@ -421,13 +404,13 @@ void external_tx_task(void const * arg)
         DBG_LOG("ext tx [%s::%s] (%d): ", cmd_str(to_transmit_ext->raw[1]),
                 option_str(to_transmit_ext->raw[1], to_transmit_ext->raw[2]),
                 to_transmit_ext->bytes_to_transmit);
-        print_bytes(to_transmit_ext->raw, to_transmit_ext->bytes_to_transmit);
+        DBG_DUMP(to_transmit_ext->raw, to_transmit_ext->bytes_to_transmit);
 
         ext_tx_completed = 0;
         HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
         HAL_UART_Transmit_DMA(&UART_RS485_HANDEL, to_transmit_ext->raw, to_transmit_ext->bytes_to_transmit);
 
-        while (!ext_tx_completed) {
+        while (ext_tx_completed == 0) {
             __NOP();
         };
 
@@ -465,7 +448,7 @@ void RxFunction(void)
     /*     if(osSemaphoreWait(BinarySem485RxHandle, 0) == osOK) */
     /*     { */
     /*         DBG_LOG("ext rx : (%d) ", huart1.RxXferSize); */
-    /*         print_bytes(rx485DataDMA, huart1.RxXferSize); */
+    /*         DBG_DUMP(rx485DataDMA, huart1.RxXferSize); */
 
     /*         for(uint8_t i = 0; i < huart1.RxXferSize; i++) */
     /*         { */
@@ -883,9 +866,9 @@ void CmdWarningTempSet(struct ext_rx_msg_s *msg)
         return;
 
     DBG_LOG("%s - slot %d, channel %d, temperature ", __func__, d->slot_id, d->channel);
-    print_bytes(&d->temperature, 4);
+    DBG_DUMP(&d->temperature, 4);
 
-    send_internal_msg(d->slot_id, CMD_THRESHOLD_SET, msg->data + 1, 5);
+    send_internal_req(d->slot_id, CMD_THRESHOLD_SET, msg->data + 1, 5);
 }
 
 void CmdWarningTempReq(struct ext_rx_msg_s *msg)

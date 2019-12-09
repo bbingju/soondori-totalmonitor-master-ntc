@@ -196,7 +196,7 @@ void internal_rx_task(void const *arg)
     }
 }
 
-static void handle_temperature(struct internal_rx_msg_s *msg)
+void handle_temperature(struct internal_rx_msg_s *msg)
 {
     uni2Byte crc;
 
@@ -220,7 +220,7 @@ static void handle_temperature(struct internal_rx_msg_s *msg)
     DoIncSlotIdStep(readSlotNumber);
 }
 
-static void handle_temerature_state(struct internal_rx_msg_s *msg)
+void handle_temerature_state(struct internal_rx_msg_s *msg)
 {
     uint8_t count = 0;
 
@@ -287,7 +287,7 @@ static void handle_threshold_set(struct internal_rx_msg_s *msg)
 
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 130);
 
-    if((crc.UI8[0] == &msg->rawdata[131]) && (crc.UI8[1] == &msg->rawdata[132]))
+    if((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] == msg->rawdata[132]))
     {
         for(int inc = 0; inc < 32; inc++)
         {

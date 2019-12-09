@@ -76,7 +76,7 @@ osThreadId ExternalTxTaskHandle;
 osThreadId myRs485TaskHandle;
 osThreadId mySlotIUartTaskHandle;
 osThreadId myRateTaskHandle;
-osThreadId InternalRxTaskHandle;
+/* osThreadId InternalRxTaskHandle; */
 osThreadId InternalTxTaskHandle;
 osSemaphoreId myBinarySemModeHandle;
 osSemaphoreId myBinarySemUpHandle;
@@ -282,9 +282,9 @@ int main(void)
   osThreadDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512);
   myRateTaskHandle = osThreadCreate(osThread(myRateTask), NULL);
 
-  /* definition and creation of InternalRxTask */
-  osThreadDef(InternalRxTask, internal_rx_task, osPriorityNormal, 0, 256);
-  InternalRxTaskHandle = osThreadCreate(osThread(InternalRxTask), NULL);
+  /* /\* definition and creation of InternalRxTask *\/ */
+  /* osThreadDef(InternalRxTask, internal_rx_task, osPriorityNormal, 0, 256); */
+  /* InternalRxTaskHandle = osThreadCreate(osThread(InternalRxTask), NULL); */
 
   /* definition and creation of InternalTxTask */
   osThreadDef(InternalTxTask, internal_tx_task, osPriorityNormal, 0, 256);

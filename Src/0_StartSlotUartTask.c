@@ -15,7 +15,7 @@ GPIO_TypeDef *  SLAVE_CS_PORT[4] = {SLAVE_CS0_GPIO_Port,  SLAVE_CS1_GPIO_Port,  
 uint16_t        SLAVE_CS_PIN[4]  = {SLAVE_CS0_Pin,        SLAVE_CS1_Pin,        SLAVE_CS2_Pin,        SLAVE_CS3_Pin};       // back plate 의 컨넥터가 잘못 되어 있음
 
 uint8_t         TxDataBuffer[UART_TX_BUF_MAX] = { 0 };  //dma 용도
-uint8_t         RxDataDMA[1340]  = { 0 };                               //dma 용도
+uint8_t         RxDataDMA[134 * 10]  = { 0 };                               //dma 용도
 
 uint8_t         RxSlotData[140]  = { 0 };                       //parsing 용도
 uint8_t         RxSlotDataLength = 0;
@@ -36,10 +36,10 @@ uint8_t         crcErrorCount    = 0;
 uint8_t                 tempReqFlag              = FALSE;
 uint8_t                 semCount                 = 0;
 uint8_t                 startThreshold   = FALSE;
-RX_QUEUE_STRUCT RxQueue;
+/* RX_QUEUE_STRUCT RxQueue; */
 
-extern struct internal_tx_msg_s *tx_received;
-extern osMailQId (internal_tx_pool_q_id);
+/* extern struct internal_tx_msg_s *tx_received; */
+/* extern osMailQId (internal_tx_pool_q_id); */
 
 /*********************************************************************
 *       StartSlaveInterfaceTask
@@ -49,7 +49,8 @@ void StartSlotUartTask(void const * argument)
 {
     //uint8_t     rxLoopCount;
 
-    SysProperties.InterfaceStep = STEP_SLOT_ID;
+    /* SysProperties.InterfaceStep = STEP_SLOT_ID; */
+    SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
 
     HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SLAVE_OE1_GPIO_Port, SLAVE_OE1_Pin, GPIO_PIN_RESET);
@@ -73,10 +74,10 @@ void StartSlotUartTask(void const * argument)
     SysProperties.bootingWate[2] = TRUE;
 
     /* for testing */
-    /* SysProperties.slotInsert[0] = TRUE; */
-    /* SysProperties.slotInsert[1] = FALSE; */
-    /* SysProperties.slotInsert[2] = TRUE; */
-    /* SysProperties.slotInsert[3] = TRUE; */
+    SysProperties.slotInsert[0] = TRUE;
+    SysProperties.slotInsert[1] = FALSE;
+    SysProperties.slotInsert[2] = TRUE;
+    SysProperties.slotInsert[3] = TRUE;
 
     while(1)
     {
@@ -112,20 +113,20 @@ void StartSlotUartTask(void const * argument)
 #if 1
         switch(SysProperties.InterfaceStep)
         {
-        case STEP_SLOT_ID:                  // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다.
-            DoReqSlotID(SendSlotNumber);
-            osDelay(100);
-            if (tx_received) {
-                osMailFree(internal_tx_pool_q_id, tx_received);
-                tx_received = NULL;
-            }
-            if (noReturnSendCt > 10)
-            {
-                DoIncSlotIdStep(SendSlotNumber);
-                noReturnSendCt = 0;
-                //SysProperties.slotInsert[0] = TRUE;
-            }
-            break;
+        /* case STEP_SLOT_ID:                  // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다. */
+        /*     DoReqSlotID(SendSlotNumber); */
+        /*     osDelay(100); */
+        /*     if (tx_received) { */
+        /*         osMailFree(internal_tx_pool_q_id, tx_received); */
+        /*         tx_received = NULL; */
+        /*     } */
+        /*     if (noReturnSendCt > 10) */
+        /*     { */
+        /*         DoIncSlotIdStep(SendSlotNumber); */
+        /*         noReturnSendCt = 0; */
+        /*         //SysProperties.slotInsert[0] = TRUE; */
+        /*     } */
+        /*     break; */
         case STEP_READ_THRESHOLD:                       //각 슬롯의 경고 온도 값을 불러 온다.
             startThreshold = TRUE;
             DoThresholdReq(SendSlotNumber);
@@ -303,7 +304,7 @@ void UartInternalTxFunction(uint8_t* datas, uint16_t length)
 
 void DoCalibrationNTCTableCal(uint8_t slotNumber)
 {
-    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4);
+    send_internal_req(slotNumber, CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
     /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0], 4, SEND_DATA_LENGTH); */
@@ -314,7 +315,7 @@ void DoCalibrationNTCTableCal(uint8_t slotNumber)
 
 void DoCalibrationNTCConstantSet(uint8_t slotNumber)
 {
-    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4);
+    send_internal_req(slotNumber, CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
     /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4, SEND_DATA_LENGTH); */
@@ -325,7 +326,7 @@ void DoCalibrationNTCConstantSet(uint8_t slotNumber)
 
 void DoCalibrationNTCTableReq(uint8_t slotNumber)
 {
-    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CON_TABLE_REQ, NULL, 0);
+    send_internal_req(slotNumber, CMD_CALIBRATION_NTC_CON_TABLE_REQ, NULL, 0);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
     /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CON_TABLE_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
@@ -336,7 +337,7 @@ void DoCalibrationNTCTableReq(uint8_t slotNumber)
 
 void DoCalibrationNTCConstantReq(uint8_t slotNumber)
 {
-    send_internal_msg(slotNumber, CMD_CALIBRATION_NTC_CONSTANT_REQ, NULL, 0);
+    send_internal_req(slotNumber, CMD_CALIBRATION_NTC_CONSTANT_REQ, NULL, 0);
 
     /* memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer)); */
     /* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30), CMD_CALIBRATION_NTC_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
@@ -355,7 +356,7 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
     u[3] = thresholdTemp.UI8[2];
     u[4] = thresholdTemp.UI8[3];
 
-    send_internal_msg(slotNumber, CMD_THRESHOLD_SET, u, 5);
+    send_internal_req(slotNumber, CMD_THRESHOLD_SET, u, 5);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
     /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_SET, u, 5, SEND_DATA_LENGTH); */
@@ -371,7 +372,7 @@ void DoThresholdReq(uint8_t slotNumber)
     if (SysProperties.slotInsert[slotNumber] == FALSE)
         return;
 
-    send_internal_msg(slotNumber, CMD_THRESHOLD_REQ, NULL, 0);
+    send_internal_req(slotNumber, CMD_THRESHOLD_REQ, NULL, 0);
 
     /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
     /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
@@ -390,7 +391,7 @@ void DoReqSlotID(uint8_t slotNumber)
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
     DoRejectSlot();
 
-    send_internal_msg(slotNumber, CMD_SLOT_ID_REQ, slotNumber + 0x30, 1);
+    send_internal_req(slotNumber, CMD_SLOT_ID_REQ, slotNumber + 0x30, 1);
 
     /* uint8_t u[1] = {0}; */
     /* u[0] = slotNumber + 0x30; */
@@ -410,7 +411,7 @@ void DoReqTemperature(uint8_t slotNumber)
 {
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    send_internal_msg(slotNumber, CMD_TEMP_REQ, NULL, 0);
+    send_internal_req(slotNumber, CMD_TEMP_REQ, NULL, 0);
 
     /* uint8_t u[1] = {0}; */
     /* slotNumber += 0x30; */
@@ -426,7 +427,7 @@ void DoReqTeameratureState(uint8_t slotNumber)
 
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    send_internal_msg(slotNumber, CMD_TEMP_STATE_REQ, NULL, 0);
+    send_internal_req(slotNumber, CMD_TEMP_STATE_REQ, NULL, 0);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
     /* slotNumber += 0x30; */
@@ -440,7 +441,7 @@ void DoRevisionApplySet(uint8_t slotNumber, uint8_t mode)		//slot 번호 전달 
 {
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    send_internal_msg(slotNumber, CMD_REVISION_APPLY_SET, &mode, 1);
+    send_internal_req(slotNumber, CMD_REVISION_APPLY_SET, &mode, 1);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
 
@@ -453,7 +454,7 @@ void DoRevisionConstantSet(uint8_t slotNumber)
 {
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    send_internal_msg(slotNumber, CMD_REVISION_CONSTANT_SET, TestData.revisionConstant[slotNumber].UI8, 4);
+    send_internal_req(slotNumber, CMD_REVISION_CONSTANT_SET, TestData.revisionConstant[slotNumber].UI8, 4);
 
     /* memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer)); */
 
@@ -467,7 +468,7 @@ void DoRevisionApplyReq(uint8_t slotNumber)
 
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    send_internal_msg(slotNumber, CMD_REVISION_APPLY_REQ, NULL, 0);
+    send_internal_req(slotNumber, CMD_REVISION_APPLY_REQ, NULL, 0);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
 
@@ -481,7 +482,7 @@ void DoRevisionConstantReq(uint8_t slotNumber)
 
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    send_internal_msg(slotNumber, CMD_REVISION_CONSTANT_REQ, NULL, 0);
+    send_internal_req(slotNumber, CMD_REVISION_CONSTANT_REQ, NULL, 0);
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
 
@@ -506,7 +507,7 @@ void DoIncSlotIdStep(uint8_t slotNumber)
         if(SendSlotNumber > 3)  {
             SendSlotNumber = 0;
             SysProperties.InterfaceStep  = STEP_READ_THRESHOLD;
-            RxQueue_Clear(&RxQueue);
+            /* RxQueue_Clear(&RxQueue); */
 
             if( (SysProperties.slotInsert[0] == FALSE) && (SysProperties.slotInsert[1] == FALSE) &&
                 (SysProperties.slotInsert[2] == FALSE) && (SysProperties.slotInsert[3] == FALSE) )
@@ -521,7 +522,7 @@ void DoIncSlotIdStep(uint8_t slotNumber)
             if(SendSlotNumber > 3)  {
                 SendSlotNumber = 0;
                 SysProperties.InterfaceStep = STEP_TEMP_READ;
-                RxQueue_Clear(&RxQueue);
+                /* RxQueue_Clear(&RxQueue); */
             }
             ct++;
             if(ct > 3)      break;
