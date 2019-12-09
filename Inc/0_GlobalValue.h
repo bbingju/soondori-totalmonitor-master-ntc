@@ -100,7 +100,7 @@ typedef enum {
 	LDM_DONOT_CONNECT		//센서 없음 
 }LED_DIPLAY_MODE;
 
-typedef struct 
+typedef __PACKED_STRUCT
 {
 	uni4Byte		mainBoard[4];				// MAINBOARDSENSOR 사용 해서 선택 
 	uint32_t		mainBoardADC[4];			// main board 내부 센서 adc 값 
@@ -114,7 +114,7 @@ typedef struct
 	uni4Byte		ntcCalibrationConst;		// NTC 증감 상수, NTC board 에서 NTC + ntcCalibration + ntcCalibrationConst 해서 NTC 값이 생성됨 
 	uint8_t			revisionApply[4];			// 보정 적용 상태, 1: 표면온도모드(보정 적용) 0 : 측정온도 모드(보정 미적용)
 	uni4Byte		revisionConstant[4];		// 보정용 접촉상수 저장 
-}TEST_DATA;
+} TEST_DATA;
 extern TEST_DATA TestData;
 
 typedef struct

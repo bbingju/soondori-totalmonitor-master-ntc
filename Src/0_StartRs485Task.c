@@ -333,7 +333,6 @@ static void handle_rx_msg(struct ext_rx_msg_s *received)
 void StartRs485Task(void const * argument)
 {
 	/* USER CODE BEGIN StartBluetooehTask */
-    //uint8_t     i;
 
     HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
     /* Rs485RTxQueue_Init(&Rs485RxQueue);			//블루투스용 rx 버퍼, 서클러큐 구현 */
@@ -398,26 +397,32 @@ void external_tx_task(void const * arg)
 
     HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
 
-    //Task 부팅 완료 플레그
-    SysProperties.bootingWate[1] = TRUE;
+    /* //Task 부팅 완료 플레그 */
+    /* SysProperties.bootingWate[1] = TRUE; */
 
-    while(1)
-    {
-        if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask,
-            (SysProperties.bootingWate[1] == TRUE) &&   // 1 : StartRs485Task,
-            (SysProperties.bootingWate[2] == TRUE) &&   // 2 : StartSlotUartTask,
-            (SysProperties.bootingWate[3] == TRUE) )    // 3 : StartRateTask
-        {
-            break;
-        }
-        osDelay(100);
-    }
+    /* while(1) */
+    /* { */
+    /*     if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask, */
+    /*         (SysProperties.bootingWate[1] == TRUE) &&   // 1 : StartRs485Task, */
+    /*         (SysProperties.bootingWate[2] == TRUE) &&   // 2 : StartSlotUartTask, */
+    /*         (SysProperties.bootingWate[3] == TRUE) )    // 3 : StartRateTask */
+    /*     { */
+    /*         break; */
+    /*     } */
+    /*     osDelay(100); */
+    /* } */
 
     ext_tx_pool_q_id = osMailCreate(osMailQ(ext_tx_pool_q), NULL);
 
     while (1) {
         osEvent event = osMailGet(ext_tx_pool_q_id, osWaitForever);
         struct ext_tx_buffer_s *to_transmit_ext = (struct ext_tx_buffer_s *) event.value.p;
+
+        DBG_LOG("ext tx [%s::%s] (%d): ", cmd_str(to_transmit_ext->raw[1]),
+                option_str(to_transmit_ext->raw[1], to_transmit_ext->raw[2]),
+                to_transmit_ext->bytes_to_transmit);
+        print_bytes(to_transmit_ext->raw, to_transmit_ext->bytes_to_transmit);
+
         ext_tx_completed = 0;
         HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
         HAL_UART_Transmit_DMA(&UART_RS485_HANDEL, to_transmit_ext->raw, to_transmit_ext->bytes_to_transmit);
