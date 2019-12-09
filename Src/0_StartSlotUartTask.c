@@ -41,6 +41,13 @@ uint8_t                 startThreshold   = FALSE;
 /* extern struct internal_tx_msg_s *tx_received; */
 /* extern osMailQId (internal_tx_pool_q_id); */
 
+extern osTimerId temperature_measuring_id;
+
+void measure_temperature(void const *arg)
+{
+    DBG_LOG("%s\n", __func__);
+}
+
 /*********************************************************************
 *       StartSlaveInterfaceTask
 * BLUETOOTH AND SLAVE 용 USART 통신 TASK
@@ -79,6 +86,8 @@ void StartSlotUartTask(void const * argument)
     SysProperties.slotInsert[2] = TRUE;
     SysProperties.slotInsert[3] = TRUE;
 
+
+
     while(1)
     {
         if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask,
@@ -91,52 +100,42 @@ void StartSlotUartTask(void const * argument)
         osDelay(100);
     }
 
+    osTimerStart(temperature_measuring_id, 1000);
+
     /* Infinite loop */
     for(;;)
     {
-        osDelay(1);
-
-        //RX FUNCTION
-        /* do */
-        /* { */
-        /*     SlotRxFunction(); */
-        /*     UnpackingRxQueue(); */
-        /*     semCount = osSemaphoreGetCount(CountingSemSlaveRxHandle); */
-
-        /*     if((RxReadCount == 11) || (RxReadCount == 37) || (RxReadCount == 133)) */
-        /*     { */
-        /*         DoSlotJumpFunction(); */
-        /*         RxReadCount = 0; */
-        /*     } */
-        /* } while((RxQueue_Count(&RxQueue) > 0) || (semCount > 0)); */
 
 #if 1
         switch(SysProperties.InterfaceStep)
         {
-        /* case STEP_SLOT_ID:                  // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다. */
-        /*     DoReqSlotID(SendSlotNumber); */
-        /*     osDelay(100); */
-        /*     if (tx_received) { */
-        /*         osMailFree(internal_tx_pool_q_id, tx_received); */
-        /*         tx_received = NULL; */
-        /*     } */
-        /*     if (noReturnSendCt > 10) */
-        /*     { */
-        /*         DoIncSlotIdStep(SendSlotNumber); */
-        /*         noReturnSendCt = 0; */
-        /*         //SysProperties.slotInsert[0] = TRUE; */
-        /*     } */
-        /*     break; */
+            /* case STEP_SLOT_ID:                  // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다. */
+            /*     DoReqSlotID(SendSlotNumber); */
+            /*     osDelay(100); */
+            /*     if (tx_received) { */
+            /*         osMailFree(internal_tx_pool_q_id, tx_received); */
+            /*         tx_received = NULL; */
+            /*     } */
+            /*     if (noReturnSendCt > 10) */
+            /*     { */
+            /*         DoIncSlotIdStep(SendSlotNumber); */
+            /*         noReturnSendCt = 0; */
+            /*         //SysProperties.slotInsert[0] = TRUE; */
+            /*     } */
+            /*     break; */
         case STEP_READ_THRESHOLD:                       //각 슬롯의 경고 온도 값을 불러 온다.
             startThreshold = TRUE;
             DoThresholdReq(SendSlotNumber);
             break;
         case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
             static int toggle = 0;
-            if (toggle %= 2)
+            if (toggle %= 2) {
                 DoReqTemperature(SendSlotNumber);
-            else
+            }
+            else {
                 DoReqTeameratureState(SendSlotNumber);
+                osDelay(1000);
+            }
             toggle++;
 
             if (noReturnSendCt > 10)
@@ -153,69 +152,69 @@ void StartSlotUartTask(void const * argument)
     /* USER CODE END 5 */
 }
 
-void SlotRxFunction(void)
-{
-    uint8_t i;
+/* void SlotRxFunction(void) */
+/* { */
+/*     uint8_t i; */
 
-    if(CountingSemSlaveRxHandle != NULL)  //RX
-    {
-        if(osSemaphoreWait(CountingSemSlaveRxHandle, 0) == osOK)
-        {
-            for(i = 0; i < huart2.RxXferSize; i++)
-            {
-                osDelay(1);       // nop 로 변경시 HardFault 발생 함. osDelayUntil(&xLastWakeTime, 180); 와 같이 사용 해야 함.
-                RxQueue_Send(&RxQueue, RxDataDMA[i]);
-            }
-            noReturnSendCt = 0;
-        }
-    }
-}
+/*     if(CountingSemSlaveRxHandle != NULL)  //RX */
+/*     { */
+/*         if(osSemaphoreWait(CountingSemSlaveRxHandle, 0) == osOK) */
+/*         { */
+/*             for(i = 0; i < huart2.RxXferSize; i++) */
+/*             { */
+/*                 osDelay(1);       // nop 로 변경시 HardFault 발생 함. osDelayUntil(&xLastWakeTime, 180); 와 같이 사용 해야 함. */
+/*                 RxQueue_Send(&RxQueue, RxDataDMA[i]); */
+/*             } */
+/*             noReturnSendCt = 0; */
+/*         } */
+/*     } */
+/* } */
 
-void UnpackingRxQueue(void)
-{
-    uint16_t    etxLength  = 0;
-    //uint16_t  etxCheck = 0;
+/* void UnpackingRxQueue(void) */
+/* { */
+/*     uint16_t    etxLength  = 0; */
+/*     //uint16_t  etxCheck = 0; */
 
-    if(RxQueue_empty(&RxQueue) == FALSE)  //Rx 버퍼에 입력 데이터가 잇는지 확인
-    {
-        if((RxQueue.tail + huart2.RxXferSize - 1) >= UART_RX_BUF_MAX)
-        {
-            etxLength = RxQueue.tail + huart2.RxXferSize - 1 - UART_RX_BUF_MAX;
-        }
-        else
-        {
-            etxLength = RxQueue.tail + huart2.RxXferSize - 1;
-        }
+/*     if(RxQueue_empty(&RxQueue) == FALSE)  //Rx 버퍼에 입력 데이터가 잇는지 확인 */
+/*     { */
+/*         if((RxQueue.tail + huart2.RxXferSize - 1) >= UART_RX_BUF_MAX) */
+/*         { */
+/*             etxLength = RxQueue.tail + huart2.RxXferSize - 1 - UART_RX_BUF_MAX; */
+/*         } */
+/*         else */
+/*         { */
+/*             etxLength = RxQueue.tail + huart2.RxXferSize - 1; */
+/*         } */
 
-        if(RxQueue_Count(&RxQueue) >= 12)// || (RxQueue_Count(&RxQueue) >= 134))
-        {
-            if( (RxQueue.ar[RxQueue.tail] == CMD_STX) && (RxQueue.ar[etxLength] == CMD_ETX))
-            {
-                RxReadCount = 0;
-                RxSlotData[0] = RxQueue_Recive(&RxQueue);
-                if(RxSlotData[0] == CMD_STX)
-                {
-                    do{
-                        RxReadCount++;
-                        RxSlotData[RxReadCount] = RxQueue_Recive(&RxQueue);
-                        if((RxQueue_empty(&RxQueue) == TRUE) || (RxReadCount >= huart2.RxXferSize))
-                        {
-                            break;
-                        }
-                    }while(1);
-                }
-            }
-            else
-            {
-                temp = RxQueue_Recive(&RxQueue);
-            }
-        }
-        else
-        {
-            RxQueue_Clear(&RxQueue);
-        }
-    }
-}
+/*         if(RxQueue_Count(&RxQueue) >= 12)// || (RxQueue_Count(&RxQueue) >= 134)) */
+/*         { */
+/*             if( (RxQueue.ar[RxQueue.tail] == CMD_STX) && (RxQueue.ar[etxLength] == CMD_ETX)) */
+/*             { */
+/*                 RxReadCount = 0; */
+/*                 RxSlotData[0] = RxQueue_Recive(&RxQueue); */
+/*                 if(RxSlotData[0] == CMD_STX) */
+/*                 { */
+/*                     do{ */
+/*                         RxReadCount++; */
+/*                         RxSlotData[RxReadCount] = RxQueue_Recive(&RxQueue); */
+/*                         if((RxQueue_empty(&RxQueue) == TRUE) || (RxReadCount >= huart2.RxXferSize)) */
+/*                         { */
+/*                             break; */
+/*                         } */
+/*                     }while(1); */
+/*                 } */
+/*             } */
+/*             else */
+/*             { */
+/*                 temp = RxQueue_Recive(&RxQueue); */
+/*             } */
+/*         } */
+/*         else */
+/*         { */
+/*             RxQueue_Clear(&RxQueue); */
+/*         } */
+/*     } */
+/* } */
 
 /*********************************************************************
 *       doSlotReset

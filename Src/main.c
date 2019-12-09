@@ -90,6 +90,9 @@ osSemaphoreId myBinarySemDownHandle;
 /* Private variables ---------------------------------------------------------*/
 SYSTEM_STRUCT SysProperties;
 
+void measure_temperature(void const *arg);
+osTimerDef(temperature_measuring, measure_temperature);
+osTimerId temperature_measuring_id;
 
 /* USER CODE END PV */
 
@@ -115,6 +118,8 @@ void internal_tx_task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+void measure_temperature(void const *arg);
+
 
 /* USER CODE END PFP */
 
@@ -131,11 +136,10 @@ void internal_tx_task(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint8_t   	i, j;
-	uint32_t	read = 0;
+    uint32_t	read = 0;
 
   /* USER CODE END 1 */
-  
+
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -165,9 +169,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   SysProperties.displayMode = DPM_NORMAL;
-  for(j = 0; j < 4; j++)
+  for(int j = 0; j < 4; j++)
   {
-      for(i = 0; i < 32; i++)
+      for(int i = 0; i < 32; i++)
       {
           TestData.temperature[j][i].Float = (float)0.0;
           TestData.sensorState[j][i] = LDM_DONOT_CONNECT;
@@ -292,6 +296,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
+  temperature_measuring_id = osTimerCreate(osTimer(temperature_measuring), osTimerPeriodic, NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */

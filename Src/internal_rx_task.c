@@ -121,7 +121,6 @@ static const char* cmd_str(uint8_t cmd)
 static void handle_rx_msg(struct internal_rx_msg_s *received)
 {
     if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) {
-    /* print_bytes(received->rawdata, received->length + 4); */
     DBG_LOG("int rx [%d] %s: (%d) ",
             received->id, cmd_str(received->type), received->length);
     print_bytes(received->data, received->length);

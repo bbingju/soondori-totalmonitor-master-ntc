@@ -232,14 +232,13 @@ static void handle_tx_msg(struct internal_tx_msg_s *received)
                        received->data, received->length, SEND_DATA_LENGTH);
     noReturnSendCt++;
 
-    //if (received->cmd == CMD_THRESHOLD_SET || received->cmd == CMD_THRESHOLD_REQ) {
+    if (received->cmd == CMD_THRESHOLD_SET || received->cmd == CMD_THRESHOLD_REQ) {
         DBG_LOG("int tx [%d] %s: (%d) ",
                 received->id, cmd_str(received->cmd), received->length);
         print_bytes(received->data, received->length);
-        //}
+    }
 
     HAL_UART_Transmit_DMA(&huart2, buf, SEND_DATA_LENGTH);
-    /* osDelay(1); */
 
     if (received->rx_dma_req_bytes != -1) {
         HAL_UART_Receive_DMA(&huart2, recv_buffer, received->rx_dma_req_bytes);
@@ -248,11 +247,11 @@ static void handle_tx_msg(struct internal_tx_msg_s *received)
 
 static void handle_resp(struct internal_rx_msg_s *received)
 {
-    //if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) {
+    if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) {
     DBG_LOG("int rx [%d] %s: (%d) ",
             received->id, cmd_str(received->type), received->length);
     DBG_DUMP(received->data, received->length);
-    //}
+    }
 
     switch (received->type) {
     case CMD_BOARD_TYPE:
@@ -398,7 +397,7 @@ void send_slot_id_req(uint8_t id)
 
     uint8_t internal_id = id + 0x30;
 
-    send_internal_msg(id, CMD_SLOT_ID_REQ, &internal_id, 1);
+    send_internal_req(id, CMD_SLOT_ID_REQ, &internal_id, 1);
 }
 
 static void handle_temperature(struct internal_rx_msg_s *msg)
