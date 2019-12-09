@@ -72,6 +72,7 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 osThreadId myDisplayTaskHandle;
+osThreadId ExternalTxTaskHandle;
 osThreadId myRs485TaskHandle;
 osThreadId mySlotIUartTaskHandle;
 osThreadId myRateTaskHandle;
@@ -80,11 +81,11 @@ osThreadId InternalTxTaskHandle;
 osSemaphoreId myBinarySemModeHandle;
 osSemaphoreId myBinarySemUpHandle;
 osSemaphoreId myBinarySemDownHandle;
-osSemaphoreId BinarySemSlaveRxHandle;
-osSemaphoreId BinarySemSlaveTxHandle;
-osSemaphoreId BinarySem485RxHandle;
-osSemaphoreId CountingSemSlaveRxHandle;
-osSemaphoreId CountingSem485TxHandle;
+/* osSemaphoreId BinarySemSlaveRxHandle; */
+/* osSemaphoreId BinarySemSlaveTxHandle; */
+/* osSemaphoreId BinarySem485RxHandle; */
+/* osSemaphoreId CountingSemSlaveRxHandle; */
+/* osSemaphoreId CountingSem485TxHandle; */
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 SYSTEM_STRUCT SysProperties;
@@ -105,6 +106,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 void StartDisplayTask(void const * argument);
+void external_tx_task(void const * argument);
 void StartRs485Task(void const * argument);
 void StartSlotUartTask(void const * argument);
 void StartRateTask(void const * argument);
@@ -228,25 +230,25 @@ int main(void)
   osSemaphoreDef(myBinarySemDown);
   myBinarySemDownHandle = osSemaphoreCreate(osSemaphore(myBinarySemDown), 1);
 
-  /* definition and creation of BinarySemSlaveRx */
-  osSemaphoreDef(BinarySemSlaveRx);
-  BinarySemSlaveRxHandle = osSemaphoreCreate(osSemaphore(BinarySemSlaveRx), 1);
+  /* /\* definition and creation of BinarySemSlaveRx *\/ */
+  /* osSemaphoreDef(BinarySemSlaveRx); */
+  /* BinarySemSlaveRxHandle = osSemaphoreCreate(osSemaphore(BinarySemSlaveRx), 1); */
 
-  /* definition and creation of BinarySemSlaveTx */
-  osSemaphoreDef(BinarySemSlaveTx);
-  BinarySemSlaveTxHandle = osSemaphoreCreate(osSemaphore(BinarySemSlaveTx), 1);
+  /* /\* definition and creation of BinarySemSlaveTx *\/ */
+  /* osSemaphoreDef(BinarySemSlaveTx); */
+  /* BinarySemSlaveTxHandle = osSemaphoreCreate(osSemaphore(BinarySemSlaveTx), 1); */
 
-  /* definition and creation of BinarySem485Rx */
-  osSemaphoreDef(BinarySem485Rx);
-  BinarySem485RxHandle = osSemaphoreCreate(osSemaphore(BinarySem485Rx), 1);
+  /* /\* definition and creation of BinarySem485Rx *\/ */
+  /* osSemaphoreDef(BinarySem485Rx); */
+  /* BinarySem485RxHandle = osSemaphoreCreate(osSemaphore(BinarySem485Rx), 1); */
 
-  /* definition and creation of CountingSemSlaveRx */
-  osSemaphoreDef(CountingSemSlaveRx);
-  CountingSemSlaveRxHandle = osSemaphoreCreate(osSemaphore(CountingSemSlaveRx), 10);
+  /* /\* definition and creation of CountingSemSlaveRx *\/ */
+  /* osSemaphoreDef(CountingSemSlaveRx); */
+  /* CountingSemSlaveRxHandle = osSemaphoreCreate(osSemaphore(CountingSemSlaveRx), 10); */
 
-  /* definition and creation of CountingSem485Tx */
-  osSemaphoreDef(CountingSem485Tx);
-  CountingSem485TxHandle = osSemaphoreCreate(osSemaphore(CountingSem485Tx), 100);
+  /* /\* definition and creation of CountingSem485Tx *\/ */
+  /* osSemaphoreDef(CountingSem485Tx); */
+  /* CountingSem485TxHandle = osSemaphoreCreate(osSemaphore(CountingSem485Tx), 100); */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
@@ -264,6 +266,9 @@ int main(void)
   /* definition and creation of myDisplayTask */
   osThreadDef(myDisplayTask, StartDisplayTask, osPriorityNormal, 0, 128);
   myDisplayTaskHandle = osThreadCreate(osThread(myDisplayTask), NULL);
+
+  osThreadDef(ExternalTxTask, external_tx_task, osPriorityBelowNormal, 0, 256);
+  ExternalTxTaskHandle = osThreadCreate(osThread(ExternalTxTask), NULL);
 
   /* definition and creation of myRs485Task */
   osThreadDef(myRs485Task, StartRs485Task, osPriorityBelowNormal, 0, 512);
@@ -1122,7 +1127,7 @@ void vApplicationIdleHook( void )
 {
     static uint32_t elapsed_tick = 0;
 
-    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(200)) {
+    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(500)) {
         elapsed_tick = osKernelSysTick();
         HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
         HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);

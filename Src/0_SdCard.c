@@ -138,8 +138,9 @@ void DoMakeFile(void)
 		if(res != FR_OK)	//파일 열기 오류
 		{
 			sdValue.sdState = SCS_OPEN_ERROR;
-			doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-			SendUart485String(tx485DataDMA, 32);
+                        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+			/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+			/* SendUart485String(tx485DataDMA, 32); */
 			return;
 		}
 		else
@@ -154,8 +155,9 @@ void DoMakeFile(void)
 		if(res != FR_OK)	//파일 열기 오류
 		{
 			sdValue.sdState = SCS_OPEN_ERROR;
-			doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-			SendUart485String(tx485DataDMA, 32);
+                        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+			/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+			/* SendUart485String(tx485DataDMA, 32); */
 			return;
 		}
 		else
@@ -209,8 +211,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -227,8 +230,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -241,8 +245,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -255,8 +260,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -269,8 +275,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -283,8 +290,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -302,8 +310,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -320,8 +329,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -345,8 +355,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -362,8 +373,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -379,8 +391,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -392,8 +405,9 @@ void DoWriteFileHeader(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SYNC_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -463,8 +477,9 @@ void DoDataWrite(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SEEK_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -477,8 +492,9 @@ void DoDataWrite(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_WRITE_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -490,8 +506,9 @@ void DoDataWrite(void)
 	if(res != FR_OK)
 	{
 		sdValue.sdState = SCS_SYNC_ERROR;
-		doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-		SendUart485String(tx485DataDMA, 32);
+                send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
 		return;
 	}
 	else
@@ -579,8 +596,9 @@ FRESULT scan_files (char* path)        /* Start node to be scanned (***also used
 				osDelay(10);
 			}*/
 			sdValue.sdState = SCS_OK;
-			doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_BODY, (uint8_t*)sdValue.scanFilePath, len1 + len2 - 3, 36, 56);
-			SendUart485String(tx485DataDMA, 56);
+                        send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_BODY, (uint8_t*)sdValue.scanFilePath, len1 + len2 - 3, 36, 56);
+			/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_BODY, (uint8_t*)sdValue.scanFilePath, len1 + len2 - 3, 36, 56); */
+			/* SendUart485String(tx485DataDMA, 56); */
 			osDelay(10);
 		}
 		printf("f_closedir %d\r", f_closedir(&sdValue.scanDir[sdValue.scanDirDeep]));

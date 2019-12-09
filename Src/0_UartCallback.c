@@ -12,6 +12,8 @@
 extern struct internal_tx_msg_s *tx_received;
 extern osMailQId (internal_tx_pool_q_id);
 
+extern int ext_tx_completed;
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
     if(huart->Instance == USART2)       //Slot Interface & Bluetooth
@@ -21,11 +23,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
             osMailFree(internal_tx_pool_q_id, tx_received);
             tx_received = NULL;
         }
-        osSemaphoreRelease(CountingSemSlaveRxHandle);
+        /* osSemaphoreRelease(CountingSemSlaveRxHandle); */
     }
     else if(huart->Instance == USART1)
     {
-        osSemaphoreRelease(BinarySem485RxHandle);
+        push_external_rx(huart->pRxBuffPtr, huart->RxXferSize);
+        /* osSemaphoreRelease(BinarySem485RxHandle); */
     }
 }
 
@@ -33,12 +36,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     if(huart->Instance == USART2)   //Slot Interface & Bluetooth
     {
-        osSemaphoreRelease(BinarySemSlaveTxHandle);
+        /* osSemaphoreRelease(BinarySemSlaveTxHandle); */
     }
     else if(huart->Instance == USART1)   //
     {
-        osSemaphoreRelease(CountingSem485TxHandle);
-	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
+        ext_tx_completed = 1;
+        /* osSemaphoreRelease(CountingSem485TxHandle); */
+	/* HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET); */
     }
 }
 

@@ -73,46 +73,59 @@
 #define OP_TIME_REQ             			2
 
 
+struct ext_rx_msg_s;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //void StartBluetooehTask(void const * argument);
 //////////////////////////////////////////////////////////////////
 //	Private function prototypes
 //////////////////////////////////////////////////////////////////
+int push_external_rx(void *data, uint16_t length);
+int send_external_response(uint8_t cmd, uint8_t option, void *data,
+                           uint16_t data_writhe_len, uint16_t data_len, uint16_t buffer_len);
+
 //uint32_t  RecieveBTUart(uint8_t *key);
 //void SendBTUart(uint8_t c);
 void SendUart485String(uint8_t *data, uint16_t length);
 void SendUart485NonDma(uint8_t *data, uint16_t length);
 void StartRs485Task(void const * argument);
-void DoReadFileList(void);
+void DoReadFileList(struct ext_rx_msg_s *);
 
-void doSaveIntervalTime(void);
+void doSaveIntervalTime(struct ext_rx_msg_s *);
 
 void RxFunction(void);
 void UnpackingRs485RxQueue(void);
 
 //void ParsingFromRs485(void);
-void JumpToFunction485(void);
-void DoSendFile(void);	
-void DoSendFileOpen(void);
+/* void JumpToFunction485(void); */
+void DoSendFile(struct ext_rx_msg_s *);
+void DoSendFileOpen(struct ext_rx_msg_s *);
 void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize);
 void DoSendFileClose(void);
 int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize);
 
-void CmdWarningTempSet(void);
-void CmdWarningTempReq(void);
-void CmdCalibrationRTDConstSet(void);
-void CmdCalibrationNTCTableCal(void);
-void CmdCalibrationNTCConstantSet(void);
-void CmdCalibrationRTDConstReq(void);
-void CmdCalibrationNTCTableReq(void);
-void CmdCalibrationNTCConstantReq(void);
-void CmdRevisionApplySet(void);
-void CmdRevisionConstantSet(void);
-void CmdRevisionApplyReq(void);
-void CmdRevisionConstantReq(void);
+void CmdWarningTempSet(struct ext_rx_msg_s *);
+void CmdWarningTempReq(struct ext_rx_msg_s *);
+void CmdCalibrationRTDConstSet(struct ext_rx_msg_s *);
+void CmdCalibrationNTCTableCal(struct ext_rx_msg_s *);
+void CmdCalibrationNTCConstantSet(struct ext_rx_msg_s *);
+void CmdCalibrationRTDConstReq(struct ext_rx_msg_s *);
+void CmdCalibrationNTCTableReq(struct ext_rx_msg_s *);
+void CmdCalibrationNTCConstantReq(struct ext_rx_msg_s *);
+void CmdRevisionApplySet(struct ext_rx_msg_s *);
+void CmdRevisionConstantSet(struct ext_rx_msg_s *);
+void CmdRevisionApplyReq(struct ext_rx_msg_s *);
+void CmdRevisionConstantReq(struct ext_rx_msg_s *);
 
-void doSetTime(void);
-void doGetTime(void);
+void doSetTime(struct ext_rx_msg_s *);
+void doGetTime(struct ext_rx_msg_s *);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

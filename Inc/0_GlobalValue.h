@@ -47,16 +47,16 @@ extern osSemaphoreId BinarySem485RxHandle;
 extern osSemaphoreId CountingSem485TxHandle;
 extern osSemaphoreId CountingSemSlaveRxHandle;
 
-typedef union {
+typedef __PACKED_UNION {
 	float 		Float;
 	uint32_t	UI32;
 	uint16_t 	UI16[2];
-	uint8_t 	UI8[4];	
+	uint8_t 	UI8[4];
 	int16_t 	SI16[2];
-	int8_t 		SIi8[4];	
+	int8_t 		SIi8[4];
 }uni4Byte;
 
-typedef union{
+typedef __PACKED_UNION {
 	uint16_t	UI16;
 	uint8_t		UI8[2];
 }uni2Byte;
@@ -69,7 +69,7 @@ typedef enum {
 	MBS_BATTERY = 0,
 	MBS_RTD,
 	MBS_TEMP,
-	MBS_HUMI	
+	MBS_HUMI
 }MAINBOARDSENSOR;
 
 typedef enum {
@@ -264,8 +264,8 @@ extern uint16_t			SLAVE_CS_PIN[4];
 //extern uint8_t 		txDataBuffer[UART_TX_BUF_MAX];
 extern uint8_t          sendSlotNumber;
 
-extern uint8_t          rx485DataDMA[320];     			 	//dma 용도 
-extern uint8_t			tx485DataDMA[MAX_485_BUF_LEN];      //dma 용도 
+/* extern uint8_t          rx485DataDMA[256]; //dma 용도 */
+extern uint8_t			tx485DataDMA[MAX_485_BUF_LEN];      //dma 용도
 extern uint8_t 			ReadFileBuf[MAX_485_BUF_LEN];
 
 #endif

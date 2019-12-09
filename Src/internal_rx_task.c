@@ -120,12 +120,12 @@ static const char* cmd_str(uint8_t cmd)
 
 static void handle_rx_msg(struct internal_rx_msg_s *received)
 {
-    /* if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) { */
+    if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) {
     /* print_bytes(received->rawdata, received->length + 4); */
-    DBG_LOG("handle_rx [%d] %s: (%d) ",
+    DBG_LOG("int rx [%d] %s: (%d) ",
             received->id, cmd_str(received->type), received->length);
     print_bytes(received->data, received->length);
-    /* } */
+    }
 
     switch (received->type) {
     case CMD_BOARD_TYPE:
@@ -243,14 +243,14 @@ static void handle_threshold_req(struct internal_rx_msg_s *msg)
 
     if((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] == msg->rawdata[132]))
     {
-        /* uni4Byte *threshold = &TestData.threshold[msg->id]; */
+        uni4Byte *threshold = &TestData.threshold[msg->id];
         for (int i = 0; i < 32; i++)
         {
-            /* (threshold + i)->Float = *((float *)&msg->rawdata[i * 4 + 3]); */
-            TestData.threshold[readSlotNumber][i].UI8[0] = msg->rawdata[i * 4 + 3];
-            TestData.threshold[readSlotNumber][i].UI8[1] = msg->rawdata[i * 4 + 4];
-            TestData.threshold[readSlotNumber][i].UI8[2] = msg->rawdata[i * 4 + 5];
-            TestData.threshold[readSlotNumber][i].UI8[3] = msg->rawdata[i * 4 + 6];
+            (threshold + i)->Float = *((float *)&msg->rawdata[i * 4 + 3]);
+            /* TestData.threshold[readSlotNumber][i].UI8[0] = msg->rawdata[i * 4 + 3]; */
+            /* TestData.threshold[readSlotNumber][i].UI8[1] = msg->rawdata[i * 4 + 4]; */
+            /* TestData.threshold[readSlotNumber][i].UI8[2] = msg->rawdata[i * 4 + 5]; */
+            /* TestData.threshold[readSlotNumber][i].UI8[3] = msg->rawdata[i * 4 + 6]; */
         }
         crcErrorCount = 0;
     }
@@ -265,9 +265,9 @@ static void handle_threshold_req(struct internal_rx_msg_s *msg)
         uint8_t thresholdData[130] = { 0 };
         thresholdData[0] = msg->id;
         memcpy(&thresholdData[1], &TestData.threshold[thresholdData[0]][0].UI8[0], 128);
-        doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ,
-                          thresholdData, 129, 132, 152);
-        SendUart485String(tx485DataDMA, 152);
+        send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ, thresholdData, 129, 132, 152);
+        /* doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ, thresholdData, 129, 132, 152); */
+        /* SendUart485String(tx485DataDMA, 152); */
     }
 
     if(startThreshold == TRUE)
@@ -304,8 +304,7 @@ static void handle_threshold_set(struct internal_rx_msg_s *msg)
     }
 
     memcpy(&thresholdData[1], &TestData.threshold[readSlotNumber][0].UI8[0], 128);
-    doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &thresholdData[0], 129, 132, 152);
-    /* DBG_LOG("%s: ", __func__); */
-    /* print_bytes(tx485DataDMA, 152); */
-    SendUart485String(tx485DataDMA, 152);
+    send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &thresholdData[0], 129, 132, 152);
+    /* doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &thresholdData[0], 129, 132, 152); */
+    /* SendUart485String(tx485DataDMA, 152); */
 }

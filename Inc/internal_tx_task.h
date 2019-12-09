@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
     void send_slot_id_req(uint8_t id);
-    void send_threashold_set_req(uint8_t id, uint8_t channel, float temp);
     int send_internal_msg(uint8_t id, uint8_t cmd, void *data, uint16_t length);
 
 #ifdef __cplusplus
