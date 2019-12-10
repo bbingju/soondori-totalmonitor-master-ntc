@@ -84,20 +84,20 @@ void DoIncSlotIdStep(uint8_t slotNumber);
 
 //  Rx
 void DoSlotJumpFunction(void);
-void DoAnsBoardType(void); 
+/* void DoAnsBoardType(void);  */
 void DoAnsReqSlotID(void);
 void DoAnsTemperature(void);
 void DoAnsTemperatureState(void);
 void DoAnsThresholdReq(void);
 void DoAnsThresholdSet(void);
-void DoAnsCalibrationNTCTableCal(void);
-void DoAnsCalibrationNTCTableReq(void);
-void DoAnsCalibrationNTCConstantSet(void);
-void DoAnsCalibrationNTCConstantReq(void);
-void DoAnsRevisionApplySet(void);
-void DoAnsRevisionConstantSet(void);
-void DoAnsRevisionApplyReq(void);
-void DoAnsRevisionConstantReq(void);
+/* void DoAnsCalibrationNTCTableCal(void); */
+/* void DoAnsCalibrationNTCTableReq(void); */
+/* void DoAnsCalibrationNTCConstantSet(void); */
+/* void DoAnsCalibrationNTCConstantReq(void); */
+/* void DoAnsRevisionApplySet(void); */
+/* void DoAnsRevisionConstantSet(void); */
+/* void DoAnsRevisionApplyReq(void); */
+/* void DoAnsRevisionConstantReq(void); */
 
 
 #endif

@@ -11,7 +11,6 @@
 #include "0_GlobalValue.h"
 #include "0_GlobalDefine.h"
 #include "main.h"
-#include "endian.h"
 
 #define BUZZER_ON	HAL_GPIO_WritePin(BUZZER_SEL_GPIO_Port, BUZZER_SEL_Pin, GPIO_PIN_SET)
 #define BUZZER_OFF 	HAL_GPIO_WritePin(BUZZER_SEL_GPIO_Port, BUZZER_SEL_Pin, GPIO_PIN_RESET)

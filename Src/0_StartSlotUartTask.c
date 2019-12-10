@@ -17,7 +17,7 @@ uint16_t        SLAVE_CS_PIN[4]  = {SLAVE_CS0_Pin,        SLAVE_CS1_Pin,        
 uint8_t         TxDataBuffer[UART_TX_BUF_MAX] = { 0 };  //dma 용도
 uint8_t         RxDataDMA[134 * 10]  = { 0 };                               //dma 용도
 
-uint8_t         RxSlotData[140]  = { 0 };                       //parsing 용도
+/* uint8_t         RxSlotData[140]  = { 0 };                       //parsing 용도 */
 uint8_t         RxSlotDataLength = 0;
 uint8_t         RxReadCount              = 0;
 
@@ -38,9 +38,6 @@ uint8_t                 semCount                 = 0;
 uint8_t                 startThreshold   = FALSE;
 /* RX_QUEUE_STRUCT RxQueue; */
 
-/* extern struct internal_tx_msg_s *tx_received; */
-/* extern osMailQId (internal_tx_pool_q_id); */
-
 extern osTimerId temperature_measuring_id;
 
 void measure_temperature(void const *arg)
@@ -52,7 +49,7 @@ void measure_temperature(void const *arg)
 *       StartSlaveInterfaceTask
 * BLUETOOTH AND SLAVE 용 USART 통신 TASK
 **********************************************************************/
-void StartSlotUartTask(void const * argument)
+void system_task(void const * argument)
 {
     //uint8_t     rxLoopCount;
 
@@ -554,479 +551,489 @@ void DoIncSlotIdStep(uint8_t slotNumber)
 *       doSlotJumpFunction
 *       Rx Data 를 Parsing 하기 위한 분기 함수
 **********************************************************************/
-void DoSlotJumpFunction(void)
-{
-    if(RxSlotData[0] == CMD_STX)
-    {
-        //if(RxSlotData[11] == CMD_ETX)
-        if(RxReadCount == 11)
-        {
-            switch(RxSlotData[2])
-            {
-            case CMD_BOARD_TYPE:
-                DoAnsBoardType();
-                break;
-            case CMD_BOARD_EN_REQ:
-                break;
-            case CMD_BOARD_EN_SET:
-                break;
-            case CMD_SLOT_ID_REQ:
-                DoAnsReqSlotID();
-                break;
-            case CMD_HW_VER:
-                break;
-            case CMD_FW_VER:
-                break;
-            case CMD_UUID_REQ:
-                break;
-            case CMD_ADC_REQ:
-                break;
-            case CMD_RELAY_REQ:
-                break;
-            case CMD_RELAY_SET:
-                break;
-            case CMD_REVISION_APPLY_SET:
-                DoAnsRevisionApplySet();
-                break;
-            case CMD_REVISION_CONSTANT_SET:
-                DoAnsRevisionConstantSet();
-                break;
-            case CMD_REVISION_APPLY_REQ:
-                DoAnsRevisionApplyReq();
-                break;
-            case CMD_REVISION_CONSTANT_REQ:
-                DoAnsRevisionConstantReq();
-                break;
-            case CMD_CALIBRATION_NTC_CONSTANT_SET:
-                DoAnsCalibrationNTCConstantSet();
-                break;
-            case CMD_CALIBRATION_NTC_CONSTANT_REQ:
-                DoAnsCalibrationNTCConstantReq();
-                break;
-            }
-        }
-        //else if(RxSlotData[37] == CMD_ETX)
-        else if(RxReadCount == 37)
-        {
-            switch(RxSlotData[2])
-            {
-            case CMD_TEMP_STATE_REQ:
-                DoAnsTemperatureState();
-                break;
-            }
-        }
-        //else if(RxSlotData[133] == CMD_ETX)
-        else if(RxReadCount == 133)
-        {
-            switch(RxSlotData[2])
-            {
-            case CMD_TEMP_REQ:
-                DoAnsTemperature();
-                break;
-            case CMD_THRESHOLD_REQ:
-                DoAnsThresholdReq();
-                break;
-            case CMD_THRESHOLD_SET:
-                DoAnsThresholdSet();
-                break;
-            case CMD_CALIBRATION_NTC_CON_TABLE_CAL:
-                DoAnsCalibrationNTCTableCal();
-                break;
-            case CMD_CALIBRATION_NTC_CON_TABLE_REQ:
-                DoAnsCalibrationNTCTableReq();
-                break;
-            }
-        }
-    }
-}
+/* void DoSlotJumpFunction(void) */
+/* { */
+/*     if(RxSlotData[0] == CMD_STX) */
+/*     { */
+/*         //if(RxSlotData[11] == CMD_ETX) */
+/*         if(RxReadCount == 11) */
+/*         { */
+/*             switch(RxSlotData[2]) */
+/*             { */
+/*             case CMD_BOARD_TYPE: */
+/*                 DoAnsBoardType(); */
+/*                 break; */
+/*             case CMD_BOARD_EN_REQ: */
+/*                 break; */
+/*             case CMD_BOARD_EN_SET: */
+/*                 break; */
+/*             case CMD_SLOT_ID_REQ: */
+/*                 DoAnsReqSlotID(); */
+/*                 break; */
+/*             case CMD_HW_VER: */
+/*                 break; */
+/*             case CMD_FW_VER: */
+/*                 break; */
+/*             case CMD_UUID_REQ: */
+/*                 break; */
+/*             case CMD_ADC_REQ: */
+/*                 break; */
+/*             case CMD_RELAY_REQ: */
+/*                 break; */
+/*             case CMD_RELAY_SET: */
+/*                 break; */
+/*             case CMD_REVISION_APPLY_SET: */
+/*                 DoAnsRevisionApplySet(); */
+/*                 break; */
+/*             case CMD_REVISION_CONSTANT_SET: */
+/*                 DoAnsRevisionConstantSet(); */
+/*                 break; */
+/*             case CMD_REVISION_APPLY_REQ: */
+/*                 DoAnsRevisionApplyReq(); */
+/*                 break; */
+/*             case CMD_REVISION_CONSTANT_REQ: */
+/*                 DoAnsRevisionConstantReq(); */
+/*                 break; */
+/*             case CMD_CALIBRATION_NTC_CONSTANT_SET: */
+/*                 DoAnsCalibrationNTCConstantSet(); */
+/*                 break; */
+/*             case CMD_CALIBRATION_NTC_CONSTANT_REQ: */
+/*                 DoAnsCalibrationNTCConstantReq(); */
+/*                 break; */
+/*             } */
+/*         } */
+/*         //else if(RxSlotData[37] == CMD_ETX) */
+/*         else if(RxReadCount == 37) */
+/*         { */
+/*             switch(RxSlotData[2]) */
+/*             { */
+/*             case CMD_TEMP_STATE_REQ: */
+/*                 DoAnsTemperatureState(); */
+/*                 break; */
+/*             } */
+/*         } */
+/*         //else if(RxSlotData[133] == CMD_ETX) */
+/*         else if(RxReadCount == 133) */
+/*         { */
+/*             switch(RxSlotData[2]) */
+/*             { */
+/*             case CMD_TEMP_REQ: */
+/*                 DoAnsTemperature(); */
+/*                 break; */
+/*             case CMD_THRESHOLD_REQ: */
+/*                 DoAnsThresholdReq(); */
+/*                 break; */
+/*             case CMD_THRESHOLD_SET: */
+/*                 DoAnsThresholdSet(); */
+/*                 break; */
+/*             case CMD_CALIBRATION_NTC_CON_TABLE_CAL: */
+/*                 DoAnsCalibrationNTCTableCal(); */
+/*                 break; */
+/*             case CMD_CALIBRATION_NTC_CON_TABLE_REQ: */
+/*                 DoAnsCalibrationNTCTableReq(); */
+/*                 break; */
+/*             } */
+/*         } */
+/*     } */
+/* } */
 
 /*********************************************************************
 *       doAnsBoardType
 *       보드 타입 응답 함수
 **********************************************************************/
-void DoAnsBoardType(void)
-{
-    SysProperties.slotType[SendSlotNumber] = RxDataDMA[2];
-}
+/* void DoAnsBoardType(struct internal_rx_msg_s *msg) */
+/* { */
+/*   if (msg) */
+/*     SysProperties.slotType[msg->id] = msg->data[0]; */
+/* } */
 
 /*********************************************************************
 *       doAnsReqSlotID
 *       슬롯 id 설정 확인 함수
 **********************************************************************/
-void DoAnsReqSlotID(void)
-{
-    noReturnSendCt = 0;
+/* void DoAnsReqSlotID(void) */
+/* { */
+/*     noReturnSendCt = 0; */
 
-    if(SendSlotNumber == (RxSlotData[1] - '0'))
-    {
-        SysProperties.slotInsert[RxSlotData[1] - '0'] = TRUE;
-        DoIncSlotIdStep(SendSlotNumber);
-    }
-}
+/*     if(SendSlotNumber == (RxSlotData[1] - '0')) */
+/*     { */
+/*         SysProperties.slotInsert[RxSlotData[1] - '0'] = TRUE; */
+/*         DoIncSlotIdStep(SendSlotNumber); */
+/*     } */
+/* } */
 
 /*********************************************************************
 *       doAnsTemperature
 *       온도 요청에 대한 응답, 회신 되는 응답은 flot임.
 **********************************************************************/
-void DoAnsTemperature(void)
-{
-    uint8_t i;
-    uni2Byte crc;
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 130);
-
-    if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132]))
-    {
-        for(i = 0; i < 32; i++)
-        {
-            HAL_Delay(1);
-            TestData.temperature[readSlotNumber][i].UI8[0] = RxSlotData[i * 4 + 3];
-            TestData.temperature[readSlotNumber][i].UI8[1] = RxSlotData[i * 4 + 4];
-            TestData.temperature[readSlotNumber][i].UI8[2] = RxSlotData[i * 4 + 5];
-            TestData.temperature[readSlotNumber][i].UI8[3] = RxSlotData[i * 4 + 6];
-        }
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    DoIncSlotIdStep(readSlotNumber);
-}
-
-void DoAnsTemperatureState(void)
-{
-    uint8_t count = 0;
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    for(count = 0; count < 32; count++)
-    {
-        TestData.sensorState[readSlotNumber][count] = (LED_DIPLAY_MODE)RxSlotData[count + 3];
-    }
-}
-
-void DoAnsThresholdReq(void)
-{
-    uni2Byte        crc;
-    uint8_t         thresholdData[130];
-
-    noReturnSendCt = 0;
-    thresholdData[0] = RxSlotData[1] - '0';
-    readSlotNumber = thresholdData[0];
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 130);
-
-    if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132]))
-    {
-        for (int inc = 0; inc < 32; inc++)
-        {
-            TestData.threshold[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3];
-            TestData.threshold[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4];
-            TestData.threshold[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5];
-            TestData.threshold[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6];
-        }
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    if(startThreshold != TRUE)      //초기화 하는 동안은 486 전송 하지 않는다, 초기화 중일때 startThreshold == TRUE 임.
-    {
-        memcpy(&thresholdData[1], &TestData.threshold[thresholdData[0]][0].UI8[0], 128);
-        doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ, &thresholdData[0], 129, 132, 152);
-        SendUart485String(tx485DataDMA, 152);
-    }
-
-    if(startThreshold == TRUE)
-    {
-        DoIncSlotIdStep(thresholdData[0]);
-    }
-}
-
-void DoAnsThresholdSet(void)
-{
-    uint8_t         inc;
-    uni2Byte        crc;
-    uint8_t         thresholdData[130];
-
-    noReturnSendCt = 0;
-    thresholdData[0] = RxSlotData[1] - '0';
-    readSlotNumber = thresholdData[0];
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 130);
-
-    if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132]))
-    {
-        for(inc = 0; inc < 32; inc++)
-        {
-            TestData.threshold[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3];
-            TestData.threshold[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4];
-            TestData.threshold[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5];
-            TestData.threshold[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6];
-        }
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    memcpy(&thresholdData[1], &TestData.threshold[readSlotNumber][0].UI8[0], 128);
-    doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &thresholdData[0], 129, 132, 152);
-    /* DBG_LOG("%s: ", __func__); */
-    /* print_bytes(tx485DataDMA, 152); */
-    SendUart485String(tx485DataDMA, 152);
-}
-
-void DoAnsCalibrationNTCTableCal(void)
-{
-    uint8_t         inc;
-    uni2Byte        crc;
-    uint8_t         calData[130];
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 130);
-
-    if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132]))
-    {
-        for(inc = 0; inc < 32; inc++)
-        {
-            osDelay(1);
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3];
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4];
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5];
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6];
-        }
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    calData[0] = readSlotNumber;
-    memcpy((void*)&calData[1],(void*)&TestData.ntcCalibrationTable[readSlotNumber][0].UI8[0], 128);
-
-    doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_CAL, calData, 129, 132, 152);
-    SendUart485String(tx485DataDMA, 152);
-}
-
-void DoAnsRevisionApplySet(void)
-{
-    uni2Byte crc;
-    uint8_t  revData[2];
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 8);
-
-    if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10]))
-    {
-        TestData.revisionApply[readSlotNumber] = RxSlotData[3];
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    revData[0] = readSlotNumber;
-    revData[1] = TestData.revisionApply[readSlotNumber];
-
-    doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_APPLY_SET, revData, 2, 12, 32);
-    SendUart485String(tx485DataDMA, 32);
-}
-
-void DoAnsRevisionConstantSet(void)
-{
-    uni2Byte crc;
-    uint8_t  revData[5];
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 8);
-
-    if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10]))
-    {
-        TestData.revisionConstant[readSlotNumber].UI8[0] = RxSlotData[3];
-        TestData.revisionConstant[readSlotNumber].UI8[1] = RxSlotData[4];
-        TestData.revisionConstant[readSlotNumber].UI8[2] = RxSlotData[5];
-        TestData.revisionConstant[readSlotNumber].UI8[3] = RxSlotData[6];
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    revData[0] = readSlotNumber;
-    revData[1] = TestData.revisionConstant[readSlotNumber].UI8[0];
-    revData[2] = TestData.revisionConstant[readSlotNumber].UI8[1];
-    revData[3] = TestData.revisionConstant[readSlotNumber].UI8[2];
-    revData[4] = TestData.revisionConstant[readSlotNumber].UI8[3];
-
-    doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_CONSTANT_SET, revData, 6, 12, 32);
-    SendUart485String(tx485DataDMA, 32);
-}
-
-void DoAnsRevisionApplyReq(void)
-{
-
-    uni2Byte crc;
-    uint8_t  revData[2];
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 8);
-
-    if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10]))
-    {
-        TestData.revisionApply[readSlotNumber] = RxSlotData[3];
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    revData[0] = readSlotNumber;
-    revData[1] = TestData.revisionApply[readSlotNumber];
-
-    doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_APPLY_REQ, revData, 2, 12, 32);
-    SendUart485String(tx485DataDMA, 32);
-}
-
-void DoAnsRevisionConstantReq(void)
-{
-    uni2Byte crc;
-    uint8_t  revData[5];
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 8);
-
-    if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10]))
-    {
-        TestData.revisionConstant[readSlotNumber].UI8[0] = RxSlotData[3];
-        TestData.revisionConstant[readSlotNumber].UI8[1] = RxSlotData[4];
-        TestData.revisionConstant[readSlotNumber].UI8[2] = RxSlotData[5];
-        TestData.revisionConstant[readSlotNumber].UI8[3] = RxSlotData[6];
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    revData[0] = readSlotNumber;
-    revData[1] = TestData.revisionConstant[readSlotNumber].UI8[0];
-    revData[2] = TestData.revisionConstant[readSlotNumber].UI8[1];
-    revData[3] = TestData.revisionConstant[readSlotNumber].UI8[2];
-    revData[4] = TestData.revisionConstant[readSlotNumber].UI8[3];
-
-    doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_CONSTANT_REQ, revData, 6, 12, 32);
-    SendUart485String(tx485DataDMA, 32);
-}
-
-void DoAnsCalibrationNTCConstantSet(void)
-{
-    uni2Byte crc;
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 8);
-
-    if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10]))
-    {
-        TestData.ntcCalibrationConst.UI8[0] = RxSlotData[3];
-        TestData.ntcCalibrationConst.UI8[1] = RxSlotData[4];
-        TestData.ntcCalibrationConst.UI8[2] = RxSlotData[5];
-        TestData.ntcCalibrationConst.UI8[3] = RxSlotData[6];
-
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
-    SendUart485String(tx485DataDMA, 32);
-}
-
-void DoAnsCalibrationNTCTableReq(void)
-{
-    uint8_t         inc;
-    uni2Byte        crc;
-    uint8_t         calData[130];
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 130);
-
-    if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132]))
-    {
-        for(inc = 0; inc < 32; inc++)
-        {
-            osDelay(1);
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3];
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4];
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5];
-            TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6];
-        }
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    calData[0] = readSlotNumber;
-    memcpy((void*)&calData[1], (void*)&TestData.ntcCalibrationTable[readSlotNumber][0].UI8[0], 128);
-
-    doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ, calData, 129, 132, 152);
-    SendUart485String(tx485DataDMA, 152);
-}
-
-void DoAnsCalibrationNTCConstantReq(void)
-{
-    uni2Byte crc;
-
-    noReturnSendCt = 0;
-    readSlotNumber = RxSlotData[1] - '0';
-
-    crc.UI16 = CRC16_Make(&RxSlotData[1], 8);
-
-    if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10]))
-    {
-        TestData.ntcCalibrationConst.UI8[0] = RxSlotData[3];
-        TestData.ntcCalibrationConst.UI8[1] = RxSlotData[4];
-        TestData.ntcCalibrationConst.UI8[2] = RxSlotData[5];
-        TestData.ntcCalibrationConst.UI8[3] = RxSlotData[6];
-
-        crcErrorCount = 0;
-    }
-    else
-    {
-        crcErrorCount++;
-    }
-
-    doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ, &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
-    SendUart485String(tx485DataDMA, 32);
-}
+/* void DoAnsTemperature(void) */
+/* { */
+/*     uint8_t i; */
+/*     uni2Byte crc; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 130); */
+
+/*     if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132])) */
+/*     { */
+/*         for(i = 0; i < 32; i++) */
+/*         { */
+/*             HAL_Delay(1); */
+/*             TestData.temperature[readSlotNumber][i].UI8[0] = RxSlotData[i * 4 + 3]; */
+/*             TestData.temperature[readSlotNumber][i].UI8[1] = RxSlotData[i * 4 + 4]; */
+/*             TestData.temperature[readSlotNumber][i].UI8[2] = RxSlotData[i * 4 + 5]; */
+/*             TestData.temperature[readSlotNumber][i].UI8[3] = RxSlotData[i * 4 + 6]; */
+/*         } */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     DoIncSlotIdStep(readSlotNumber); */
+/* } */
+
+/* void DoAnsTemperatureState(void) */
+/* { */
+/*     uint8_t count = 0; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     for(count = 0; count < 32; count++) */
+/*     { */
+/*         TestData.sensorState[readSlotNumber][count] = (LED_DIPLAY_MODE)RxSlotData[count + 3]; */
+/*     } */
+/* } */
+
+/* void DoAnsThresholdReq(void) */
+/* { */
+/*     uni2Byte        crc; */
+/*     uint8_t         thresholdData[130]; */
+
+/*     noReturnSendCt = 0; */
+/*     thresholdData[0] = RxSlotData[1] - '0'; */
+/*     readSlotNumber = thresholdData[0]; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 130); */
+
+/*     if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132])) */
+/*     { */
+/*         for (int inc = 0; inc < 32; inc++) */
+/*         { */
+/*             TestData.threshold[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3]; */
+/*             TestData.threshold[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4]; */
+/*             TestData.threshold[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5]; */
+/*             TestData.threshold[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6]; */
+/*         } */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     if(startThreshold != TRUE)      //초기화 하는 동안은 486 전송 하지 않는다, 초기화 중일때 startThreshold == TRUE 임. */
+/*     { */
+/*         memcpy(&thresholdData[1], &TestData.threshold[thresholdData[0]][0].UI8[0], 128); */
+/*         doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ, &thresholdData[0], 129, 132, 152); */
+/*         SendUart485String(tx485DataDMA, 152); */
+/*     } */
+
+/*     if(startThreshold == TRUE) */
+/*     { */
+/*         DoIncSlotIdStep(thresholdData[0]); */
+/*     } */
+/* } */
+
+/* void DoAnsThresholdSet(void) */
+/* { */
+/*     uint8_t         inc; */
+/*     uni2Byte        crc; */
+/*     uint8_t         thresholdData[130]; */
+
+/*     noReturnSendCt = 0; */
+/*     thresholdData[0] = RxSlotData[1] - '0'; */
+/*     readSlotNumber = thresholdData[0]; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 130); */
+
+/*     if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132])) */
+/*     { */
+/*         for(inc = 0; inc < 32; inc++) */
+/*         { */
+/*             TestData.threshold[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3]; */
+/*             TestData.threshold[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4]; */
+/*             TestData.threshold[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5]; */
+/*             TestData.threshold[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6]; */
+/*         } */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     memcpy(&thresholdData[1], &TestData.threshold[readSlotNumber][0].UI8[0], 128); */
+/*     doMakeSend485Data(tx485DataDMA, CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &thresholdData[0], 129, 132, 152); */
+/*     /\* DBG_LOG("%s: ", __func__); *\/ */
+/*     /\* print_bytes(tx485DataDMA, 152); *\/ */
+/*     SendUart485String(tx485DataDMA, 152); */
+/* } */
+
+/* void DoAnsCalibrationNTCTableCal(void) */
+/* { */
+/*     uint8_t         inc; */
+/*     uni2Byte        crc; */
+/*     uint8_t         calData[130]; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 130); */
+
+/*     if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132])) */
+/*     { */
+/*         for(inc = 0; inc < 32; inc++) */
+/*         { */
+/*             osDelay(1); */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3]; */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4]; */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5]; */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6]; */
+/*         } */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     calData[0] = readSlotNumber; */
+/*     memcpy((void*)&calData[1],(void*)&TestData.ntcCalibrationTable[readSlotNumber][0].UI8[0], 128); */
+
+/*     send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_CAL, calData, 129, 132, 152); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_CAL, calData, 129, 132, 152); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 152); *\/ */
+/* } */
+
+/* void DoAnsRevisionApplySet(void) */
+/* { */
+/*     uni2Byte crc; */
+/*     uint8_t  revData[2]; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 8); */
+
+/*     if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10])) */
+/*     { */
+/*         TestData.revisionApply[readSlotNumber] = RxSlotData[3]; */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     revData[0] = readSlotNumber; */
+/*     revData[1] = TestData.revisionApply[readSlotNumber]; */
+
+/*     send_external_response(CMD_REVISION, OP_REVISION_APPLY_SET, revData, 2, 12, 32); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_APPLY_SET, revData, 2, 12, 32); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 32); *\/ */
+/* } */
+
+/* void DoAnsRevisionConstantSet(void) */
+/* { */
+/*     uni2Byte crc; */
+/*     uint8_t  revData[5]; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 8); */
+
+/*     if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10])) */
+/*     { */
+/*         TestData.revisionConstant[readSlotNumber].UI8[0] = RxSlotData[3]; */
+/*         TestData.revisionConstant[readSlotNumber].UI8[1] = RxSlotData[4]; */
+/*         TestData.revisionConstant[readSlotNumber].UI8[2] = RxSlotData[5]; */
+/*         TestData.revisionConstant[readSlotNumber].UI8[3] = RxSlotData[6]; */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     revData[0] = readSlotNumber; */
+/*     revData[1] = TestData.revisionConstant[readSlotNumber].UI8[0]; */
+/*     revData[2] = TestData.revisionConstant[readSlotNumber].UI8[1]; */
+/*     revData[3] = TestData.revisionConstant[readSlotNumber].UI8[2]; */
+/*     revData[4] = TestData.revisionConstant[readSlotNumber].UI8[3]; */
+
+/*     send_external_response(CMD_REVISION, OP_REVISION_CONSTANT_SET, revData, 6, 12, 32); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_CONSTANT_SET, revData, 6, 12, 32); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 32); *\/ */
+/* } */
+
+/* void DoAnsRevisionApplyReq(void) */
+/* { */
+
+/*     uni2Byte crc; */
+/*     uint8_t  revData[2]; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 8); */
+
+/*     if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10])) */
+/*     { */
+/*         TestData.revisionApply[readSlotNumber] = RxSlotData[3]; */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     revData[0] = readSlotNumber; */
+/*     revData[1] = TestData.revisionApply[readSlotNumber]; */
+
+/*     send_external_response(CMD_REVISION, OP_REVISION_APPLY_REQ, revData, 2, 12, 32); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_APPLY_REQ, revData, 2, 12, 32); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 32); *\/ */
+/* } */
+
+/* void DoAnsRevisionConstantReq(void) */
+/* { */
+/*     uni2Byte crc; */
+/*     uint8_t  revData[5]; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 8); */
+
+/*     if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10])) */
+/*     { */
+/*         TestData.revisionConstant[readSlotNumber].UI8[0] = RxSlotData[3]; */
+/*         TestData.revisionConstant[readSlotNumber].UI8[1] = RxSlotData[4]; */
+/*         TestData.revisionConstant[readSlotNumber].UI8[2] = RxSlotData[5]; */
+/*         TestData.revisionConstant[readSlotNumber].UI8[3] = RxSlotData[6]; */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     revData[0] = readSlotNumber; */
+/*     revData[1] = TestData.revisionConstant[readSlotNumber].UI8[0]; */
+/*     revData[2] = TestData.revisionConstant[readSlotNumber].UI8[1]; */
+/*     revData[3] = TestData.revisionConstant[readSlotNumber].UI8[2]; */
+/*     revData[4] = TestData.revisionConstant[readSlotNumber].UI8[3]; */
+
+/*     send_external_response(CMD_REVISION, OP_REVISION_CONSTANT_REQ, revData, 6, 12, 32); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_REVISION, OP_REVISION_CONSTANT_REQ, revData, 6, 12, 32); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 32); *\/ */
+/* } */
+
+/* void DoAnsCalibrationNTCConstantSet(void) */
+/* { */
+/*     uni2Byte crc; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 8); */
+
+/*     if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10])) */
+/*     { */
+/*         TestData.ntcCalibrationConst.UI8[0] = RxSlotData[3]; */
+/*         TestData.ntcCalibrationConst.UI8[1] = RxSlotData[4]; */
+/*         TestData.ntcCalibrationConst.UI8[2] = RxSlotData[5]; */
+/*         TestData.ntcCalibrationConst.UI8[3] = RxSlotData[6]; */
+
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_SET, */
+/*                            &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 32); *\/ */
+/* } */
+
+/* void DoAnsCalibrationNTCTableReq(void) */
+/* { */
+/*     uint8_t         inc; */
+/*     uni2Byte        crc; */
+/*     uint8_t         calData[130]; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 130); */
+
+/*     if((crc.UI8[0] == RxSlotData[131]) && (crc.UI8[1] == RxSlotData[132])) */
+/*     { */
+/*         for(inc = 0; inc < 32; inc++) */
+/*         { */
+/*             osDelay(1); */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[0] = RxSlotData[inc * 4 + 3]; */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[1] = RxSlotData[inc * 4 + 4]; */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[2] = RxSlotData[inc * 4 + 5]; */
+/*             TestData.ntcCalibrationTable[readSlotNumber][inc].UI8[3] = RxSlotData[inc * 4 + 6]; */
+/*         } */
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     calData[0] = readSlotNumber; */
+/*     memcpy((void*)&calData[1], (void*)&TestData.ntcCalibrationTable[readSlotNumber][0].UI8[0], 128); */
+
+/*     send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ, calData, 129, 132, 152); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ, calData, 129, 132, 152); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 152); *\/ */
+/* } */
+
+/* void DoAnsCalibrationNTCConstantReq(void) */
+/* { */
+/*     uni2Byte crc; */
+
+/*     noReturnSendCt = 0; */
+/*     readSlotNumber = RxSlotData[1] - '0'; */
+
+/*     crc.UI16 = CRC16_Make(&RxSlotData[1], 8); */
+
+/*     if((crc.UI8[0] == RxSlotData[9]) && (crc.UI8[1] == RxSlotData[10])) */
+/*     { */
+/*         TestData.ntcCalibrationConst.UI8[0] = RxSlotData[3]; */
+/*         TestData.ntcCalibrationConst.UI8[1] = RxSlotData[4]; */
+/*         TestData.ntcCalibrationConst.UI8[2] = RxSlotData[5]; */
+/*         TestData.ntcCalibrationConst.UI8[3] = RxSlotData[6]; */
+
+/*         crcErrorCount = 0; */
+/*     } */
+/*     else */
+/*     { */
+/*         crcErrorCount++; */
+/*     } */
+
+/*     send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ, &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32); */
+/*     /\* doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ, &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32); *\/ */
+/*     /\* SendUart485String(tx485DataDMA, 32); *\/ */
+/* } */

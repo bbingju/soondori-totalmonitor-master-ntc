@@ -700,9 +700,9 @@ void DoSendFileOpen(struct ext_rx_msg_s *msg)
 
 void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 {
-    uint8_t t[1] = {0};
+    /* uint8_t t[1] = {0}; */
     int32_t ReadSize;
-    uint16_t i = 0, j, ct;
+    uint16_t i = 0;
     uni4Byte temp;
 
     /* if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
@@ -729,9 +729,9 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
         /* SendUart485String(&tx485DataDMA[0], packetSize + 8 + 20); */
 
 /*		uint16_t len = (packetSize + 8 + 20);
-		ct  = (len / 32);
+		uint16_t ct  = (len / 32);
 
-		for(j = 0; j < ct; j++)
+		for(int j = 0; j < ct; j++)
 		{
                 SendUart485String(&tx485DataDMA[j * 32], 32);
                 len -= 32;

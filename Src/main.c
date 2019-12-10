@@ -72,20 +72,13 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 osThreadId myDisplayTaskHandle;
-osThreadId ExternalTxTaskHandle;
 osThreadId myRs485TaskHandle;
-osThreadId mySlotIUartTaskHandle;
+osThreadId SystemTaskHandle;
 osThreadId myRateTaskHandle;
-/* osThreadId InternalRxTaskHandle; */
-osThreadId InternalTxTaskHandle;
+osThreadId InternalUartTasHandle;
 osSemaphoreId myBinarySemModeHandle;
 osSemaphoreId myBinarySemUpHandle;
 osSemaphoreId myBinarySemDownHandle;
-/* osSemaphoreId BinarySemSlaveRxHandle; */
-/* osSemaphoreId BinarySemSlaveTxHandle; */
-/* osSemaphoreId BinarySem485RxHandle; */
-/* osSemaphoreId CountingSemSlaveRxHandle; */
-/* osSemaphoreId CountingSem485TxHandle; */
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 SYSTEM_STRUCT SysProperties;
@@ -109,12 +102,10 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 void StartDisplayTask(void const * argument);
-void external_tx_task(void const * argument);
 void StartRs485Task(void const * argument);
-void StartSlotUartTask(void const * argument);
+void system_task(void const * argument);
 void StartRateTask(void const * argument);
-void internal_rx_task(void const * argument);
-void internal_tx_task(void const * argument);
+void internal_uart_task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -234,26 +225,6 @@ int main(void)
   osSemaphoreDef(myBinarySemDown);
   myBinarySemDownHandle = osSemaphoreCreate(osSemaphore(myBinarySemDown), 1);
 
-  /* /\* definition and creation of BinarySemSlaveRx *\/ */
-  /* osSemaphoreDef(BinarySemSlaveRx); */
-  /* BinarySemSlaveRxHandle = osSemaphoreCreate(osSemaphore(BinarySemSlaveRx), 1); */
-
-  /* /\* definition and creation of BinarySemSlaveTx *\/ */
-  /* osSemaphoreDef(BinarySemSlaveTx); */
-  /* BinarySemSlaveTxHandle = osSemaphoreCreate(osSemaphore(BinarySemSlaveTx), 1); */
-
-  /* /\* definition and creation of BinarySem485Rx *\/ */
-  /* osSemaphoreDef(BinarySem485Rx); */
-  /* BinarySem485RxHandle = osSemaphoreCreate(osSemaphore(BinarySem485Rx), 1); */
-
-  /* /\* definition and creation of CountingSemSlaveRx *\/ */
-  /* osSemaphoreDef(CountingSemSlaveRx); */
-  /* CountingSemSlaveRxHandle = osSemaphoreCreate(osSemaphore(CountingSemSlaveRx), 10); */
-
-  /* /\* definition and creation of CountingSem485Tx *\/ */
-  /* osSemaphoreDef(CountingSem485Tx); */
-  /* CountingSem485TxHandle = osSemaphoreCreate(osSemaphore(CountingSem485Tx), 100); */
-
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -271,28 +242,21 @@ int main(void)
   osThreadDef(myDisplayTask, StartDisplayTask, osPriorityNormal, 0, 128);
   myDisplayTaskHandle = osThreadCreate(osThread(myDisplayTask), NULL);
 
-  osThreadDef(ExternalTxTask, external_tx_task, osPriorityBelowNormal, 0, 256);
-  ExternalTxTaskHandle = osThreadCreate(osThread(ExternalTxTask), NULL);
-
   /* definition and creation of myRs485Task */
   osThreadDef(myRs485Task, StartRs485Task, osPriorityBelowNormal, 0, 512);
   myRs485TaskHandle = osThreadCreate(osThread(myRs485Task), NULL);
 
-  /* definition and creation of mySlotIUartTask */
-  osThreadDef(mySlotIUartTask, StartSlotUartTask, osPriorityAboveNormal, 0, 256);
-  mySlotIUartTaskHandle = osThreadCreate(osThread(mySlotIUartTask), NULL);
+  /* definition and creation of SystemTask */
+  osThreadDef(SystemTask, system_task, osPriorityAboveNormal, 0, 256);
+  SystemTaskHandle = osThreadCreate(osThread(SystemTask), NULL);
 
   /* definition and creation of myRateTask */
   osThreadDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512);
   myRateTaskHandle = osThreadCreate(osThread(myRateTask), NULL);
 
-  /* /\* definition and creation of InternalRxTask *\/ */
-  /* osThreadDef(InternalRxTask, internal_rx_task, osPriorityNormal, 0, 256); */
-  /* InternalRxTaskHandle = osThreadCreate(osThread(InternalRxTask), NULL); */
-
-  /* definition and creation of InternalTxTask */
-  osThreadDef(InternalTxTask, internal_tx_task, osPriorityNormal, 0, 256);
-  InternalTxTaskHandle = osThreadCreate(osThread(InternalTxTask), NULL);
+  /* definition and creation of InternalUartTas */
+  osThreadDef(InternalUartTas, internal_uart_task, osPriorityNormal, 0, 256);
+  InternalUartTasHandle = osThreadCreate(osThread(InternalUartTas), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
@@ -1004,22 +968,22 @@ __weak void StartRs485Task(void const * argument)
   /* USER CODE END StartRs485Task */
 }
 
-/* USER CODE BEGIN Header_StartSlotUartTask */
+/* USER CODE BEGIN Header_system_task */
 /**
-* @brief Function implementing the mySlotIUartTask thread.
+* @brief Function implementing the SystemTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartSlotUartTask */
-__weak void StartSlotUartTask(void const * argument)
+/* USER CODE END Header_system_task */
+__weak void system_task(void const * argument)
 {
-  /* USER CODE BEGIN StartSlotUartTask */
+  /* USER CODE BEGIN system_task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartSlotUartTask */
+  /* USER CODE END system_task */
 }
 
 /* USER CODE BEGIN Header_StartRateTask */
@@ -1040,40 +1004,22 @@ __weak void StartRateTask(void const * argument)
   /* USER CODE END StartRateTask */
 }
 
-/* USER CODE BEGIN Header_internal_rx_task */
+/* USER CODE BEGIN Header_internal_uart_task */
 /**
-* @brief Function implementing the InternalRxTask thread.
+* @brief Function implementing the InternalUartTas thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_internal_rx_task */
-__weak void internal_rx_task(void const * argument)
+/* USER CODE END Header_internal_uart_task */
+__weak void internal_uart_task(void const * argument)
 {
-  /* USER CODE BEGIN internal_rx_task */
+  /* USER CODE BEGIN internal_uart_task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END internal_rx_task */
-}
-
-/* USER CODE BEGIN Header_internal_tx_task */
-/**
-* @brief Function implementing the InternalTxTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_internal_tx_task */
-__weak void internal_tx_task(void const * argument)
-{
-  /* USER CODE BEGIN internal_tx_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END internal_tx_task */
+  /* USER CODE END internal_uart_task */
 }
 
 /**
