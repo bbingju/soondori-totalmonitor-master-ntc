@@ -1,7 +1,6 @@
 #include "math.h"
 #include "0_StartSlotUartTask.h"
 #include "0_GlobalValue.h"
-#include "0_soonQueue.h"
 #include "0_UartCallback.h"
 #include "0_StartRs485Task.h"
 #include <string.h>
@@ -38,23 +37,55 @@ uint8_t                 semCount                 = 0;
 uint8_t                 startThreshold   = FALSE;
 /* RX_QUEUE_STRUCT RxQueue; */
 
-extern osTimerId temperature_measuring_id;
+extern int int_tx_completed;
+extern int int_rx_completed;
 
-void measure_temperature(void const *arg)
+void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
 {
-    DBG_LOG("%s\n", __func__);
+    uint8_t buf[150] = { 0 };
+
+    for (int i = 0; i < num_of_slots; i++) {
+        for (int j = 0; j < 11; j++) {
+            HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+
+            doMakeSendSlotData(buf, slots[i].id + 0x30, CMD_TEMP_REQ,
+                       buf, 0, SEND_DATA_LENGTH);
+            noReturnSendCt++;
+            int_tx_completed = 0;
+            HAL_UART_Transmit_DMA(&huart2, buf, SEND_DATA_LENGTH);
+            while (int_tx_completed == 0) {
+                __NOP();
+            };
+
+            int_rx_completed = 0;
+            HAL_UART_Receive_DMA(&huart2, buf, 134);
+
+            /* DBG_LOG("slot %d, %d times\n", i, j); */
+
+            uint32_t old_tick = osKernelSysTick();
+            while (int_rx_completed == 0) {
+                __NOP();
+                if (osKernelSysTick() - old_tick > 50)
+                    break;
+            };
+
+            if (int_rx_completed)
+                noReturnSendCt = 0;
+        }
+
+        slots[i].inserted = noReturnSendCt > 9 ? false : true;
+        noReturnSendCt = 0;
+    }
+
+    for (int i = 0; i < num_of_slots; i++) {
+        DBG_LOG("slot %d inserted %s\n", slots[i].id,
+                slots[i].inserted ? "TRUE" : "FALSE");
+    }
 }
 
-/*********************************************************************
-*       StartSlaveInterfaceTask
-* BLUETOOTH AND SLAVE 용 USART 통신 TASK
-**********************************************************************/
 void system_task(void const * argument)
 {
-    //uint8_t     rxLoopCount;
-
-    /* SysProperties.InterfaceStep = STEP_SLOT_ID; */
-    SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
+    SysProperties.InterfaceStep = STEP_SLOT_ID;
 
     HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SLAVE_OE1_GPIO_Port, SLAVE_OE1_Pin, GPIO_PIN_RESET);
@@ -64,88 +95,39 @@ void system_task(void const * argument)
     DoSlotReset(ALL_SLOT);
     DoRejectSlot();
     osDelay(100);
-    HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12);
 
     //todo : 센서 타입을 슬레이브 보드에서 읽어 와야 함.
-    SysProperties.slotType[0] = SBT_NTC;
-    SysProperties.slotType[1] = SBT_NTC;
-    SysProperties.slotType[2] = SBT_NTC;
-    SysProperties.slotType[3] = SBT_NTC;
-
-
-
-    //Task 부팅 완료 플레그
-    SysProperties.bootingWate[2] = TRUE;
-
-    /* for testing */
-    SysProperties.slotInsert[0] = TRUE;
-    SysProperties.slotInsert[1] = FALSE;
-    SysProperties.slotInsert[2] = TRUE;
-    SysProperties.slotInsert[3] = TRUE;
-
-
-
-    while(1)
-    {
-        if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask,
-            (SysProperties.bootingWate[1] == TRUE) &&   // 1 : StartRs485Task,
-            (SysProperties.bootingWate[2] == TRUE) &&   // 2 : StartSlotUartTask,
-            (SysProperties.bootingWate[3] == TRUE) )    // 3 : StartRateTask
-        {
-            break;
-        }
-        osDelay(100);
-    }
-
-    osTimerStart(temperature_measuring_id, 1000);
 
     /* Infinite loop */
-    for(;;)
+    for (;;)
     {
+        switch (SysProperties.InterfaceStep) {
 
-#if 1
-        switch(SysProperties.InterfaceStep)
-        {
-            /* case STEP_SLOT_ID:                  // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다. */
-            /*     DoReqSlotID(SendSlotNumber); */
-            /*     osDelay(100); */
-            /*     if (tx_received) { */
-            /*         osMailFree(internal_tx_pool_q_id, tx_received); */
-            /*         tx_received = NULL; */
-            /*     } */
-            /*     if (noReturnSendCt > 10) */
-            /*     { */
-            /*         DoIncSlotIdStep(SendSlotNumber); */
-            /*         noReturnSendCt = 0; */
-            /*         //SysProperties.slotInsert[0] = TRUE; */
-            /*     } */
-            /*     break; */
-        case STEP_READ_THRESHOLD:                       //각 슬롯의 경고 온도 값을 불러 온다.
-            startThreshold = TRUE;
-            DoThresholdReq(SendSlotNumber);
+        case STEP_SLOT_ID: // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다.
+            check_slots_inserted(SysProperties.slots, 4);
+            SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
             break;
+
+        case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
+            startThreshold = TRUE;
+            for (int i = 0; i < 4; i++) {
+                DoThresholdReq(i);
+                osDelay(100);
+            }
+            SysProperties.InterfaceStep = STEP_TEMP_READ;
+            break;
+
         case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
-            static int toggle = 0;
-            if (toggle %= 2) {
-                DoReqTemperature(SendSlotNumber);
-            }
-            else {
-                DoReqTeameratureState(SendSlotNumber);
-                osDelay(1000);
-            }
-            toggle++;
+            DoReqTemperature(SendSlotNumber);
+            DoReqTeameratureState(SendSlotNumber);
+            osDelay(1000);
 
             if (noReturnSendCt > 10)
                 noReturnSendCt = 0;
             break;
         }
         }
-
-        osDelay(30);
-//        osDelayUntil(&xLastWakeTime, 200);      //osDelay 사용시 HardFaul 발생 함.
-#endif
     }
-
     /* USER CODE END 5 */
 }
 
@@ -365,7 +347,7 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
 
 void DoThresholdReq(uint8_t slotNumber)
 {
-    if (SysProperties.slotInsert[slotNumber] == FALSE)
+    if (!SysProperties.slots[slotNumber].inserted)
         return;
 
     send_internal_req(slotNumber, CMD_THRESHOLD_REQ, NULL, 0);
@@ -505,11 +487,15 @@ void DoIncSlotIdStep(uint8_t slotNumber)
             SysProperties.InterfaceStep  = STEP_READ_THRESHOLD;
             /* RxQueue_Clear(&RxQueue); */
 
-            if( (SysProperties.slotInsert[0] == FALSE) && (SysProperties.slotInsert[1] == FALSE) &&
-                (SysProperties.slotInsert[2] == FALSE) && (SysProperties.slotInsert[3] == FALSE) )
-            {
-                HAL_NVIC_SystemReset();
+            bool system_reset_needed = true;
+            for (int i = 0; i < 4; i++) {
+                if (SysProperties.slots[i].inserted) {
+                    system_reset_needed = false;
+                    break;
+                }
             }
+            if (system_reset_needed)
+                HAL_NVIC_SystemReset();
         }
         break;
     case STEP_READ_THRESHOLD:                       //각 슬롯의 경고 온도 값을 불러 온다.
@@ -522,7 +508,7 @@ void DoIncSlotIdStep(uint8_t slotNumber)
             }
             ct++;
             if(ct > 3)      break;
-        }while(SysProperties.slotInsert[SendSlotNumber] == FALSE);
+        } while (!SysProperties.slots[SendSlotNumber].inserted);
         break;
     case STEP_TEMP_READ:
         do{
@@ -533,7 +519,7 @@ void DoIncSlotIdStep(uint8_t slotNumber)
             }
             ct++;
             if(ct > 3) break;
-        }while(SysProperties.slotInsert[SendSlotNumber] == FALSE);
+        } while (!SysProperties.slots[SendSlotNumber].inserted);
         break;
     }
 }

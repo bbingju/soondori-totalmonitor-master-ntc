@@ -65,21 +65,21 @@ FRESULT DoFolderCheck(void)
     sprintf(dirname, "20%02d", date->Year);
     res = check_n_create_directory(dirname);
     if (res != FR_OK) {
-        DBG_LOG("%s: Error to create a directory!", __func__);
+        DBG_LOG("%s: Error to create a directory!\n", __func__);
 	goto ret;
     }
 
     sprintf(dirname, "20%02d/%02d", date->Year, date->Month);
     res = check_n_create_directory(dirname);
     if (res != FR_OK) {
-        DBG_LOG("%s: Error to create a directory!", __func__);
+        DBG_LOG("%s: Error to create a directory!\n", __func__);
 	goto ret;
     }
 
     sprintf(dirname, "20%02d/%02d/%02d", date->Year, date->Month, date->Date);
     res = check_n_create_directory(dirname);
     if (res != FR_OK) {
-        DBG_LOG("%s: Error to create a directory!", __func__);
+        DBG_LOG("%s: Error to create a directory!\n", __func__);
 	goto ret;
     }
 
@@ -364,10 +364,8 @@ void DoWriteFileHeader(void)
 	{
 		sdValue.sdState = SCS_OK;
 	}
-	f_putc(SysProperties.slotInsert[0], &sdValue.fileObject);
-	f_putc(SysProperties.slotInsert[1], &sdValue.fileObject);
-	f_putc(SysProperties.slotInsert[2], &sdValue.fileObject);
-	f_putc(SysProperties.slotInsert[3], &sdValue.fileObject);
+        for (int i = 0; i < 4; i++)
+            f_putc(SysProperties.slots[i].inserted, &sdValue.fileObject);
 
 	res = f_lseek(&sdValue.fileObject, FILE_ADD_SLOT_TYPE);				//slot type
 	if(res != FR_OK)
@@ -382,10 +380,8 @@ void DoWriteFileHeader(void)
 	{
 		sdValue.sdState = SCS_OK;
 	}
-	f_putc(SysProperties.slotType[0], &sdValue.fileObject);
-	f_putc(SysProperties.slotType[1], &sdValue.fileObject);
-	f_putc(SysProperties.slotType[2], &sdValue.fileObject);
-	f_putc(SysProperties.slotType[3], &sdValue.fileObject);
+        for (int i = 0; i < 4; i++)
+            f_putc(SysProperties.slots[i].type, &sdValue.fileObject);
 
 	res = f_lseek(&sdValue.fileObject, FILE_ADD_TEST_DATA); 			//file write position
 	if(res != FR_OK)

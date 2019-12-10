@@ -72,7 +72,8 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 osThreadId myDisplayTaskHandle;
-osThreadId myRs485TaskHandle;
+osThreadId ExRxTaskHandle;
+osThreadId ExtTxTaskHandle;
 osThreadId SystemTaskHandle;
 osThreadId myRateTaskHandle;
 osThreadId InternalUartTasHandle;
@@ -82,10 +83,6 @@ osSemaphoreId myBinarySemDownHandle;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 SYSTEM_STRUCT SysProperties;
-
-void measure_temperature(void const *arg);
-osTimerDef(temperature_measuring, measure_temperature);
-osTimerId temperature_measuring_id;
 
 /* USER CODE END PV */
 
@@ -101,9 +98,10 @@ static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
-void StartDisplayTask(void const * argument);
-void StartRs485Task(void const * argument);
 void system_task(void const * argument);
+void StartDisplayTask(void const * argument);
+void external_rx_task(void const * argument);
+void external_tx_task(void const * argument);
 void StartRateTask(void const * argument);
 void internal_uart_task(void const * argument);
 
@@ -169,17 +167,9 @@ int main(void)
       }
   }
 
-  SysProperties.bootingWate[0] = FALSE;
-  SysProperties.bootingWate[1] = FALSE;
-  SysProperties.bootingWate[2] = FALSE;
-  SysProperties.bootingWate[3] = FALSE;
+  INIT_SLOT_PROPERTIES(SysProperties.slots, 4);
 
-  SysProperties.slotInsert[0] = FALSE;
-  SysProperties.slotInsert[1] = FALSE;
-  SysProperties.slotInsert[2] = FALSE;
-  SysProperties.slotInsert[3] = FALSE;
-
-  SysProperties.intervalTime.UI32 = 1000;
+  SysProperties.interval_ms = 1000;
   SysProperties.start_flag = FALSE;
 
   read = ReadFlash(FLASH_SAVE_CHK);
@@ -242,14 +232,6 @@ int main(void)
   osThreadDef(myDisplayTask, StartDisplayTask, osPriorityNormal, 0, 128);
   myDisplayTaskHandle = osThreadCreate(osThread(myDisplayTask), NULL);
 
-  /* definition and creation of myRs485Task */
-  osThreadDef(myRs485Task, StartRs485Task, osPriorityBelowNormal, 0, 512);
-  myRs485TaskHandle = osThreadCreate(osThread(myRs485Task), NULL);
-
-  /* definition and creation of SystemTask */
-  osThreadDef(SystemTask, system_task, osPriorityAboveNormal, 0, 256);
-  SystemTaskHandle = osThreadCreate(osThread(SystemTask), NULL);
-
   /* definition and creation of myRateTask */
   osThreadDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512);
   myRateTaskHandle = osThreadCreate(osThread(myRateTask), NULL);
@@ -260,7 +242,17 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-  temperature_measuring_id = osTimerCreate(osTimer(temperature_measuring), osTimerPeriodic, NULL);
+  osThreadDef(ExtTxTask, external_tx_task, osPriorityNormal, 0, 256);
+  ExtTxTaskHandle = osThreadCreate(osThread(ExtTxTask), NULL);
+
+  /* definition and creation of myRs485Task */
+  osThreadDef(ExtRxTask, external_rx_task, osPriorityAboveNormal, 0, 256);
+  ExRxTaskHandle = osThreadCreate(osThread(ExtRxTask), NULL);
+
+  /* definition and creation of SystemTask */
+  osThreadDef(SystemTask, system_task, osPriorityNormal, 0, 256);
+  SystemTaskHandle = osThreadCreate(osThread(SystemTask), NULL);
+
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -1078,20 +1070,11 @@ void vApplicationIdleHook( void )
 {
     static uint32_t elapsed_tick = 0;
 
-    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(500)) {
+    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(400)) {
         elapsed_tick = osKernelSysTick();
         HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
         HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
     }
-
-    /* static uint32_t test_tick = 0; */
-    /* if (osKernelSysTick() - test_tick > osKernelSysTickMicroSec(3000)) { */
-    /*     test_tick = osKernelSysTick(); */
-    /*     send_slot_id_req(0); */
-    /*     /\* send_slot_id_req(1); *\/ */
-    /*     /\* send_slot_id_req(2); *\/ */
-    /*     send_slot_id_req(3); */
-    /* } */
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

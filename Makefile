@@ -91,7 +91,10 @@ Src/stm32f4xx_it.c \
 Src/stm32f4xx_hal_msp.c \
 Src/stm32f4xx_hal_timebase_tim.c
 
+ifeq ($(USE_RTT_FOR_DEBUG), 1)
 C_SOURCES += $(RTT_C_SOURCES)
+endif
+
 C_SOURCES += $(APP_C_SOURCES)
 
 # ASM sources
@@ -163,7 +166,9 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include
 
+ifeq ($(USE_RTT_FOR_DEBUG), 1)
 C_INCLUDES += $(RTT_C_INCLUDES)
+endif
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections

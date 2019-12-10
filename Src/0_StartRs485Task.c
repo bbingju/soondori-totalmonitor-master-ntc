@@ -22,24 +22,26 @@ __PACKED_STRUCT ext_rx_msg_s {
     uint8_t crc[2];
 };
 
-osMailQDef(ext_rx_pool_q, 6, struct ext_rx_msg_s);
+osMailQDef(ext_rx_pool_q, 8, struct ext_rx_msg_s);
 osMailQId (ext_rx_pool_q_id);
 
 
 __PACKED_STRUCT ext_tx_buffer_s {
-    uint8_t raw[180];
+    uint8_t raw[160];
     uint16_t bytes_to_transmit;
 };
 
 osMailQDef(ext_tx_pool_q, 16, struct ext_tx_buffer_s);
 osMailQId (ext_tx_pool_q_id);
 
+int ext_tx_completed;
 
 static int validate_msg(uint8_t *rawdata, uint16_t length)
 {
 
-    if (rawdata[0] == RS_STX && rawdata[length - 1] == RS_ETX)
+    if (rawdata[0] == RS_STX && rawdata[length - 1] == RS_ETX) {
         return 0;
+    }
 
     return -1;
 }
@@ -67,9 +69,6 @@ int push_external_rx(void *data, uint16_t length)
     return 0;
 }
 
-// 함수 내부로 변수를 옮기면 Stack을 차지하면서 문제가 발생하여
-// 크기를 자치하는 모든 Buffer type으 변수는 가급적 전역변수로 설정하였음.
-
 
 uint8_t         rx485DataDMA[256] = { 0 };      //dma 용도
 /* uint8_t         Rx485Data[40] = { 0 };          //parsing 용도 */
@@ -89,20 +88,6 @@ uint8_t 	ReadFileBuf[MAX_485_BUF_LEN];
 //TEST_STATE_STRUCT TestState;
 uint8_t			FindFilelistFlag = 0;		//0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
 
-
-/* void SendUart485String(uint8_t *data, uint16_t length) */
-/* { */
-/*     if(CountingSem485TxHandle != NULL)  //TX */
-/*     { */
-/*         if(osSemaphoreWait(CountingSem485TxHandle, 2000) == osOK) */
-/*         { */
-/*             HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET); */
-/*             osDelay(1); */
-/*             HAL_UART_Transmit_DMA(&UART_RS485_HANDEL, data, length); */
-/* //		    osDelay(7); */
-/*         } */
-/*     } */
-/* } */
 
 void SendUart485NonDma(uint8_t *data, uint16_t length)
 {
@@ -324,35 +309,28 @@ static void handle_rx_msg(struct ext_rx_msg_s *received)
     }
 }
 
-
-/*********************************************************************
-*	Bluetooth Task
-*	블루투스 통신을 위한 모듈 초기화
-*	블루투스 통신으로 들으온 명령들을 파싱
-**********************************************************************/
-void StartRs485Task(void const * argument)
+void external_rx_task(void const * argument)
 {
-	/* USER CODE BEGIN StartBluetooehTask */
+    while (SysProperties.InterfaceStep == STEP_SLOT_ID)
+        osDelay(1);
 
     HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
-    /* Rs485RTxQueue_Init(&Rs485RxQueue);			//블루투스용 rx 버퍼, 서클러큐 구현 */
     HAL_UART_Receive_DMA(&huart1, rx485DataDMA, 32);
-    /* Rs485RxQueue_Clear(&Rs485RxQueue); */
 
-    //Task 부팅 완료 플레그
-    SysProperties.bootingWate[1] = TRUE;
+    /* //Task 부팅 완료 플레그 */
+    /* SysProperties.bootingWate[1] = TRUE; */
 
-    while(1)
-    {
-        if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask,
-            (SysProperties.bootingWate[1] == TRUE) &&   // 1 : StartRs485Task,
-            (SysProperties.bootingWate[2] == TRUE) &&   // 2 : StartSlotUartTask,
-            (SysProperties.bootingWate[3] == TRUE) )    // 3 : StartRateTask
-        {
-            break;
-        }
-        osDelay(100);
-    }
+    /* while(1) */
+    /* { */
+    /*     if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask, */
+    /*         (SysProperties.bootingWate[1] == TRUE) &&   // 1 : StartRs485Task, */
+    /*         (SysProperties.bootingWate[2] == TRUE) &&   // 2 : StartSlotUartTask, */
+    /*         (SysProperties.bootingWate[3] == TRUE) )    // 3 : StartRateTask */
+    /*     { */
+    /*         break; */
+    /*     } */
+    /*     osDelay(100); */
+    /* } */
 
     ext_rx_pool_q_id = osMailCreate(osMailQ(ext_rx_pool_q), NULL);
 
@@ -389,13 +367,15 @@ void StartRs485Task(void const * argument)
     /* USER CODE END StartBluetooehTask */
 }
 
-int ext_tx_completed;
-
 void external_tx_task(void const * arg)
 {
      HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
 
     ext_tx_pool_q_id = osMailCreate(osMailQ(ext_tx_pool_q), NULL);
+    if (!ext_tx_pool_q_id) {
+        DBG_LOG("%s: osMailCreate failed\n", __func__);
+        return;
+    }
 
     while (1) {
         osEvent event = osMailGet(ext_tx_pool_q_id, osWaitForever);
@@ -848,12 +828,13 @@ void DoReadFileList(struct ext_rx_msg_s *msg)
 
 void doSaveIntervalTime(struct ext_rx_msg_s *msg)   //샘플레이트
 {
-    SysProperties.intervalTime.UI8[0] = msg->data[0]; //Rx485Data[ 7];
-    SysProperties.intervalTime.UI8[1] = msg->data[1]; //Rx485Data[ 8];
-    SysProperties.intervalTime.UI8[2] = msg->data[2]; //Rx485Data[ 9];
-    SysProperties.intervalTime.UI8[3] = msg->data[3]; //Rx485Data[10];
+    SysProperties.interval_ms = *((uint32_t *) msg->data);
+    /* SysProperties.intervalTime.UI8[0] = msg->data[0]; //Rx485Data[ 7]; */
+    /* SysProperties.intervalTime.UI8[1] = msg->data[1]; //Rx485Data[ 8]; */
+    /* SysProperties.intervalTime.UI8[2] = msg->data[2]; //Rx485Data[ 9]; */
+    /* SysProperties.intervalTime.UI8[3] = msg->data[3]; //Rx485Data[10]; */
 
-    send_external_response(CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE, &SysProperties.intervalTime.UI8[0], 4, 12, 32);
+    send_external_response(CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE, &SysProperties.interval_ms, 4, 12, 32);
     /* doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE, &SysProperties.intervalTime.UI8[0], 4, 12, 32); */
     /* SendUart485String(tx485DataDMA, 32); */
 }
@@ -862,7 +843,7 @@ void CmdWarningTempSet(struct ext_rx_msg_s *msg)
 {
     struct ext_rx_data_warning_temp_set_s *d = (struct ext_rx_data_warning_temp_set_s *)&msg->data;
 
-    if (SysProperties.slotInsert[d->slot_id] == FALSE)
+    if (!SysProperties.slots[d->slot_id].inserted)
         return;
 
     DBG_LOG("%s - slot %d, channel %d, temperature ", __func__, d->slot_id, d->channel);

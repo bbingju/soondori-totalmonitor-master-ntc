@@ -97,9 +97,8 @@ static int bytes_to_request(uint8_t cmd)
 
 int send_internal_req(uint8_t id, uint8_t cmd, void *data, uint16_t length)
 {
-    /* if (length > 134 || id > 3) { */
-    /*     return -1; */
-    /* } */
+    if (SysProperties.InterfaceStep == STEP_SLOT_ID)
+        return -1;
 
     struct internal_msg_s *obj;
     obj = (struct internal_msg_s *) osMailAlloc(internal_pool_q_id, osWaitForever);
@@ -185,11 +184,11 @@ static const char* cmd_str(uint8_t cmd)
 
 static void handle_resp(struct internal_rx_msg_s *received)
 {
-    if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) {
-    DBG_LOG("int rx [%d] %s - (%d) ",
-            received->id, cmd_str(received->type), received->length);
-    DBG_DUMP(received->data, received->length);
-    }
+    /* if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) { */
+    /* DBG_LOG("int rx [%d] %s - (%d) ", */
+    /*         received->id, cmd_str(received->type), received->length); */
+    /* DBG_DUMP(received->data, received->length); */
+    /* } */
 
     switch (received->type) {
     case CMD_BOARD_TYPE:
@@ -202,7 +201,7 @@ static void handle_resp(struct internal_rx_msg_s *received)
     case CMD_SLOT_ID_REQ:
         noReturnSendCt = 0;
         if (SendSlotNumber == received->id) {
-            SysProperties.slotInsert[received->id] = TRUE;
+            SysProperties.slots[received->id].inserted = TRUE;
             DoIncSlotIdStep(SendSlotNumber);
         }
         break;
@@ -269,11 +268,11 @@ static void handle_req(struct internal_msg_s *obj)
                        req->data, req->length, SEND_DATA_LENGTH);
     noReturnSendCt++;
 
-    if (req->cmd == CMD_THRESHOLD_SET || req->cmd == CMD_THRESHOLD_REQ) {
-        DBG_LOG("int tx [%d] %s: (%d) ",
-                req->id, cmd_str(req->cmd), req->length);
-        DBG_DUMP(req->data, req->length);
-    }
+    /* if (req->cmd == CMD_THRESHOLD_SET || req->cmd == CMD_THRESHOLD_REQ) { */
+    /*     DBG_LOG("int tx [%d] %s: (%d) ", */
+    /*             req->id, cmd_str(req->cmd), req->length); */
+    /*     DBG_DUMP(req->data, req->length); */
+    /* } */
 
     int_tx_completed = 0;
     HAL_UART_Transmit_DMA(&huart2, buf, SEND_DATA_LENGTH);
@@ -310,6 +309,9 @@ void internal_uart_task(void const *arg)
 {
     internal_pool_q_id = osMailCreate(osMailQ(internal_pool_q), NULL);
 
+    while (SysProperties.InterfaceStep == STEP_SLOT_ID)
+        osDelay(1);
+
     while (1) {
         osEvent event = osMailGet(internal_pool_q_id, osWaitForever);
         struct internal_msg_s *obj = (struct internal_msg_s *) event.value.p;
@@ -320,8 +322,8 @@ void internal_uart_task(void const *arg)
 
 static void DoAnsBoardType(struct internal_rx_msg_s *msg)
 {
-  if (msg)
-    SysProperties.slotType[msg->id] = msg->data[0];
+    if (msg)
+        SysProperties.slots[msg->id].type = msg->data[0];
 }
 
 void send_slot_id_req(uint8_t id)

@@ -12,7 +12,7 @@
 
 #include "0_GlobalDefine.h"
 #include "0_GlobalValue.h"
-#include "0_soonQueue.h"
+/* #include "0_soonQueue.h" */
 
 #define RS_READ_SIZE            			(32)
 
