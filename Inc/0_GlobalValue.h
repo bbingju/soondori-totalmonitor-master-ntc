@@ -50,18 +50,18 @@ extern osSemaphoreId CountingSem485TxHandle;
 extern osSemaphoreId CountingSemSlaveRxHandle;
 
 typedef __PACKED_UNION {
-        float           Float;
-        uint32_t        UI32;
-        uint16_t        UI16[2];
-        uint8_t         UI8[4];
-        int16_t         SI16[2];
-        int8_t          SIi8[4];
-}uni4Byte;
+    float Float;
+    uint32_t UI32;
+    uint16_t UI16[2];
+    uint8_t UI8[4];
+    int16_t SI16[2];
+    int8_t SIi8[4];
+} uni4Byte;
 
 typedef __PACKED_UNION {
-        uint16_t        UI16;
-        uint8_t         UI8[2];
-}uni2Byte;
+    uint16_t UI16;
+    uint8_t UI8[2];
+} uni2Byte;
 
 /*********************************************************************
 *       Test Data
@@ -102,28 +102,32 @@ typedef enum {
     LDM_DONOT_CONNECT               //센서 없음
 } LED_DIPLAY_MODE;
 
-
-typedef __PACKED_STRUCT
-{
-    uni4Byte  mainBoard[4];        // MAINBOARDSENSOR 사용 해서 선택
-    uint32_t  mainBoardADC[4];     // main board 내부 센서 adc 값
-    /* float                        temperature[4][32];                     // adc 완료후 온도값으로 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널 */
-    uni4Byte  temperature[4][32];  // adc 완료후 온도값으로 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널
-    uni4Byte  adcMidValue[4][32];                     // 컨버팅 완료된 ADC 값중 중간 값,  0 : 피대상물 온도, 1 : 환경온도, 0~15채널
-    uni4Byte  threshold[4][32];                       // 경고 온도 저장
-    LED_DIPLAY_MODE sensorState[4][32];                     // 센서 상태 저장용
-    uni4Byte  ntcCalibrationTable[4][32];     // NTC 교정상수 테이블, RTD - NTC 로 계산되는 상수
-    uni4Byte  rtdCalibrationConst;            // RTD 교정상수
-    uni4Byte  ntcCalibrationConst;            // NTC 증감 상수, NTC board 에서 NTC + ntcCalibration + ntcCalibrationConst 해서 NTC 값이 생성됨
-    uint8_t   revisionApply[4];                       // 보정 적용 상태, 1: 표면온도모드(보정 적용) 0 : 측정온도 모드(보정 미적용)
-    uni4Byte  revisionConstant[4];            // 보정용 접촉상수 저장
+typedef __PACKED_STRUCT {
+    uni4Byte mainBoard[4];    // MAINBOARDSENSOR 사용 해서 선택
+    uint32_t mainBoardADC[4]; // main board 내부 센서 adc 값
+    /* float   temperature[4][32]; // adc 완료후 온도값으로
+     * 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널 */
+    uni4Byte temperature[4][32]; // adc 완료후 온도값으로 환산된 값, 0 :
+                                 // 피대상물 온도, 1 : 환경온도 , 0~15채널
+    uni4Byte adcMidValue[4][32]; // 컨버팅 완료된 ADC 값중 중간 값,  0 :
+                                 // 피대상물 온도, 1 : 환경온도, 0~15채널
+    uni4Byte threshold[4][32];          // 경고 온도 저장
+    LED_DIPLAY_MODE sensorState[4][32]; // 센서 상태 저장용
+    uni4Byte ntcCalibrationTable[4][32]; // NTC 교정상수 테이블, RTD - NTC 로
+                                         // 계산되는 상수
+    uni4Byte rtdCalibrationConst; // RTD 교정상수
+    uni4Byte ntcCalibrationConst; // NTC 증감 상수, NTC board 에서 NTC +
+                                  // ntcCalibration + ntcCalibrationConst 해서
+                                  // NTC 값이 생성됨
+    uint8_t revisionApply[4]; // 보정 적용 상태, 1: 표면온도모드(보정 적용) 0 :
+                              // 측정온도 모드(보정 미적용)
+    uni4Byte revisionConstant[4]; // 보정용 접촉상수 저장
 } TEST_DATA;
 
 extern TEST_DATA TestData;
 
-typedef struct
-{
-    uint8_t readTemp;           //응답이 왔는지 확인 하는 플래그
+typedef struct {
+    uint8_t readTemp; //응답이 왔는지 확인 하는 플래그
 } UPDATA_FLAG;
 
 extern UPDATA_FLAG Updata_Flag;
@@ -140,9 +144,9 @@ typedef enum {
 } DISPLAYMODE;
 
 struct slot_properties_s {
-    uint8_t          id;
-    bool             inserted;
-    SENSORBOARDTYPE  type;
+    uint8_t id;
+    bool inserted;
+    SENSORBOARDTYPE type;
 };
 
 #define INIT_SLOT_PROPERTIES(s, n) do {                 \
@@ -152,135 +156,82 @@ struct slot_properties_s {
             p->inserted = false; }                      \
     } while (0)
 
-
 typedef struct {
     /* DISPLAYMODE 사용해서 선택,
        NORMAL MODE 에서는 -, \, |, / 을 순차적으로 표시 한다.
        SETTING MODE 에서는 설정 값들을 변경 한다. */
-    DISPLAYMODE   displayMode;
+    DISPLAYMODE displayMode;
 
     /* 초기화 단계 표시용 */
-    uint8_t        InterfaceStep;
+    uint8_t InterfaceStep;
 
     /* sample rate 를 만들기 위한 task delay time 설정 */
-    uint32_t       interval_ms;
+    uint32_t interval_ms;
 
     /* 온도 실시간 감시 플레 */
-    uint8_t        start_flag;
+    uint8_t start_flag;
 
-    uni4Byte       mcuUUID[3];    // MCU UUID
-    uint8_t        smpsState;     // smps 신호 확인
+    uni4Byte mcuUUID[3]; // MCU UUID
+    uint8_t smpsState;   // smps 신호 확인
 
     struct slot_properties_s slots[4];
 } SYSTEM_STRUCT;
 
 extern SYSTEM_STRUCT SysProperties;
 
-
-
-typedef struct
-{
+typedef struct {
     RTC_DateTypeDef Date;
     RTC_TimeTypeDef Time;
-}SYSTEM_TIME;
-extern SYSTEM_TIME  SysTime;
-
+} SYSTEM_TIME;
+extern SYSTEM_TIME SysTime;
 
 /*********************************************************************
 *       Button 처리용
 **********************************************************************/
-typedef enum {
-        BTN_NORMAL = 0,
-        BTN_FALLING,
-        BTN_ENTERED
-}BUTTONMODE;
-
-/*********************************************************************
-*               RS485
-**********************************************************************/
-/* typedef struct */
-/* { */
-/*         uint16_t        size; */
-/*         uint16_t        head; */
-/*         uint16_t        tail; */
-/*         uint16_t        count; */
-/*         uint8_t   ar[RS_485_TX_BUF_MAX]; */
-/* }RS_485_TX_QUEUE_STRUCT; */
-/* extern RS_485_TX_QUEUE_STRUCT Rs485TxQueue; */
-
-/* typedef struct */
-/* { */
-/*         uint16_t        size; */
-/*         uint16_t        head; */
-/*         uint16_t        tail; */
-/*         uint16_t        count; */
-/*         uint8_t   ar[RS_485_RX_BUF_MAX]; */
-/* }RS_485_RX_QUEUE_STRUCT; */
-/* extern RS_485_RX_QUEUE_STRUCT Rs485RxQueue; */
-
-/* typedef struct */
-/* { */
-/*         uint16_t        size; */
-/*         uint16_t        head; */
-/*         uint16_t        tail; */
-/*         uint16_t        count; */
-/*         uint8_t   ar[UART_TX_BUF_MAX]; */
-/* }TX_QUEUE_STRUCT; */
-/* extern TX_QUEUE_STRUCT TxQueue; */
-
-/* typedef struct */
-/* { */
-/*         uint16_t        size; */
-/*         uint16_t        head; */
-/*         uint16_t        tail; */
-/*         uint16_t        count; */
-/*         uint8_t   ar[UART_RX_BUF_MAX]; */
-/* }RX_QUEUE_STRUCT; */
-/* extern RX_QUEUE_STRUCT RxQueue; */
+typedef enum { BTN_NORMAL = 0, BTN_FALLING, BTN_ENTERED } BUTTONMODE;
 
 //////////////////////////////////////////////////////////////////
 //      SD CARD
 //////////////////////////////////////////////////////////////////
 typedef enum {
-        SCS_OK = 0,
-        SCS_LINK_ERROR,
-        SCS_MOUNT_ERROR,
-        SCS_MKDIR_ERROR,
-        SCS_OPEN_ERROR,
-        SCS_SEEK_ERROR,
-        SCS_READ_ERROR,
-        SCS_SYNC_ERROR,
-        SCS_WRITE_ERROR,
-        SCS_CLOSE_ERROR,
-        SCS_READDIR_ERROR,
-        SCS_OPENDIR_ERROR,
-        SCS_DISK_FULL
-}SD_CARD_STATE;
+    SCS_OK = 0,
+    SCS_LINK_ERROR,
+    SCS_MOUNT_ERROR,
+    SCS_MKDIR_ERROR,
+    SCS_OPEN_ERROR,
+    SCS_SEEK_ERROR,
+    SCS_READ_ERROR,
+    SCS_SYNC_ERROR,
+    SCS_WRITE_ERROR,
+    SCS_CLOSE_ERROR,
+    SCS_READDIR_ERROR,
+    SCS_OPENDIR_ERROR,
+    SCS_DISK_FULL
+} SD_CARD_STATE;
 
-typedef struct
-{
-    FATFS           sdFatFs;
-    const TCHAR*    path;
-    FIL             fileObject; // File object
-    TCHAR           loadFileName[40];
-    char            diskPath[4]; // User logical drive path
-    SD_CARD_STATE   sdState;     // 에러 체크용
-    SD_CARD_STATE   sdMountState;
-    FILINFO         fno;        // 파일 정보 리턴용
+typedef struct {
+    FATFS sdFatFs;
+    const TCHAR *path;
+    FIL fileObject; // File object
+    TCHAR loadFileName[40];
+    char diskPath[4];      // User logical drive path
+    SD_CARD_STATE sdState; // 에러 체크용
+    SD_CARD_STATE sdMountState;
+    FILINFO fno; // 파일 정보 리턴용
 
-    DIR             scanDir[5]; // 파일 리스트 전송용
-    FIL             sendFileObject;
-    uint8_t         scanDirDeep;
-    uint8_t         scanFilePath[50];
-    uint32_t        scanFileListCount;
-    uint8_t         scanReadFileName[50];
+    DIR scanDir[5]; // 파일 리스트 전송용
+    FIL sendFileObject;
+    uint8_t scanDirDeep;
+    uint8_t scanFilePath[50];
+    uint32_t scanFileListCount;
+    uint8_t scanReadFileName[50];
 
-    uint8_t         sendFileName[50]; // 파일 다운로드용
-    uint8_t         sendFileNameLen;
+    uint8_t sendFileName[50]; // 파일 다운로드용
+    uint8_t sendFileNameLen;
 
-    //uint8_t       errorState;             // 에러 체크용
-}SD_CARD_VALUE;
-extern SD_CARD_VALUE    sdValue;
+    // uint8_t       errorState;             // 에러 체크용
+} SD_CARD_VALUE;
+extern SD_CARD_VALUE sdValue;
 
 extern uint8_t   FindFilelistFlag;               //0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
 

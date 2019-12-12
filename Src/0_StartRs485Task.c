@@ -630,51 +630,57 @@ void DoSendFileOpen(struct ext_rx_msg_s *msg)
 {
     uint8_t t[1] = {0};
     FRESULT res = FR_OK;
-    uint8_t	fileNameLen = 0;
+    uint8_t fileNameLen = 0;
     FILINFO fno;
 
     memset(sdValue.sendFileName, 0x00, sizeof(sdValue.sendFileName));
     sdValue.sendFileName[0] = '0';
     sdValue.sendFileName[1] = ':';
 
-    for(sdValue.sendFileNameLen = 0; sdValue.sendFileNameLen < 22; sdValue.sendFileNameLen++)
-    {
-        if(msg->data[/* Rx485Data[7 +  */sdValue.sendFileNameLen] == '>') break;
+    for (sdValue.sendFileNameLen = 0; sdValue.sendFileNameLen < 22;
+         sdValue.sendFileNameLen++) {
+        if (msg->data[/* Rx485Data[7 +  */ sdValue.sendFileNameLen] == '>')
+            break;
 
-        sdValue.sendFileName[13 + sdValue.sendFileNameLen] = msg->data[/* Rx485Data[7 + */ sdValue.sendFileNameLen];
+        sdValue.sendFileName[13 + sdValue.sendFileNameLen] =
+            msg->data[/* Rx485Data[7 + */ sdValue.sendFileNameLen];
     }
-    sdValue.sendFileName[ 2] = '/';
-    sdValue.sendFileName[ 3] = '2';
-    sdValue.sendFileName[ 4] = '0';
-    sdValue.sendFileName[ 5] = sdValue.sendFileName[14];
-    sdValue.sendFileName[ 6] = sdValue.sendFileName[15];
-    sdValue.sendFileName[ 7] = '/';
-    sdValue.sendFileName[ 8] = sdValue.sendFileName[16];
-    sdValue.sendFileName[ 9] = sdValue.sendFileName[17];
+    sdValue.sendFileName[2] = '/';
+    sdValue.sendFileName[3] = '2';
+    sdValue.sendFileName[4] = '0';
+    sdValue.sendFileName[5] = sdValue.sendFileName[14];
+    sdValue.sendFileName[6] = sdValue.sendFileName[15];
+    sdValue.sendFileName[7] = '/';
+    sdValue.sendFileName[8] = sdValue.sendFileName[16];
+    sdValue.sendFileName[9] = sdValue.sendFileName[17];
     sdValue.sendFileName[10] = '/';
     sdValue.sendFileName[11] = sdValue.sendFileName[18];
     sdValue.sendFileName[12] = sdValue.sendFileName[19];
 
-    res = f_stat((const TCHAR*)sdValue.sendFileName, &fno);
+    res = f_stat((const TCHAR *)sdValue.sendFileName, &fno);
 
     /* if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
     /*     osSemaphoreRelease(CountingSem485TxHandle); */
 
-    if(res == FR_OK){
-        res = f_open(&sdValue.sendFileObject, sdValue.sendFileName, FA_OPEN_EXISTING | FA_READ);
-        if(res == FR_OK)	//파일 정상 오픈
+    if (res == FR_OK) {
+        res = f_open(&sdValue.sendFileObject, sdValue.sendFileName,
+                     FA_OPEN_EXISTING | FA_READ);
+        if (res == FR_OK) //파일 정상 오픈
         {
             sdValue.sdState = SCS_OK;
-            send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_HEADER, sdValue.sendFileName, fileNameLen, 36, 56);
-            /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_DOWNLOAD_HEADER, sdValue.sendFileName, fileNameLen, 36, 56); */
+            send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_HEADER,
+                                   sdValue.sendFileName, fileNameLen, 36, 56);
+            /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD,
+             * OP_SDCARD_DOWNLOAD_HEADER, sdValue.sendFileName, fileNameLen, 36,
+             * 56); */
             /* SendUart485String(tx485DataDMA, 56); */
-        }
-        else		//파일 오픈 에러
+        } else //파일 오픈 에러
         {
             sdValue.sdState = SCS_OPEN_ERROR;
             t[0] = SCS_OPEN_ERROR;
             send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-            /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32); */
+            /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t,
+             * 1, 12, 32); */
             /* SendUart485String(tx485DataDMA, 32); */
         }
     }
@@ -690,44 +696,48 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
     /* if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
     /*     osSemaphoreRelease(CountingSem485TxHandle); */
 
-    do{
+    do {
         memset(ReadFileBuf, 0x00, sizeof(ReadFileBuf));
         temp.UI32 = Offset + (packetSize * i);
         ReadFileBuf[0] = temp.UI8[0];
         ReadFileBuf[1] = temp.UI8[1];
         ReadFileBuf[2] = temp.UI8[2];
         ReadFileBuf[3] = temp.UI8[3];
-        //util_mem_cpy(&ReadFileBuf[0], &temp.UI8[0], 4);
+        // util_mem_cpy(&ReadFileBuf[0], &temp.UI8[0], 4);
         temp.UI32 = Offset + (packetSize * (i + 1));
         ReadFileBuf[4] = temp.UI8[0];
         ReadFileBuf[5] = temp.UI8[1];
         ReadFileBuf[6] = temp.UI8[2];
         ReadFileBuf[7] = temp.UI8[3];
-        //util_mem_cpy(&ReadFileBuf[4], &temp.UI8[0], 4);
+        // util_mem_cpy(&ReadFileBuf[4], &temp.UI8[0], 4);
 
-        ReadSize = DoSendFileRead(Offset + (packetSize * i), packetSize );
-        send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY, &ReadFileBuf[0], ReadSize + 8, packetSize + 8, packetSize + 8 + 20);
-        /* doMakeSend485DataDownLoad(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY, &ReadFileBuf[0], ReadSize + 8, packetSize + 8, packetSize + 8 + 20); */
+        ReadSize = DoSendFileRead(Offset + (packetSize * i), packetSize);
+        send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY,
+                               &ReadFileBuf[0], ReadSize + 8, packetSize + 8,
+                               packetSize + 8 + 20);
+        /* doMakeSend485DataDownLoad(tx485DataDMA, CMD_SD_CARD,
+         * OP_SDCARD_DOWNLOAD_BADY, &ReadFileBuf[0], ReadSize + 8, packetSize +
+         * 8, packetSize + 8 + 20); */
         /* SendUart485String(&tx485DataDMA[0], packetSize + 8 + 20); */
 
-/*		uint16_t len = (packetSize + 8 + 20);
-		uint16_t ct  = (len / 32);
+        /*		uint16_t len = (packetSize + 8 + 20);
+                        uint16_t ct  = (len / 32);
 
-		for(int j = 0; j < ct; j++)
-		{
-                SendUart485String(&tx485DataDMA[j * 32], 32);
-                len -= 32;
-		}
-		osDelay(1);
-		SendUart485String(&tx485DataDMA[j * 32], len);
-*/
-        if(packetSize != ReadSize)	//마지막 페킷
+                        for(int j = 0; j < ct; j++)
+                        {
+                        SendUart485String(&tx485DataDMA[j * 32], 32);
+                        len -= 32;
+                        }
+                        osDelay(1);
+                        SendUart485String(&tx485DataDMA[j * 32], len);
+        */
+        if (packetSize != ReadSize) //마지막 페킷
         {
             osDelay(1);
             break;
         }
         i++;
-    }while(1);
+    } while (1);
 
     osDelay(1);
 }
@@ -738,19 +748,23 @@ void DoSendFileClose(void)
     uint8_t t[1] = {0};
 
     res = f_close(&sdValue.sendFileObject);
-    if(res == FR_OK)	//파일 정상으로 닫힘
+    if (res == FR_OK) //파일 정상으로 닫힘
     {
         sdValue.sdState = SCS_OK;
-        send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER, sdValue.sendFileName, sdValue.sendFileNameLen, 36, 56);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER, sdValue.sendFileName, sdValue.sendFileNameLen, 36, 56); */
+        send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER,
+                               sdValue.sendFileName, sdValue.sendFileNameLen,
+                               36, 56);
+        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD,
+         * OP_SDCARD_DOWNLOAD_FOOTER, sdValue.sendFileName,
+         * sdValue.sendFileNameLen, 36, 56); */
         /* SendUart485String(tx485DataDMA, 56); */
-    }
-    else		//파일 닫기 에러
+    } else //파일 닫기 에러
     {
         sdValue.sdState = SCS_CLOSE_ERROR;
         t[0] = SCS_CLOSE_ERROR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32); */
+        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
+         * 12, 32); */
         /* SendUart485String(tx485DataDMA, 32); */
     }
 }
@@ -762,22 +776,22 @@ int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
     uint8_t t[1] = {0};
 
     res = f_lseek(&sdValue.sendFileObject, Offset);
-    if(res != FR_OK)
-    {
+    if (res != FR_OK) {
         sdValue.sdState = SCS_OK;
         t[0] = SCS_SEEK_ERROR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32); */
+        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
+         * 12, 32); */
         /* SendUart485String(tx485DataDMA, 32); */
     }
 
     res = f_read(&sdValue.sendFileObject, &ReadFileBuf[8], ReadSize, &br);
-    if(res != FR_OK)
-    {
+    if (res != FR_OK) {
         sdValue.sdState = SCS_READ_ERROR;
         t[0] = SCS_READ_ERROR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32); */
+        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
+         * 12, 32); */
         /* SendUart485String(tx485DataDMA, 32); */
     }
 
@@ -786,11 +800,12 @@ int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
 
 void DoReadFileList(struct ext_rx_msg_s *msg)
 {
-    uint8_t	t[1] = {0};
-    TCHAR 	root_directory[3] = "0:";
+    uint8_t t[1] = {0};
+    TCHAR root_directory[3] = "0:";
 
     send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0, 12, 32);
-    /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0, 12, 32); */
+    /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0,
+     * 12, 32); */
     /* SendUart485String(tx485DataDMA, 32); */
 
     memset(&sdValue.scanDir[0], 0x00, sizeof(sdValue.scanDir));
@@ -799,56 +814,60 @@ void DoReadFileList(struct ext_rx_msg_s *msg)
     memset(&sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
     osDelay(1);
 
-    if (msg->data[0]/* Rx485Data[7] == '.' */)	//루트를 요청 했을 경우
+    if (msg->data[0] /* Rx485Data[7] == '.' */) //루트를 요청 했을 경우
     {
         osDelay(1);
         scan_files(root_directory);
-    }
-    else	//경로 지정 했을 경우
+    } else //경로 지정 했을 경우
     {
-        memset(&sdValue.scanReadFileName[0], 0x00, sizeof(sdValue.scanReadFileName));
+        memset(&sdValue.scanReadFileName[0], 0x00,
+               sizeof(sdValue.scanReadFileName));
         sdValue.scanReadFileName[0] = '0';
         sdValue.scanReadFileName[1] = ':';
 
-        for (int i = 0; i < 22; i++)
-        {
-            if (msg->data[/* Rx485Data[7 + */ i] == '>') break;
+        for (int i = 0; i < 22; i++) {
+            if (msg->data[/* Rx485Data[7 + */ i] == '>')
+                break;
 
             sdValue.scanReadFileName[2 + i] = msg->data[/* Rx485Data[7 + */ i];
         }
 
-        while(scan_files((char*)sdValue.scanReadFileName) != FR_OK)
-        {
+        while (scan_files((char *)sdValue.scanReadFileName) != FR_OK) {
             osDelay(1);
         }
     }
 
     send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_END, t, 0, 12, 32);
-    /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_END, t, 0, 12, 32); */
+    /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_END, t, 0,
+     * 12, 32); */
     /* SendUart485String(tx485DataDMA, 32); */
 }
 
-void doSaveIntervalTime(struct ext_rx_msg_s *msg)   //샘플레이트
+void doSaveIntervalTime(struct ext_rx_msg_s *msg) //샘플레이트
 {
-    SysProperties.interval_ms = *((uint32_t *) msg->data);
+    SysProperties.interval_ms = *((uint32_t *)msg->data);
     /* SysProperties.intervalTime.UI8[0] = msg->data[0]; //Rx485Data[ 7]; */
     /* SysProperties.intervalTime.UI8[1] = msg->data[1]; //Rx485Data[ 8]; */
     /* SysProperties.intervalTime.UI8[2] = msg->data[2]; //Rx485Data[ 9]; */
     /* SysProperties.intervalTime.UI8[3] = msg->data[3]; //Rx485Data[10]; */
 
-    send_external_response(CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE, &SysProperties.interval_ms, 4, 12, 32);
-    /* doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE, &SysProperties.intervalTime.UI8[0], 4, 12, 32); */
+    send_external_response(CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE,
+                           &SysProperties.interval_ms, 4, 12, 32);
+    /* doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE,
+     * &SysProperties.intervalTime.UI8[0], 4, 12, 32); */
     /* SendUart485String(tx485DataDMA, 32); */
 }
 
 void CmdWarningTempSet(struct ext_rx_msg_s *msg)
 {
-    struct ext_rx_data_warning_temp_set_s *d = (struct ext_rx_data_warning_temp_set_s *)&msg->data;
+    struct ext_rx_data_warning_temp_set_s *d =
+        (struct ext_rx_data_warning_temp_set_s *)&msg->data;
 
     if (!SysProperties.slots[d->slot_id].inserted)
         return;
 
-    DBG_LOG("%s - slot %d, channel %d, temperature ", __func__, d->slot_id, d->channel);
+    DBG_LOG("%s - slot %d, channel %d, temperature ", __func__, d->slot_id,
+            d->channel);
     DBG_DUMP(&d->temperature, 4);
 
     send_internal_req(d->slot_id, CMD_THRESHOLD_SET, msg->data + 1, 5);
@@ -889,42 +908,45 @@ void CmdRevisionConstantReq(struct ext_rx_msg_s *msg)
 
 void CmdCalibrationRTDConstSet(struct ext_rx_msg_s *msg)
 {
-    uni4Byte 	readConst;
-    uint8_t		i = 0;
+    uni4Byte readConst;
+    uint8_t i = 0;
 
-    TestData.rtdCalibrationConst.UI8[0] = msg->data[0]; //Rx485Data[ 7];
-    TestData.rtdCalibrationConst.UI8[1] = msg->data[1]; //Rx485Data[ 8];
-    TestData.rtdCalibrationConst.UI8[2] = msg->data[2]; //Rx485Data[ 9];
-    TestData.rtdCalibrationConst.UI8[3] = msg->data[3]; //Rx485Data[10];
+    TestData.rtdCalibrationConst.UI8[0] = msg->data[0]; // Rx485Data[ 7];
+    TestData.rtdCalibrationConst.UI8[1] = msg->data[1]; // Rx485Data[ 8];
+    TestData.rtdCalibrationConst.UI8[2] = msg->data[2]; // Rx485Data[ 9];
+    TestData.rtdCalibrationConst.UI8[3] = msg->data[3]; // Rx485Data[10];
 
     readConst.UI32 = ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
 
-    if(TestData.rtdCalibrationConst.Float != readConst.Float)
-    {
-        do{
+    if (TestData.rtdCalibrationConst.Float != readConst.Float) {
+        do {
             doFlashWriteRevision();
             readConst.UI32 = ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
             i++;
-            if(i > 10)
+            if (i > 10)
                 break;
-        }while(TestData.rtdCalibrationConst.Float != readConst.Float);
+        } while (TestData.rtdCalibrationConst.Float != readConst.Float);
     }
 
     if (1 > 10) {
         i = 0xFF;
-        send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &i, 1, 12, 32);
+        send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
+                               &i, 1, 12, 32);
     } else {
-        send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &readConst.UI8[0], 4, 12, 32);
+        send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
+                               &readConst.UI8[0], 4, 12, 32);
     }
 
     /* if(i > 10)		//기록 실패 */
     /* { */
     /*     i = 0xFF; */
-    /*     doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &i, 1, 12, 32); */
+    /*     doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION,
+     * OP_CALIBRATION_RTD_CONSTANT_SET, &i, 1, 12, 32); */
     /* } */
     /* else			//기록 성공 */
     /* { */
-    /*     doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &readConst.UI8[0], 4, 12, 32); */
+    /*     doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION,
+     * OP_CALIBRATION_RTD_CONSTANT_SET, &readConst.UI8[0], 4, 12, 32); */
     /* } */
     /* SendUart485String(tx485DataDMA, 32); */
 }
@@ -968,34 +990,32 @@ void CmdCalibrationNTCConstantReq(struct ext_rx_msg_s *msg)
 
 void doSetTime(struct ext_rx_msg_s *msg)
 {
-//    uint8_t i = 0;
+    //    uint8_t i = 0;
     uint8_t res = TRUE;
     HAL_StatusTypeDef resHal;
     RTC_DateTypeDef setDate, getDate;
     RTC_TimeTypeDef setTime, getTime;
 
-    setDate.Year    = msg->data[0]; //Rx485Data[7];
-    setDate.Month   = msg->data[1]; //Rx485Data[8];
-    setDate.Date    = msg->data[2]; //Rx485Data[9];
-    setDate.WeekDay = msg->data[6]; //Rx485Data[13];
-    setTime.Hours   = msg->data[3]; //Rx485Data[10];
-    setTime.Minutes = msg->data[4]; //Rx485Data[11];
-    setTime.Seconds = msg->data[5]; //Rx485Data[12];
+    setDate.Year = msg->data[0];    // Rx485Data[7];
+    setDate.Month = msg->data[1];   // Rx485Data[8];
+    setDate.Date = msg->data[2];    // Rx485Data[9];
+    setDate.WeekDay = msg->data[6]; // Rx485Data[13];
+    setTime.Hours = msg->data[3];   // Rx485Data[10];
+    setTime.Minutes = msg->data[4]; // Rx485Data[11];
+    setTime.Seconds = msg->data[5]; // Rx485Data[12];
     setTime.TimeFormat = RTC_HOURFORMAT12_AM;
     setTime.StoreOperation = RTC_STOREOPERATION_RESET;
 
-    do{
-        while (1)
-        {
+    do {
+        while (1) {
             resHal = HAL_RTC_SetTime(&hrtc, &setTime, RTC_FORMAT_BIN);
-            if(resHal == HAL_OK)
+            if (resHal == HAL_OK)
                 break;
             osDelay(1);
         }
-        while(1)
-        {
+        while (1) {
             resHal = HAL_RTC_SetDate(&hrtc, &setDate, RTC_FORMAT_BIN);
-            if(resHal == HAL_OK)
+            if (resHal == HAL_OK)
                 break;
             osDelay(1);
         }
@@ -1010,15 +1030,19 @@ void doSetTime(struct ext_rx_msg_s *msg)
           break;
           }*/
 
-        if( (setDate.Year  == getDate.Year)  && (setDate.Month   == getDate.Month)   && (setDate.Date    == getDate.Date)   &&
-            (setTime.Hours == getTime.Hours) && (setTime.Minutes == getTime.Minutes) && (setTime.Seconds == getTime.Seconds)  )
-        {
+        if ((setDate.Year == getDate.Year) &&
+            (setDate.Month == getDate.Month) &&
+            (setDate.Date == getDate.Date) &&
+            (setTime.Hours == getTime.Hours) &&
+            (setTime.Minutes == getTime.Minutes) &&
+            (setTime.Seconds == getTime.Seconds)) {
             break;
         }
-    }while(1);
+    } while (1);
 
     send_external_response(CMD_TIME, OP_TIME_SET, &res, 1, 12, 32);
-    /* doMakeSend485Data(tx485DataDMA, CMD_TIME, OP_TIME_SET, &res, 1, 12, 32); */
+    /* doMakeSend485Data(tx485DataDMA, CMD_TIME, OP_TIME_SET, &res, 1, 12, 32);
+     */
     /* SendUart485String(tx485DataDMA, 32); */
 }
 
@@ -1027,6 +1051,7 @@ void doGetTime(struct ext_rx_msg_s *msg)
     uint8_t res = 0;
 
     send_external_response(CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32);
-    /* doMakeSend485Data(tx485DataDMA, CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32); */
+    /* doMakeSend485Data(tx485DataDMA, CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32);
+     */
     /* SendUart485String(tx485DataDMA, 32); */
 }
