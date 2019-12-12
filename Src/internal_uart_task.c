@@ -283,8 +283,15 @@ static void handle_req(struct internal_msg_s *obj)
         };
         int_rx_completed = 0;
         HAL_UART_Receive_DMA(&huart2, recv_buffer, req->rx_dma_req_bytes);
+
+        uint32_t old_tick = osKernelSysTick();
         while (int_rx_completed == 0) {
             __NOP();
+            if (osKernelSysTick() - old_tick > 100) {
+                DBG_LOG("int rx: %d slot %s is not responsed\n",
+                        req->id, cmd_str(req->cmd));
+                return;
+            }
         };
 
         memcpy(buf, recv_buffer, req->rx_dma_req_bytes);

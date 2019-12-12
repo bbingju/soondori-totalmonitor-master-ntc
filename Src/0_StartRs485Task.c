@@ -34,7 +34,7 @@ __PACKED_STRUCT ext_tx_buffer_s {
     uint16_t bytes_to_transmit;
 };
 
-osMailQDef(ext_tx_pool_q, 16, struct ext_tx_buffer_s);
+osMailQDef(ext_tx_pool_q, 18, struct ext_tx_buffer_s);
 osMailQId (ext_tx_pool_q_id);
 
 int ext_tx_completed;

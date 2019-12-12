@@ -65,7 +65,7 @@ void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
             uint32_t old_tick = osKernelSysTick();
             while (int_rx_completed == 0) {
                 __NOP();
-                if (osKernelSysTick() - old_tick > 50)
+                if (osKernelSysTick() - old_tick > 100)
                     break;
             };
 

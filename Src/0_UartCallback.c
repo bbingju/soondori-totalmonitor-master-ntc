@@ -9,9 +9,6 @@
 *	응답을 받아서 처리 하기 힘듬 
 **********************************************************************/
 
-/* extern struct internal_tx_msg_s *tx_received; */
-/* extern osMailQId (internal_tx_pool_q_id); */
-
 extern int ext_tx_completed;
 extern int int_tx_completed;
 extern int int_rx_completed;
@@ -20,20 +17,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
     if(huart->Instance == USART2)       //Slot Interface & Bluetooth
     {
-        /* internal_rx_msg_push(huart->pRxBuffPtr, huart->RxXferSize); */
-        /* if (tx_received) { */
-        /*     osMailFree(internal_tx_pool_q_id, tx_received); */
-        /*     tx_received = NULL; */
-        /* } */
-
-        /* push_internal_resp(huart->pRxBuffPtr, huart->RxXferSize); */
-
-        if (SysProperties.InterfaceStep == STEP_SLOT_ID) {
-            int_rx_completed = 1;
-        }
-        else {
-            int_rx_completed = 1;
-        }
+        int_rx_completed = 1;
     }
     else if(huart->Instance == USART1)
     {
@@ -45,17 +29,10 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     if(huart->Instance == USART2)   //Slot Interface & Bluetooth
     {
-        if (SysProperties.InterfaceStep == STEP_SLOT_ID) {
-            int_tx_completed = 1;
-        }
-        else {
-            int_tx_completed = 1;
-        }
+        int_tx_completed = 1;
     }
     else if(huart->Instance == USART1)
     {
         ext_tx_completed = 1;
-	/* HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET); */
     }
 }
-
