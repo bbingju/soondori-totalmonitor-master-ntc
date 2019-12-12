@@ -29,6 +29,8 @@ uint32_t 	uid[3];
 
 uint8_t iiii;
 
+extern IWDG_HandleTypeDef hiwdg;
+
 /*********************************************************************
 *	StartDisplayTask
 *	16-SEGMENT, LED, BUTTON INPUT 등을 처리 하는 TASK
@@ -37,7 +39,7 @@ void StartDisplayTask(void const * argument)
 {
     portTickType	  xLastWakeTime;
 
-    /* USER CODE BEGIN 5 */
+    HAL_IWDG_Refresh(&hiwdg);
     osDelay(500);
 
     revid = HAL_GetREVID();

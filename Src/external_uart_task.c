@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include "cmsis_os.h"
-#include "0_StartRs485Task.h"
-/* #include "0_soonQueue.h" */
+#include "external_uart_task.h"
+#include "internal_uart_task.h"
 #include "0_StartSlotUartTask.h"
 #include "0_soonFlashMemory.h"
 #include "0_SdCard.h"
@@ -30,7 +30,7 @@ osMailQId (ext_rx_pool_q_id);
 
 
 __PACKED_STRUCT ext_tx_buffer_s {
-    uint8_t raw[160];
+    uint8_t raw[152];
     uint16_t bytes_to_transmit;
 };
 
@@ -39,13 +39,21 @@ osMailQId (ext_tx_pool_q_id);
 
 int ext_tx_completed;
 
-static int validate_msg(uint8_t *rawdata, uint16_t length)
+static bool _validate_external_msg(uint8_t *rawdata, uint16_t length)
 {
     if (rawdata[0] == RS_STX && rawdata[length - 1] == RS_ETX) {
-        return 0;
+        /* uint16_t received_crc = *((uint16_t *)&rawdata[length - 3]); */
+        /* uint16_t calcurated_crc = CRC16_Make(&rawdata[1], length - 4); */
+
+        /* if (received_crc != calcurated_crc) { */
+        /*     DBG_LOG("%s: received_crc: %04x, calcurated_crc: %04x\n", */
+        /*             __func__, received_crc, calcurated_crc); */
+        /*     return false; */
+        /* } */
+        return true;
     }
 
-    return -1;
+    return false;
 }
 
 int push_external_rx(void *data, uint16_t length)
@@ -54,7 +62,7 @@ int push_external_rx(void *data, uint16_t length)
         return -1;
     }
 
-    if (validate_msg(data, length) < 0) {
+    if (!_validate_external_msg(data, length)) {
         DBG_LOG("%s: error validate_msg\n", __func__);
         DBG_DUMP(data, length);
         return -1;
@@ -65,7 +73,7 @@ int push_external_rx(void *data, uint16_t length)
     if (!obj) {
         return -1;
     }
-    memcpy(obj, data + 1, length - 2);
+    memcpy(obj, data + 1, length - 4);
     osMailPut(ext_rx_pool_q_id, obj);
 
     return 0;
@@ -82,10 +90,7 @@ uint8_t         noReturn485SendCt = 0;
 
 uint8_t 	ReadFileBuf[MAX_485_BUF_LEN];
 
-//uint8_t FunctionHandlingFlag = READY;
 
-/* RS_485_RX_QUEUE_STRUCT Rs485RxQueue; */
-/* RS_485_TX_QUEUE_STRUCT Rs485TxQueue; */
 //SD_CARD_STRUCT SdCard;
 //TEST_STATE_STRUCT TestState;
 uint8_t			FindFilelistFlag = 0;		//0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
@@ -201,7 +206,7 @@ static const char* option_str(uint8_t cmd, uint8_t option) {
         }
         break;
     }
-return "";
+    return "";
 }
 
 static void handle_rx_msg(struct ext_rx_msg_s *received)
@@ -343,30 +348,6 @@ void external_rx_task(void const * argument)
         osMailFree(ext_rx_pool_q_id, received);
         HAL_UART_Receive_DMA(&huart1, rx485DataDMA, 32);
     }
-
-    /* /\* Infinite loop *\/ */
-    /* for(;;) */
-    /* { */
-    /*     HAL_UART_Receive_DMA(&huart1, rx485DataDMA, 32); */
-    /*     osDelay(1); */
-
-    /*     //RX FUNCTION */
-    /*     RxFunction(); */
-    /*     UnpackingRs485RxQueue(); */
-
-    /*     if(Rx485ReadCount == 31) */
-    /*     { */
-    /*         JumpToFunction485(); */
-    /*         if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
-    /*         { */
-    /*             osSemaphoreRelease(CountingSem485TxHandle); */
-    /*         } */
-    /*         Rx485ReadCount = 0; */
-    /*     } */
-
-    /*     osDelay(30); */
-    /* } */
-    /* USER CODE END StartBluetooehTask */
 }
 
 void external_tx_task(void const * arg)
@@ -422,76 +403,6 @@ int send_external_response(uint8_t cmd, uint8_t option, void *data,
     osMailPut(ext_tx_pool_q_id, obj);
     return 0;
 }
-
-void RxFunction(void)
-{
-    /* if(BinarySem485RxHandle != NULL)  //RX */
-    /* { */
-    /*     if(osSemaphoreWait(BinarySem485RxHandle, 0) == osOK) */
-    /*     { */
-    /*         DBG_LOG("ext rx : (%d) ", huart1.RxXferSize); */
-    /*         DBG_DUMP(rx485DataDMA, huart1.RxXferSize); */
-
-    /*         for(uint8_t i = 0; i < huart1.RxXferSize; i++) */
-    /*         { */
-    /*             //osDelay(1); 	  // nop 로 변경시 HardFault 발생 함. osDelayUntil(&xLastWakeTime, 180); 와 같이 사용 해야 함. */
-    /*             //doNOP(25000); */
-    /*             Rs485RxQueue_Send(&Rs485RxQueue, rx485DataDMA[i]); */
-    /*         } */
-    /*         noReturn485SendCt = 0; */
-    /*     } */
-    /* } */
-}
-
-/* void UnpackingRs485RxQueue(void) */
-/* { */
-/*     uint16_t    etxLength0 = 0; */
-/*     uint8_t 	temp;			//이거 Warning 나와도 지우지 말것. */
-
-/*     if(Rs485RxQueue_empty(&Rs485RxQueue) == FALSE)	//Rx 버퍼에 입력 데이터가 잇는지 확인 */
-/*     { */
-
-/*         if((Rs485RxQueue.tail + 31) >= RS_485_RX_BUF_MAX)  { */
-/*             etxLength0 = Rs485RxQueue.tail + 31 - RS_485_RX_BUF_MAX; */
-/*         } */
-/*         else { */
-/*             etxLength0 = Rs485RxQueue.tail + 31; */
-/*         } */
-
-/*         if(Rs485RxQueue_Count(&Rs485RxQueue) > 31)// || (RxQueue_Count(&RxQueue) >= 134)) */
-/*         { */
-/*             if( (Rs485RxQueue.ar[Rs485RxQueue.tail] == RS_STX) && (Rs485RxQueue.ar[etxLength0] == RS_ETX)) */
-/*             { */
-/*                 Rx485ReadCount = 0; */
-/*                 Rx485Data[0] = Rs485RxQueue_Recive(&Rs485RxQueue); */
-/*                 if(Rx485Data[0] == RS_STX) */
-/*                 { */
-/*                     do{ */
-/*                         Rx485ReadCount++; */
-/*                         Rx485Data[Rx485ReadCount] = Rs485RxQueue_Recive(&Rs485RxQueue); */
-/*                         if(Rs485RxQueue_empty(&Rs485RxQueue)) break; */
-/*                     }while(Rx485Data[Rx485ReadCount] != RS_ETX); */
-/*                 } */
-/*             } */
-/*             else */
-/*             { */
-/*                 while(	!Rs485RxQueue_empty(&Rs485RxQueue)	&& (Rs485RxQueue.ar[Rs485RxQueue.tail] != RS_STX) */
-/*                         && (Rs485RxQueue.ar[etxLength0] != RS_ETX) ) */
-/*                 { */
-/*                     temp = Rs485RxQueue_Recive(&Rs485RxQueue); */
-/*                 } */
-/*                 if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
-/*                 { */
-/*                     osSemaphoreRelease(CountingSem485TxHandle); */
-/*                 } */
-/*             } */
-/*         } */
-/*         else */
-/*         { */
-/*             Rs485RxQueue_Clear(&Rs485RxQueue); */
-/*         } */
-/*     } */
-/* } */
 
 /*********************************************************************
 *	JumpToFunction
@@ -866,16 +777,31 @@ void CmdWarningTempSet(struct ext_rx_msg_s *msg)
     if (!SysProperties.slots[d->slot_id].inserted)
         return;
 
-    DBG_LOG("%s - slot %d, channel %d, temperature ", __func__, d->slot_id,
-            d->channel);
-    DBG_DUMP(&d->temperature, 4);
+    /* DBG_LOG("%s - slot %d, channel %d, temperature ", __func__, d->slot_id, */
+    /*         d->channel); */
+    /* DBG_DUMP(&d->temperature, 4); */
 
     send_internal_req(d->slot_id, CMD_THRESHOLD_SET, msg->data + 1, 5);
 }
 
 void CmdWarningTempReq(struct ext_rx_msg_s *msg)
 {
-    DoThresholdReq(msg->data[0]/* Rx485Data[7] */);
+    if (msg) {
+        int id = msg->data[0];
+        bool found = false;
+
+        struct slot_properties_s *s;
+        for (int i = 0; i < MAX_SLOT_NUM; i++) {
+            s = &SysProperties.slots[i];
+            if (s->id == id) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
+            DoThresholdReq(s);
+    }
 }
 
 void CmdRevisionApplySet(struct ext_rx_msg_s *msg)

@@ -1,6 +1,6 @@
 #include "0_Util.h"
 #include "0_StartSlotUartTask.h"
-#include "0_StartRs485Task.h"
+#include "external_uart_task.h"
 #include <string.h>		//memset 용 include
 
 uint8_t *bytes;

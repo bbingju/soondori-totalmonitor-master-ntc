@@ -1,6 +1,6 @@
 #include "0_StartRateTask.h"
 #include "0_GlobalValue.h"
-#include "0_StartRs485Task.h"
+#include "external_uart_task.h"
 #include "ff_gen_drv.h"
 #include "sd_diskio.h"
 #include "fatfs.h"
@@ -20,6 +20,7 @@ SD_CARD_VALUE	sdValue;
 
 extern Disk_drvTypeDef disk;
 
+extern IWDG_HandleTypeDef hiwdg;
 /*********************************************************************
 *	StartDisplayTask
 *	16-SEGMENT, LED, BUTTON INPUT 등을 처리 하는 TASK
@@ -33,6 +34,7 @@ void StartRateTask(void const * argument)
 
     /* init code for FATFS */
     MX_FATFS_Init();
+    HAL_IWDG_Refresh(&hiwdg);
 
     //시간 초기화
     HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);

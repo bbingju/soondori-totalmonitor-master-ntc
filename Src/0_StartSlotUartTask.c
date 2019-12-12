@@ -2,7 +2,8 @@
 #include "0_StartSlotUartTask.h"
 #include "0_GlobalValue.h"
 #include "0_UartCallback.h"
-#include "0_StartRs485Task.h"
+#include "external_uart_task.h"
+#include "internal_uart_task.h"
 #include <string.h>
 
 /*********************************************************************
@@ -39,6 +40,7 @@ uint8_t                 startThreshold   = FALSE;
 
 extern int int_tx_completed;
 extern int int_rx_completed;
+extern IWDG_HandleTypeDef hiwdg;
 
 void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
 {
@@ -94,33 +96,58 @@ void system_task(void const * argument)
 
     DoSlotReset(ALL_SLOT);
     DoRejectSlot();
+    HAL_IWDG_Refresh(&hiwdg);
     osDelay(100);
-
+    HAL_IWDG_Refresh(&hiwdg);
     //todo : 센서 타입을 슬레이브 보드에서 읽어 와야 함.
 
-    /* Infinite loop */
     for (;;)
     {
         switch (SysProperties.InterfaceStep) {
 
-        case STEP_SLOT_ID: // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다.
-            check_slots_inserted(SysProperties.slots, 4);
+        case STEP_SLOT_ID: {// 부팅 하면 각 슬롯의 id 를 지정 한다. id 는 '0'에서 시작한다.
+            volatile bool existed_any_slot = false;
+
+            while (!existed_any_slot) {
+                check_slots_inserted(SysProperties.slots, MAX_SLOT_NUM);
+                HAL_IWDG_Refresh(&hiwdg);
+                for (int i = 0; i < MAX_SLOT_NUM; i++) {
+                    struct slot_properties_s *slot = &SysProperties.slots[i];
+                    if (slot->inserted) {
+                        existed_any_slot = true;
+                        break;
+                    }
+                }
+            }
+
+            /* if (system_reset_needed) { */
+            /*     HAL_IWDG_Refresh(&hiwdg); */
+            /*     osDelay(500); */
+            /*     HAL_NVIC_SystemReset(); */
+            /* } */
+
             SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
+        }
             break;
 
         case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
             startThreshold = TRUE;
-            for (int i = 0; i < 4; i++) {
-                DoThresholdReq(i);
-                osDelay(100);
+            for (int i = 0; i < MAX_SLOT_NUM; i++) {
+                struct slot_properties_s *slot = &SysProperties.slots[i];
+                DoThresholdReq(slot);
             }
             SysProperties.InterfaceStep = STEP_TEMP_READ;
             break;
 
         case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
-            DoReqTemperature(SendSlotNumber);
-            DoReqTeameratureState(SendSlotNumber);
-            osDelay(SysProperties.interval_ms);
+            for (int i = 0; i < MAX_SLOT_NUM; i++) {
+                struct slot_properties_s *slot = &SysProperties.slots[i];
+                DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", slot->id, slot->type, slot->inserted);
+                DoReqTemperature(slot);
+                DoReqTemperatureState(slot);
+                osDelay(SysProperties.interval_ms - 100);
+            }
+            SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
 
             if (noReturnSendCt > 10)
                 noReturnSendCt = 0;
@@ -128,72 +155,7 @@ void system_task(void const * argument)
         }
         }
     }
-    /* USER CODE END 5 */
 }
-
-/* void SlotRxFunction(void) */
-/* { */
-/*     uint8_t i; */
-
-/*     if(CountingSemSlaveRxHandle != NULL)  //RX */
-/*     { */
-/*         if(osSemaphoreWait(CountingSemSlaveRxHandle, 0) == osOK) */
-/*         { */
-/*             for(i = 0; i < huart2.RxXferSize; i++) */
-/*             { */
-/*                 osDelay(1);       // nop 로 변경시 HardFault 발생 함. osDelayUntil(&xLastWakeTime, 180); 와 같이 사용 해야 함. */
-/*                 RxQueue_Send(&RxQueue, RxDataDMA[i]); */
-/*             } */
-/*             noReturnSendCt = 0; */
-/*         } */
-/*     } */
-/* } */
-
-/* void UnpackingRxQueue(void) */
-/* { */
-/*     uint16_t    etxLength  = 0; */
-/*     //uint16_t  etxCheck = 0; */
-
-/*     if(RxQueue_empty(&RxQueue) == FALSE)  //Rx 버퍼에 입력 데이터가 잇는지 확인 */
-/*     { */
-/*         if((RxQueue.tail + huart2.RxXferSize - 1) >= UART_RX_BUF_MAX) */
-/*         { */
-/*             etxLength = RxQueue.tail + huart2.RxXferSize - 1 - UART_RX_BUF_MAX; */
-/*         } */
-/*         else */
-/*         { */
-/*             etxLength = RxQueue.tail + huart2.RxXferSize - 1; */
-/*         } */
-
-/*         if(RxQueue_Count(&RxQueue) >= 12)// || (RxQueue_Count(&RxQueue) >= 134)) */
-/*         { */
-/*             if( (RxQueue.ar[RxQueue.tail] == CMD_STX) && (RxQueue.ar[etxLength] == CMD_ETX)) */
-/*             { */
-/*                 RxReadCount = 0; */
-/*                 RxSlotData[0] = RxQueue_Recive(&RxQueue); */
-/*                 if(RxSlotData[0] == CMD_STX) */
-/*                 { */
-/*                     do{ */
-/*                         RxReadCount++; */
-/*                         RxSlotData[RxReadCount] = RxQueue_Recive(&RxQueue); */
-/*                         if((RxQueue_empty(&RxQueue) == TRUE) || (RxReadCount >= huart2.RxXferSize)) */
-/*                         { */
-/*                             break; */
-/*                         } */
-/*                     }while(1); */
-/*                 } */
-/*             } */
-/*             else */
-/*             { */
-/*                 temp = RxQueue_Recive(&RxQueue); */
-/*             } */
-/*         } */
-/*         else */
-/*         { */
-/*             RxQueue_Clear(&RxQueue); */
-/*         } */
-/*     } */
-/* } */
 
 /*********************************************************************
 *       doSlotReset
@@ -324,18 +286,19 @@ void DoCalibrationNTCConstantReq(uint8_t slotNumber)
     /* osDelay(100); */
 }
 
-void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
+void DoThresholdSet(struct slot_properties_s *slot, uint8_t channal, uni4Byte thresholdTemp)
 {
-    uint8_t u[5] = {0};
+    if (slot && slot->inserted) {
+        uint8_t u[5] = {0};
 
-    u[0] = channal;
-    u[1] = thresholdTemp.UI8[0];
-    u[2] = thresholdTemp.UI8[1];
-    u[3] = thresholdTemp.UI8[2];
-    u[4] = thresholdTemp.UI8[3];
+        u[0] = channal;
+        u[1] = thresholdTemp.UI8[0];
+        u[2] = thresholdTemp.UI8[1];
+        u[3] = thresholdTemp.UI8[2];
+        u[4] = thresholdTemp.UI8[3];
 
-    send_internal_req(slotNumber, CMD_THRESHOLD_SET, u, 5);
-
+        send_internal_req(slot->id, CMD_THRESHOLD_SET, u, 5);
+    }
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
     /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_SET, u, 5, SEND_DATA_LENGTH); */
     /* /\* DBG_LOG("%s: ", __func__); *\/ */
@@ -345,12 +308,12 @@ void DoThresholdSet(uint8_t slotNumber, uint8_t channal, uni4Byte thresholdTemp)
     /* osDelay(100); */
 }
 
-void DoThresholdReq(uint8_t slotNumber)
+void DoThresholdReq(struct slot_properties_s *slot)
 {
-    if (!SysProperties.slots[slotNumber].inserted)
-        return;
-
-    send_internal_req(slotNumber, CMD_THRESHOLD_REQ, NULL, 0);
+    if (slot && slot->inserted) {
+        DBG_LOG("%s slot %d\n", __func__, slot->id);
+        send_internal_req(slot->id, CMD_THRESHOLD_REQ, NULL, 0);
+    }
 
     /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30), CMD_THRESHOLD_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
     /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
@@ -369,7 +332,8 @@ void DoReqSlotID(uint8_t slotNumber)
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
     DoRejectSlot();
 
-    send_internal_req(slotNumber, CMD_SLOT_ID_REQ, slotNumber + 0x30, 1);
+    uint8_t id = slotNumber + 0x30;
+    send_internal_req(slotNumber, CMD_SLOT_ID_REQ, &id, sizeof(id));
 
     /* uint8_t u[1] = {0}; */
     /* u[0] = slotNumber + 0x30; */
@@ -385,11 +349,12 @@ void DoReqSlotID(uint8_t slotNumber)
 *       슬롯에 센서 온도를 요청 함, 전송 받는 값은 flot(4byte)으로 한다.
 *   slotNumber : SLOT 지정
 **********************************************************************/
-void DoReqTemperature(uint8_t slotNumber)
+void DoReqTemperature(struct slot_properties_s *slot)
 {
-    HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
-
-    send_internal_req(slotNumber, CMD_TEMP_REQ, NULL, 0);
+    if (slot && slot->inserted) {
+        HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+        send_internal_req(slot->id, CMD_TEMP_REQ, NULL, 0);
+    }
 
     /* uint8_t u[1] = {0}; */
     /* slotNumber += 0x30; */
@@ -399,13 +364,14 @@ void DoReqTemperature(uint8_t slotNumber)
     /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); */
 }
 
-void DoReqTeameratureState(uint8_t slotNumber)
+void DoReqTemperatureState(struct slot_properties_s *slot)
 {
     /* uint8_t u[1] = {0}; */
 
-    HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
-
-    send_internal_req(slotNumber, CMD_TEMP_STATE_REQ, NULL, 0);
+    if (slot && slot->inserted) {
+        HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+        send_internal_req(slot->id, CMD_TEMP_STATE_REQ, NULL, 0);
+    }
 
     /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
     /* slotNumber += 0x30; */

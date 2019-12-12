@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include "0_GlobalValue.h"
 #include "0_StartDisplayTask.h"
-#include "0_StartRs485Task.h"
+#include "external_uart_task.h"
 #include "0_StartSlotUartTask.h"
 #include "0_StartRateTask.h"
 #include "0_soonFlashMemory.h"
@@ -54,6 +54,8 @@ ADC_HandleTypeDef hadc2;
 DMA_HandleTypeDef hdma_adc1;
 DMA_HandleTypeDef hdma_adc2;
 
+IWDG_HandleTypeDef hiwdg;
+
 RTC_HandleTypeDef hrtc;
 
 SD_HandleTypeDef hsd;
@@ -72,7 +74,7 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 osThreadId myDisplayTaskHandle;
-osThreadId ExRxTaskHandle;
+osThreadId ExtRxTaskHandle;
 osThreadId ExtTxTaskHandle;
 osThreadId SystemTaskHandle;
 osThreadId myRateTaskHandle;
@@ -98,12 +100,13 @@ static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
-void system_task(void const * argument);
+static void MX_IWDG_Init(void);
 void StartDisplayTask(void const * argument);
 void external_rx_task(void const * argument);
 void external_tx_task(void const * argument);
 void StartRateTask(void const * argument);
 void internal_uart_task(void const * argument);
+void system_task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -153,7 +156,14 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
+
+  /* Check if system reset is caused by IWDG */
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) == SET) {
+      __HAL_RCC_CLEAR_RESET_FLAGS();
+      DBG_LOG("System reset caused by watchdog.\n");
+  }
 
   SysProperties.displayMode = DPM_NORMAL;
   for (int j = 0; j < 4; j++)
@@ -165,7 +175,7 @@ int main(void)
       }
   }
 
-  INIT_SLOT_PROPERTIES(SysProperties.slots, 4);
+  INIT_SLOT_PROPERTIES(SysProperties.slots, MAX_SLOT_NUM);
 
   SysProperties.interval_ms = 1000;
   SysProperties.start_flag = FALSE;
@@ -193,7 +203,7 @@ int main(void)
   SysProperties.mcuUUID[1].UI32 = HAL_GetUIDw1();
   SysProperties.mcuUUID[2].UI32 = HAL_GetUIDw2();
 
-  HAL_Delay(500);
+  HAL_Delay(5);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -245,17 +255,18 @@ int main(void)
 
   /* definition and creation of myRs485Task */
   osThreadDef(ExtRxTask, external_rx_task, osPriorityAboveNormal, 0, 256);
-  ExRxTaskHandle = osThreadCreate(osThread(ExtRxTask), NULL);
+  ExtRxTaskHandle = osThreadCreate(osThread(ExtRxTask), NULL);
 
   /* definition and creation of SystemTask */
   osThreadDef(SystemTask, system_task, osPriorityNormal, 0, 256);
   SystemTaskHandle = osThreadCreate(osThread(SystemTask), NULL);
 
+  HAL_IWDG_Refresh(&hiwdg);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
   osKernelStart();
-  
+
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
@@ -285,9 +296,11 @@ void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE
+                              |RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -432,6 +445,34 @@ static void MX_ADC2_Init(void)
   /* USER CODE BEGIN ADC2_Init 2 */
 
   /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
+  * @brief IWDG Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_IWDG_Init(void)
+{
+
+  /* USER CODE BEGIN IWDG_Init 0 */
+
+  /* USER CODE END IWDG_Init 0 */
+
+  /* USER CODE BEGIN IWDG_Init 1 */
+
+  /* USER CODE END IWDG_Init 1 */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_64;
+  hiwdg.Init.Reload = 4095;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN IWDG_Init 2 */
+
+  /* USER CODE END IWDG_Init 2 */
 
 }
 
@@ -1073,6 +1114,8 @@ void vApplicationIdleHook( void )
         HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
         HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
     }
+
+    HAL_IWDG_Refresh(&hiwdg);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

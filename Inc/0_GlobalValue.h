@@ -145,8 +145,8 @@ typedef enum {
 
 struct slot_properties_s {
     uint8_t id;
-    bool inserted;
     SENSORBOARDTYPE type;
+    bool inserted;
 };
 
 #define INIT_SLOT_PROPERTIES(s, n) do {                 \
@@ -174,7 +174,7 @@ typedef struct {
     uni4Byte mcuUUID[3]; // MCU UUID
     uint8_t smpsState;   // smps 신호 확인
 
-    struct slot_properties_s slots[4];
+    struct slot_properties_s slots[MAX_SLOT_NUM];
 } SYSTEM_STRUCT;
 
 extern SYSTEM_STRUCT SysProperties;

@@ -1,7 +1,7 @@
 #include "cmsis_os.h"
 #include "0_Util.h"
 #include "0_StartSlotUartTask.h"
-#include "0_StartRs485Task.h"
+#include "external_uart_task.h"
 #include "internal_uart_task.h"
 #include <string.h>
 
@@ -258,7 +258,7 @@ static void handle_resp(struct internal_rx_msg_s *received)
 
 static void handle_req(struct internal_msg_s *obj)
 {
-    static uint8_t buf[256] = { 0 };
+    static uint8_t buf[160] = { 0 };
     struct internal_tx_msg_s *req = &obj->request;
     struct internal_rx_msg_s *resp = &obj->response;
 
@@ -269,9 +269,9 @@ static void handle_req(struct internal_msg_s *obj)
     noReturnSendCt++;
 
     /* if (req->cmd == CMD_THRESHOLD_SET || req->cmd == CMD_THRESHOLD_REQ) { */
-    /*     DBG_LOG("int tx [%d] %s: (%d) ", */
-    /*             req->id, cmd_str(req->cmd), req->length); */
-    /*     DBG_DUMP(req->data, req->length); */
+        /* DBG_LOG("int tx [%d] %s: (%d) ", */
+        /*         req->id, cmd_str(req->cmd), req->length); */
+        /* DBG_DUMP(req->data, req->length); */
     /* } */
 
     int_tx_completed = 0;
@@ -281,6 +281,9 @@ static void handle_req(struct internal_msg_s *obj)
         while (int_tx_completed == 0) {
             __NOP();
         };
+
+        /* DBG_LOG("%s: rx_dma_req_bytes %d\n", __func__, req->rx_dma_req_bytes); */
+        memset(buf, 0, 160);
         int_rx_completed = 0;
         HAL_UART_Receive_DMA(&huart2, recv_buffer, req->rx_dma_req_bytes);
 
@@ -395,10 +398,6 @@ static void handle_threshold_req(struct internal_rx_msg_s *msg)
         for (int i = 0; i < 32; i++)
         {
             (threshold + i)->Float = *((float *)&msg->rawdata[i * 4 + 3]);
-            /* TestData.threshold[msg->id][i].UI8[0] = msg->rawdata[i * 4 + 3]; */
-            /* TestData.threshold[msg->id][i].UI8[1] = msg->rawdata[i * 4 + 4]; */
-            /* TestData.threshold[msg->id][i].UI8[2] = msg->rawdata[i * 4 + 5]; */
-            /* TestData.threshold[msg->id][i].UI8[3] = msg->rawdata[i * 4 + 6]; */
         }
         crcErrorCount = 0;
     }
@@ -439,10 +438,6 @@ static void handle_threshold_set(struct internal_rx_msg_s *msg)
         uni4Byte *threshold = &TestData.threshold[msg->id];
         for (int i = 0; i < 32; i++) {
             (threshold + i)->Float = *((float *)&msg->rawdata[i * 4 + 3]);
-            /* TestData.threshold[msg->id][i].UI8[0] = msg->rawdata[i * 4 + 3]; */
-            /* TestData.threshold[msg->id][i].UI8[1] = msg->rawdata[i * 4 + 4]; */
-            /* TestData.threshold[msg->id][i].UI8[2] = msg->rawdata[i * 4 + 5]; */
-            /* TestData.threshold[msg->id][i].UI8[3] = msg->rawdata[i * 4 + 6]; */
         }
         crcErrorCount = 0;
     }

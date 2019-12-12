@@ -1,6 +1,5 @@
-#include "cmsis_os.h"
 #include "0_UartCallback.h"
-#include "internal_rx_task.h"
+
 
 /*********************************************************************
 *	Callback Function

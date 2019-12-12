@@ -1,4 +1,4 @@
-USE_RTT_FOR_DEBUG = 1
+USE_RTT_FOR_DEBUG = 0
 
 RTT_C_SOURCES = \
 Lib/RTT/SEGGER_RTT.c \
@@ -16,10 +16,9 @@ Src/0_SensorCal.c \
 Src/0_soonFlashMemory.c \
 Src/0_StartDisplayTask.c \
 Src/0_StartRateTask.c \
-Src/0_StartRs485Task.c \
 Src/0_StartSlotUartTask.c \
+Src/external_uart_task.c \
 Src/internal_uart_task.c \
 Src/0_UartCallback.c \
 Src/0_Util.c
 
-# Src/0_soonQueue.c

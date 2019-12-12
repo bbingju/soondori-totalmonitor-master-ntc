@@ -1,8 +1,8 @@
-#ifndef __START_RS485_TASK_H__
-#define __START_RS485_TASK_H__
+#ifndef EXTERNAL_UART_TASK_H
+#define EXTERNAL_UART_TASK_H
 
 #include "cmsis_os.h"
-#include "stm32f4xx_hal.h"
+/* #include "stm32f4xx_hal.h" */
 #include "0_Util.h"
 #include "0_BCD110DS.h"
 
@@ -12,7 +12,6 @@
 
 #include "0_GlobalDefine.h"
 #include "0_GlobalValue.h"
-/* #include "0_soonQueue.h" */
 
 #define RS_READ_SIZE            			(32)
 
@@ -79,7 +78,7 @@ struct ext_rx_msg_s;
 extern "C" {
 #endif
 
-//void StartBluetooehTask(void const * argument);
+
 //////////////////////////////////////////////////////////////////
 //	Private function prototypes
 //////////////////////////////////////////////////////////////////
@@ -95,9 +94,6 @@ void StartRs485Task(void const * argument);
 void DoReadFileList(struct ext_rx_msg_s *);
 
 void doSaveIntervalTime(struct ext_rx_msg_s *);
-
-void RxFunction(void);
-void UnpackingRs485RxQueue(void);
 
 //void ParsingFromRs485(void);
 /* void JumpToFunction485(void); */
@@ -127,5 +123,5 @@ void doGetTime(struct ext_rx_msg_s *);
 }
 #endif
 
-#endif
+#endif /* EXTERNAL_UART_TASK_H */
 
