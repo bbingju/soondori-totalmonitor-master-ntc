@@ -156,6 +156,15 @@ struct slot_properties_s {
             p->inserted = false; }                      \
     } while (0)
 
+#define FOREACH(item, array)                            \
+  for (int keep = 1,                                    \
+          count = 0,                                    \
+           size = sizeof (array) / sizeof *(array);     \
+       keep && count != size;                           \
+       keep = !keep, count++)                           \
+    for (item = (array) + count; keep; keep = !keep)
+
+
 typedef struct {
     /* DISPLAYMODE 사용해서 선택,
        NORMAL MODE 에서는 -, \, |, / 을 순차적으로 표시 한다.

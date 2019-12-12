@@ -111,50 +111,60 @@ void system_task(void const * argument)
             while (!existed_any_slot) {
                 check_slots_inserted(SysProperties.slots, MAX_SLOT_NUM);
                 HAL_IWDG_Refresh(&hiwdg);
-                for (int i = 0; i < MAX_SLOT_NUM; i++) {
-                    struct slot_properties_s *slot = &SysProperties.slots[i];
-                    if (slot->inserted) {
-                        existed_any_slot = true;
-                        break;
-                    }
+                FOREACH(struct slot_properties_s *s, SysProperties.slots) {
+                  if (s->inserted)
+                    existed_any_slot = true;
                 }
+                /* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
+                /*     struct slot_properties_s *slot = &SysProperties.slots[i]; */
+                /*     if (slot->inserted) { */
+                /*         existed_any_slot = true; */
+                /*         break; */
+                /*     } */
+                /* } */
             }
+        /* if (system_reset_needed) { */
+        /*     HAL_IWDG_Refresh(&hiwdg); */
+        /*     osDelay(500); */
+        /*     HAL_NVIC_SystemReset(); */
+        /* } */
 
-            /* if (system_reset_needed) { */
-            /*     HAL_IWDG_Refresh(&hiwdg); */
-            /*     osDelay(500); */
-            /*     HAL_NVIC_SystemReset(); */
-            /* } */
+        SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
+      }
+        break;
 
-            SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
+      case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
+        startThreshold = TRUE;
+        FOREACH(struct slot_properties_s *s, SysProperties.slots) {
+          DoThresholdReq(s);
         }
-            break;
+        /* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
+        /*   struct slot_properties_s *slot = &SysProperties.slots[i]; */
+        /*   DoThresholdReq(slot); */
+        /* } */
+        osDelay(1000);
+        SysProperties.InterfaceStep = STEP_TEMP_READ;
+        break;
 
-        case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
-            startThreshold = TRUE;
-            for (int i = 0; i < MAX_SLOT_NUM; i++) {
-                struct slot_properties_s *slot = &SysProperties.slots[i];
-                DoThresholdReq(slot);
-            }
-            SysProperties.InterfaceStep = STEP_TEMP_READ;
-            break;
-
-        case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
-            for (int i = 0; i < MAX_SLOT_NUM; i++) {
-                struct slot_properties_s *slot = &SysProperties.slots[i];
-                DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", slot->id, slot->type, slot->inserted);
-                DoReqTemperature(slot);
-                DoReqTemperatureState(slot);
-                osDelay(SysProperties.interval_ms - 100);
-            }
-            SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
-
-            if (noReturnSendCt > 10)
-                noReturnSendCt = 0;
-            break;
+      case STEP_TEMP_READ:  // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
+        FOREACH(struct slot_properties_s *s, SysProperties.slots) {
+          DoReqTemperature(s);
+          DoReqTemperatureState(s);
+          osDelay(SysProperties.interval_ms - 50);
         }
-        }
+        /* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
+        /*     struct slot_properties_s *slot = &SysProperties.slots[i]; */
+        /*     DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", slot->id, slot->type, slot->inserted); */
+        /*     DoReqTemperature(slot); */
+        /*     DoReqTemperatureState(slot); */
+        /*     osDelay(SysProperties.interval_ms - 50); */
+        /* } */
+
+        if (noReturnSendCt > 10)
+          noReturnSendCt = 0;
+        break;
     }
+  }
 }
 
 /*********************************************************************
