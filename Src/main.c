@@ -107,8 +107,6 @@ void internal_uart_task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-void measure_temperature(void const *arg);
-
 
 /* USER CODE END PFP */
 
@@ -125,7 +123,7 @@ void measure_temperature(void const *arg);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-    uint32_t	read = 0;
+  uint32_t read = 0;
 
   /* USER CODE END 1 */
 
@@ -158,9 +156,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   SysProperties.displayMode = DPM_NORMAL;
-  for(int j = 0; j < 4; j++)
+  for (int j = 0; j < 4; j++)
   {
-      for(int i = 0; i < 32; i++)
+      for (int i = 0; i < 32; i++)
       {
           TestData.temperature[j][i].Float = (float)0.0;
           TestData.sensorState[j][i] = LDM_DONOT_CONNECT;

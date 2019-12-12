@@ -14,7 +14,6 @@ uint8_t BuzzerEnable;
 **********************************************************************/
 float ByteArrayToFloat(uint8_t *byteArray)
 {
-//	uint8_t data[4] = {0, 0, 0, 0};
     bytes = byteArray;
     uint32_t res = 0.0;
 
@@ -23,7 +22,7 @@ float ByteArrayToFloat(uint8_t *byteArray)
              | ((uint32_t)*(byteArray + 2) << 16)
              | ((uint32_t)*(byteArray + 3) << 24));
 
-    return	*((float*)&res);
+    return *((float*)&res);
 }
 
 /*********************************************************************
@@ -38,9 +37,9 @@ float ByteArrayToFloat(uint8_t *byteArray)
 uint8_t CopyToArray(uint8_t* TagetArray, uint8_t* OriginalString,
                     uint16_t CopyLength, uint16_t TotalLength)
 {
-    for(uint16_t i = 0; i < TotalLength; i++)
+    for (int i = 0; i < TotalLength; i++)
     {
-        if(i < CopyLength)
+        if (i < CopyLength)
         {
             *TagetArray++ = *OriginalString++;
         }
@@ -207,30 +206,30 @@ void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Optio
 **********************************************************************/
 void doPlayBuzzer100ms(uint16_t count)
 {
-        uint16_t i, j, k, msec;
+        uint16_t msec;
 
-        if(BuzzerEnable == ENABLE)
+        if (BuzzerEnable == ENABLE)
         {
                 for(msec = 0; msec < count; msec++)
                 {
                         //여기서 부터 한 루팅에 100ms 소요 된다.
                         //BUZZER_OFF;
                         //HAL_GPIO_WritePin(Debug_out_GPIO_Port, Debug_out_Pin, GPIO_PIN_SET);
-                        for(i = 0; i < 105; i++)
+                        for (int i = 0; i < 105; i++)
                         {
                                 BUZZER_ON;
                                 //HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
                                 //HAL_GPIO_TogglePin(BUZZER_GPIO_Port, BUZZER_Pin);
-                                for(j = 0; j < 100; j++)
+                                for (int j = 0; j < 100 * 100; j++)
                                 {
-                                        for(k = 0; k < 100; k++){	asm("NOP");	}
+				      __NOP();
                                 }
                                 BUZZER_OFF;
                                 //HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
                                 //HAL_GPIO_TogglePin(BUZZER_GPIO_Port, BUZZER_Pin);
-                                for(j = 0; j < 100; j++)
+                                for (int j = 0; j < 100 * 100; j++)
                                 {
-                                        for(k = 0; k < 100; k++){	asm("NOP");	}
+				      __NOP();
                                 }
                         }
                 }

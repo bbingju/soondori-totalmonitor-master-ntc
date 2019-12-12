@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <string.h>
+
 #include "cmsis_os.h"
 #include "0_StartRs485Task.h"
 /* #include "0_soonQueue.h" */
@@ -38,7 +41,6 @@ int ext_tx_completed;
 
 static int validate_msg(uint8_t *rawdata, uint16_t length)
 {
-
     if (rawdata[0] == RS_STX && rawdata[length - 1] == RS_ETX) {
         return 0;
     }

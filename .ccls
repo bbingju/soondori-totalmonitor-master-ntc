@@ -1,11 +1,13 @@
 %compile_commands.json
 --target
 arm-none-eabi
+-D__GNUC__
 -DUSE_HAL_DRIVER
 -DSTM32F405xx
 -DUSE_RTT_FOR_DEBUG
 %c -std=c11
-%h --include=-IInc
+%h --include
+-IInc
 -IDrivers/STM32F4xx_HAL_Driver/Inc
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy
 -IMiddlewares/Third_Party/FatFs/src

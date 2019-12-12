@@ -120,7 +120,7 @@ void system_task(void const * argument)
         case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청 한다.
             DoReqTemperature(SendSlotNumber);
             DoReqTeameratureState(SendSlotNumber);
-            osDelay(1000);
+            osDelay(SysProperties.interval_ms);
 
             if (noReturnSendCt > 10)
                 noReturnSendCt = 0;
