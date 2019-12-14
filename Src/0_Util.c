@@ -1,7 +1,7 @@
 #include "0_Util.h"
 #include "0_StartSlotUartTask.h"
 #include "external_uart_task.h"
-#include <string.h>		//memset 용 include
+#include <string.h>
 
 uint8_t *bytes;
 uint8_t BuzzerEnable;
@@ -117,7 +117,7 @@ void doMakeSend485Data(uint8_t* SendData, uint8_t  Command, uint8_t  Option,
     len.UI32 = 0;
     len.UI16[0] = BufferLen;
 
-    memset((void*)SendData,0x00, BufferLen);
+    memset(SendData, 0x00, BufferLen);
 
     /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN); */
     /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN); */
@@ -162,7 +162,7 @@ void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Optio
         len.UI32 = 0;
         len.UI16[0] = BufferLen;
 
-        memset((void*)SendData,0x00, sizeof(tx485DataDMA));
+        memset(SendData, 0x00, BufferLen);
 
         /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN); */
         /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN); */
@@ -186,7 +186,7 @@ void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Optio
         SendData[16] = SysTime.Time.Seconds;
         memcpy(&SendData[17], Data, DataWriteLen);
         //CopyToArray(SendData, Data, DataWriteLen, DataLen);
-    //SendData -= 16;
+	//SendData -= 16;
 
         crc.UI16 =	CRC16_Make(&SendData[1], BufferLen - 4);
         //SendData += BufferLen - 4;
@@ -206,34 +206,27 @@ void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Optio
 **********************************************************************/
 void doPlayBuzzer100ms(uint16_t count)
 {
-        uint16_t msec;
-
-        if (BuzzerEnable == ENABLE)
-        {
-                for(msec = 0; msec < count; msec++)
-                {
-                        //여기서 부터 한 루팅에 100ms 소요 된다.
-                        //BUZZER_OFF;
-                        //HAL_GPIO_WritePin(Debug_out_GPIO_Port, Debug_out_Pin, GPIO_PIN_SET);
-                        for (int i = 0; i < 105; i++)
-                        {
-                                BUZZER_ON;
-                                //HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-                                //HAL_GPIO_TogglePin(BUZZER_GPIO_Port, BUZZER_Pin);
-                                for (int j = 0; j < 100 * 100; j++)
-                                {
-				      __NOP();
-                                }
-                                BUZZER_OFF;
-                                //HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
-                                //HAL_GPIO_TogglePin(BUZZER_GPIO_Port, BUZZER_Pin);
-                                for (int j = 0; j < 100 * 100; j++)
-                                {
-				      __NOP();
-                                }
-                        }
+    if (BuzzerEnable == ENABLE) {
+        for (int msec = 0; msec < count; msec++) {
+            //여기서 부터 한 루팅에 100ms 소요 된다.
+            // BUZZER_OFF;
+            // HAL_GPIO_WritePin(Debug_out_GPIO_Port, Debug_out_Pin, GPIO_PIN_SET);
+            for (int i = 0; i < 105; i++) {
+                BUZZER_ON;
+                // HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+                // HAL_GPIO_TogglePin(BUZZER_GPIO_Port, BUZZER_Pin);
+                for (int j = 0; j < 100 * 100; j++) {
+                    __NOP();
                 }
+                BUZZER_OFF;
+                // HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
+                // HAL_GPIO_TogglePin(BUZZER_GPIO_Port, BUZZER_Pin);
+                for (int j = 0; j < 100 * 100; j++) {
+                    __NOP();
+                }
+            }
         }
+    }
 }
 
 /*********************************************************************

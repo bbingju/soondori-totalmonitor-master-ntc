@@ -43,11 +43,6 @@ extern SD_HandleTypeDef hsd;
 extern osSemaphoreId myBinarySemModeHandle;
 extern osSemaphoreId myBinarySemUpHandle;
 extern osSemaphoreId myBinarySemDownHandle;
-extern osSemaphoreId BinarySemSlaveRxHandle;
-extern osSemaphoreId BinarySemSlaveTxHandle;
-extern osSemaphoreId BinarySem485RxHandle;
-extern osSemaphoreId CountingSem485TxHandle;
-extern osSemaphoreId CountingSemSlaveRxHandle;
 
 typedef __PACKED_UNION {
     float Float;
@@ -237,13 +232,5 @@ extern uint8_t   FindFilelistFlag;               //0 : 파일 리스트 검색 �
 
 extern GPIO_TypeDef *   SLAVE_CS_PORT[4];
 extern uint16_t         SLAVE_CS_PIN[4];
-
-//extern uint8_t                rxDataBuffer[UART_RX_BUF_MAX];
-//extern uint8_t                txDataBuffer[UART_TX_BUF_MAX];
-extern uint8_t     sendSlotNumber;
-
-/* extern uint8_t          rx485DataDMA[256]; //dma 용도 */
-extern uint8_t       tx485DataDMA[MAX_485_BUF_LEN]; //dma 용도
-extern uint8_t       ReadFileBuf[MAX_485_BUF_LEN];
 
 #endif

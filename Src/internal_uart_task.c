@@ -324,7 +324,7 @@ void internal_uart_task(void const *arg)
 
     while (1) {
         osEvent event = osMailGet(internal_pool_q_id, osWaitForever);
-        struct internal_msg_s *obj = (struct internal_msg_s *) event.value.p;
+        struct internal_msg_s *obj = (struct internal_msg_s *)event.value.p;
         handle_req(obj);
         osMailFree(internal_pool_q_id, obj);
     }
