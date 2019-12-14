@@ -67,7 +67,7 @@ uint32_t pTableRTD[161] = {
 **********************************************************************/
 float Calc_BD_Temp(uint32_t val)
 {
-	return (float)val * 165 / 4096 - 40;		// 째C = Vout[12bit=4096] / (Vin=5[V] / 165) - 40
+    return (float)val * 165 / 4096 - 40; // 째C = Vout[12bit=4096] / (Vin=5[V] / 165) - 40
 }
 
 /*********************************************************************
@@ -77,8 +77,9 @@ float Calc_BD_Temp(uint32_t val)
 **********************************************************************/
 float Calc_BD_Humi(uint32_t val)
 {
-//			return (double)val * 100 / 4096;			// %RH = Vout[12bit=4096] / (Vin=5[V] / 100)
-	return (float)val * 125 / 4096 - 12.5;
+    // return (double)val * 100 / 4096;	// %RH = Vout[12bit=4096] / (Vin=5[V] /
+    // 100)
+    return (float)val * 125 / 4096 - 12.5;
 }
 
 /*********************************************************************
@@ -88,28 +89,27 @@ float Calc_BD_Humi(uint32_t val)
 **********************************************************************/
 float Calc_Temp_NTC(uint32_t val)
 {
-	int i;
+    int i;
 
-	if ((val == 0) || (val > pTableNTC[0]) || (val < pTableNTC[160])){
-		return 0;
+    if ((val == 0) || (val > pTableNTC[0]) || (val < pTableNTC[160])) {
+        return 0;
+    }
 
-	}
+    for (i = 0; i < 161; i++) {
+        if (pTableNTC[i] < val) {
+            break;
+        }
+    }
 
-	for (i = 0; i < 161; i++){
-		if (pTableNTC[i] < val){
-			break;
-		}
-	}
-	
-	if (i == 0){
-		return 0;
-	}
-	
-	float dv = (float) val;
-	float d1 = (float) pTableNTC[i - 1];
-	float d2 = (float) pTableNTC[i];
-	
-	return (dv - d1) / (d2 - d1) + i - 11;
+    if (i == 0) {
+        return 0;
+    }
+
+    float dv = (float)val;
+    float d1 = (float)pTableNTC[i - 1];
+    float d2 = (float)pTableNTC[i];
+
+    return (dv - d1) / (d2 - d1) + i - 11;
 }
 
 /*********************************************************************
@@ -119,30 +119,30 @@ float Calc_Temp_NTC(uint32_t val)
 **********************************************************************/
 float Calc_Temp_RTD(uint32_t val)
 {
-	float dv;
-	float d1;
-	float d2;
+    float dv;
+    float d1;
+    float d2;
     float res = 0;
-	int i;
-	
-	if ((val == 0) || (val < pTableRTD[0]) || (val > pTableRTD[160])){
-		return 0;
-	}
-	
-	for (i = 0; i < 161; i++)	{
-		if (pTableRTD[i] > val){
-			break;
-		}
-	}
-	
-	if (i == 0){
-		return 0;
-	}
-	
-	dv = (float)val;
-	d1 = (float)pTableRTD[i - 1];
-	d2 = (float)pTableRTD[i];
-	
-	res = (dv - d1) / (d2 - d1) + i - 11;
+    int i;
+
+    if ((val == 0) || (val < pTableRTD[0]) || (val > pTableRTD[160])) {
+        return 0;
+    }
+
+    for (i = 0; i < 161; i++) {
+        if (pTableRTD[i] > val) {
+            break;
+        }
+    }
+
+    if (i == 0) {
+        return 0;
+    }
+
+    dv = (float)val;
+    d1 = (float)pTableRTD[i - 1];
+    d2 = (float)pTableRTD[i];
+
+    res = (dv - d1) / (d2 - d1) + i - 11;
     return res;
 }

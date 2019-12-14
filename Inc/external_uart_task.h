@@ -86,8 +86,6 @@ int push_external_rx(void *data, uint16_t length);
 int send_external_response(uint8_t cmd, uint8_t option, void *data,
                            uint16_t data_writhe_len, uint16_t data_len, uint16_t buffer_len);
 
-//uint32_t  RecieveBTUart(uint8_t *key);
-//void SendBTUart(uint8_t c);
 void SendUart485String(uint8_t *data, uint16_t length);
 void SendUart485NonDma(uint8_t *data, uint16_t length);
 void StartRs485Task(void const * argument);
@@ -95,8 +93,6 @@ void DoReadFileList(struct ext_rx_msg_s *);
 
 void doSaveIntervalTime(struct ext_rx_msg_s *);
 
-//void ParsingFromRs485(void);
-/* void JumpToFunction485(void); */
 void DoSendFile(struct ext_rx_msg_s *);
 void DoSendFileOpen(struct ext_rx_msg_s *);
 void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize);

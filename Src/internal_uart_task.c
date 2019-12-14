@@ -1,10 +1,9 @@
-#include "cmsis_os.h"
-#include "0_Util.h"
-#include "0_StartSlotUartTask.h"
-#include "external_uart_task.h"
 #include "internal_uart_task.h"
+#include "0_StartSlotUartTask.h"
+#include "0_Util.h"
+#include "cmsis_os.h"
+#include "external_uart_task.h"
 #include <string.h>
-
 
 extern uint8_t readSlotNumber;
 extern uint8_t crcErrorCount;
@@ -34,7 +33,7 @@ struct internal_msg_s {
 };
 
 osMailQDef(internal_pool_q, 16, struct internal_msg_s);
-osMailQId (internal_pool_q_id);
+osMailQId(internal_pool_q_id);
 
 int int_tx_completed;
 int int_rx_completed;
@@ -101,7 +100,8 @@ int send_internal_req(uint8_t id, uint8_t cmd, void *data, uint16_t length)
         return -1;
 
     struct internal_msg_s *obj;
-    obj = (struct internal_msg_s *) osMailAlloc(internal_pool_q_id, osWaitForever);
+    obj =
+        (struct internal_msg_s *)osMailAlloc(internal_pool_q_id, osWaitForever);
     if (!obj) {
         DBG_LOG("%s: mail allocation failed\n", __func__);
         return -1;
@@ -130,7 +130,7 @@ static int validate_msg(uint8_t *rawdata, uint16_t length)
     return 0;
 }
 
-static const char* cmd_str(uint8_t cmd)
+static const char *cmd_str(uint8_t cmd)
 {
     switch (cmd) {
     case CMD_BOARD_TYPE:
@@ -184,7 +184,8 @@ static const char* cmd_str(uint8_t cmd)
 
 static void handle_resp(struct internal_rx_msg_s *received)
 {
-    /* if (received->type == CMD_THRESHOLD_SET || received->type == CMD_THRESHOLD_REQ) { */
+    /* if (received->type == CMD_THRESHOLD_SET || received->type ==
+     * CMD_THRESHOLD_REQ) { */
     /* DBG_LOG("int rx [%d] %s - (%d) ", */
     /*         received->id, cmd_str(received->type), received->length); */
     /* DBG_DUMP(received->data, received->length); */
@@ -258,20 +259,20 @@ static void handle_resp(struct internal_rx_msg_s *received)
 
 static void handle_req(struct internal_msg_s *obj)
 {
-    static uint8_t buf[160] = { 0 };
+    static uint8_t buf[160] = {0};
     struct internal_tx_msg_s *req = &obj->request;
     struct internal_rx_msg_s *resp = &obj->response;
 
     memset(buf, 0, sizeof(buf));
 
-    doMakeSendSlotData(buf, req->id + 0x30, req->cmd,
-                       req->data, req->length, SEND_DATA_LENGTH);
+    doMakeSendSlotData(buf, req->id + 0x30, req->cmd, req->data, req->length,
+                       SEND_DATA_LENGTH);
     noReturnSendCt++;
 
     /* if (req->cmd == CMD_THRESHOLD_SET || req->cmd == CMD_THRESHOLD_REQ) { */
-        /* DBG_LOG("int tx [%d] %s: (%d) ", */
-        /*         req->id, cmd_str(req->cmd), req->length); */
-        /* DBG_DUMP(req->data, req->length); */
+    /* DBG_LOG("int tx [%d] %s: (%d) ", */
+    /*         req->id, cmd_str(req->cmd), req->length); */
+    /* DBG_DUMP(req->data, req->length); */
     /* } */
 
     int_tx_completed = 0;
@@ -282,7 +283,8 @@ static void handle_req(struct internal_msg_s *obj)
             __NOP();
         };
 
-        /* DBG_LOG("%s: rx_dma_req_bytes %d\n", __func__, req->rx_dma_req_bytes); */
+        /* DBG_LOG("%s: rx_dma_req_bytes %d\n", __func__,
+         * req->rx_dma_req_bytes); */
         memset(buf, 0, 160);
         int_rx_completed = 0;
         HAL_UART_Receive_DMA(&huart2, recv_buffer, req->rx_dma_req_bytes);
@@ -291,8 +293,8 @@ static void handle_req(struct internal_msg_s *obj)
         while (int_rx_completed == 0) {
             __NOP();
             if (osKernelSysTick() - old_tick > 100) {
-                DBG_LOG("int rx: %d slot %s is not responsed\n",
-                        req->id, cmd_str(req->cmd));
+                DBG_LOG("int rx: %d slot %s is not responsed\n", req->id,
+                        cmd_str(req->cmd));
                 return;
             }
         };
@@ -356,15 +358,13 @@ static void handle_temperature(struct internal_rx_msg_s *msg)
 
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 130);
 
-    if ((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] == msg->rawdata[132]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[131]) &&
+        (crc.UI8[1] == msg->rawdata[132])) {
         uni4Byte *temp = &TestData.temperature[msg->id];
         for (int i = 0; i < 32; i++)
             (temp + i)->Float = *((float *)&msg->rawdata[i * 4 + 3]);
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
@@ -380,7 +380,6 @@ static void handle_temerature_state(struct internal_rx_msg_s *msg)
         TestData.sensorState[msg->id][i] = (LED_DIPLAY_MODE)msg->data[i];
 }
 
-
 static void handle_threshold_req(struct internal_rx_msg_s *msg)
 {
     if (!msg)
@@ -392,27 +391,25 @@ static void handle_threshold_req(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 130);
 
-    if ((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] == msg->rawdata[132]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[131]) &&
+        (crc.UI8[1] == msg->rawdata[132])) {
         uni4Byte *threshold = &TestData.threshold[msg->id];
-        for (int i = 0; i < 32; i++)
-        {
+        for (int i = 0; i < 32; i++) {
             (threshold + i)->Float = *((float *)&msg->rawdata[i * 4 + 3]);
         }
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
     // 초기화 하는 동안은 486 전송 하지 않는다, 초기화 중일때
     // startThreshold == TRUE 임.
     if (startThreshold != TRUE) {
-        uint8_t thresholdData[130] = { 0 };
+        uint8_t thresholdData[130] = {0};
         thresholdData[0] = msg->id;
         memcpy(&thresholdData[1], &TestData.threshold[msg->id][0].UI8[0], 128);
-        send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ, thresholdData, 129, 132, 152);
+        send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ,
+                               thresholdData, 129, 132, 152);
     }
 
     if (startThreshold == TRUE) {
@@ -430,26 +427,25 @@ static void handle_threshold_set(struct internal_rx_msg_s *msg)
 
     /* uni2Byte crc; */
     uint16_t calculated_crc = CRC16_Make(&msg->rawdata[1], 130);
-    uint16_t received_crc = *((uint16_t *) &msg->rawdata[131]);
+    uint16_t received_crc = *((uint16_t *)&msg->rawdata[131]);
 
-    /* if ((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] == msg->rawdata[132])) */
-    if (calculated_crc == received_crc)
-    {
+    /* if ((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] ==
+     * msg->rawdata[132])) */
+    if (calculated_crc == received_crc) {
         uni4Byte *threshold = &TestData.threshold[msg->id];
         for (int i = 0; i < 32; i++) {
             (threshold + i)->Float = *((float *)&msg->rawdata[i * 4 + 3]);
         }
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
-    uint8_t data[130] = { 0 };
+    uint8_t data[130] = {0};
     data[0] = msg->id;
     memcpy(&data[1], &TestData.threshold[msg->id][0].UI8[0], 128);
-    send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &data[0], 129, 132, 152);
+    send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &data[0], 129,
+                           132, 152);
 }
 
 static void DoAnsRevisionApplySet(struct internal_rx_msg_s *msg)
@@ -463,20 +459,18 @@ static void DoAnsRevisionApplySet(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 8);
 
-    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) {
         TestData.revisionApply[msg->id] = msg->rawdata[3];
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
-    uint8_t  data[2] = { 0 };
+    uint8_t data[2] = {0};
     data[0] = msg->id;
     data[1] = TestData.revisionApply[msg->id];
-    send_external_response(CMD_REVISION, OP_REVISION_APPLY_SET, data, 2, 12, 32);
+    send_external_response(CMD_REVISION, OP_REVISION_APPLY_SET, data, 2, 12,
+                           32);
 }
 
 static void DoAnsRevisionApplyReq(struct internal_rx_msg_s *msg)
@@ -490,21 +484,19 @@ static void DoAnsRevisionApplyReq(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 8);
 
-    if((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) {
         TestData.revisionApply[msg->id] = msg->rawdata[3];
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
-    uint8_t  data[2];
+    uint8_t data[2];
     data[0] = msg->id;
     data[1] = TestData.revisionApply[msg->id];
 
-    send_external_response(CMD_REVISION, OP_REVISION_APPLY_REQ, data, 2, 12, 32);
+    send_external_response(CMD_REVISION, OP_REVISION_APPLY_REQ, data, 2, 12,
+                           32);
 }
 
 static void DoAnsRevisionConstantSet(struct internal_rx_msg_s *msg)
@@ -518,26 +510,24 @@ static void DoAnsRevisionConstantSet(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 8);
 
-    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) {
         TestData.revisionConstant[msg->id].UI8[0] = msg->rawdata[3];
         TestData.revisionConstant[msg->id].UI8[1] = msg->rawdata[4];
         TestData.revisionConstant[msg->id].UI8[2] = msg->rawdata[5];
         TestData.revisionConstant[msg->id].UI8[3] = msg->rawdata[6];
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
-    uint8_t  data[5] = { 0 };
+    uint8_t data[5] = {0};
     data[0] = msg->id;
     data[1] = TestData.revisionConstant[msg->id].UI8[0];
     data[2] = TestData.revisionConstant[msg->id].UI8[1];
     data[3] = TestData.revisionConstant[msg->id].UI8[2];
     data[4] = TestData.revisionConstant[msg->id].UI8[3];
-    send_external_response(CMD_REVISION, OP_REVISION_CONSTANT_SET, data, 6, 12, 32);
+    send_external_response(CMD_REVISION, OP_REVISION_CONSTANT_SET, data, 6, 12,
+                           32);
 }
 
 static void DoAnsRevisionConstantReq(struct internal_rx_msg_s *msg)
@@ -551,26 +541,24 @@ static void DoAnsRevisionConstantReq(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 8);
 
-    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) {
         TestData.revisionConstant[msg->id].UI8[0] = msg->rawdata[3];
         TestData.revisionConstant[msg->id].UI8[1] = msg->rawdata[4];
         TestData.revisionConstant[msg->id].UI8[2] = msg->rawdata[5];
         TestData.revisionConstant[msg->id].UI8[3] = msg->rawdata[6];
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
-    uint8_t  data[5];
+    uint8_t data[5];
     data[0] = msg->id;
     data[1] = TestData.revisionConstant[msg->id].UI8[0];
     data[2] = TestData.revisionConstant[msg->id].UI8[1];
     data[3] = TestData.revisionConstant[msg->id].UI8[2];
     data[4] = TestData.revisionConstant[msg->id].UI8[3];
-    send_external_response(CMD_REVISION, OP_REVISION_CONSTANT_REQ, data, 6, 12, 32);
+    send_external_response(CMD_REVISION, OP_REVISION_CONSTANT_REQ, data, 6, 12,
+                           32);
 }
 
 static void DoAnsCalibrationNTCTableCal(struct internal_rx_msg_s *msg)
@@ -581,30 +569,33 @@ static void DoAnsCalibrationNTCTableCal(struct internal_rx_msg_s *msg)
     noReturnSendCt = 0;
     readSlotNumber = msg->id;
 
-    uni2Byte        crc;
+    uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 130);
 
-    if((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] == msg->rawdata[132]))
-    {
-        for (int i = 0; i < 32; i++)
-        {
+    if ((crc.UI8[0] == msg->rawdata[131]) &&
+        (crc.UI8[1] == msg->rawdata[132])) {
+        for (int i = 0; i < 32; i++) {
             osDelay(1);
-            TestData.ntcCalibrationTable[msg->id][i].UI8[0] = msg->rawdata[i * 4 + 3];
-            TestData.ntcCalibrationTable[msg->id][i].UI8[1] = msg->rawdata[i * 4 + 4];
-            TestData.ntcCalibrationTable[msg->id][i].UI8[2] = msg->rawdata[i * 4 + 5];
-            TestData.ntcCalibrationTable[msg->id][i].UI8[3] = msg->rawdata[i * 4 + 6];
+            TestData.ntcCalibrationTable[msg->id][i].UI8[0] =
+                msg->rawdata[i * 4 + 3];
+            TestData.ntcCalibrationTable[msg->id][i].UI8[1] =
+                msg->rawdata[i * 4 + 4];
+            TestData.ntcCalibrationTable[msg->id][i].UI8[2] =
+                msg->rawdata[i * 4 + 5];
+            TestData.ntcCalibrationTable[msg->id][i].UI8[3] =
+                msg->rawdata[i * 4 + 6];
         }
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
     uint8_t calData[130];
     calData[0] = msg->id;
-    memcpy((void*)&calData[1],(void*)&TestData.ntcCalibrationTable[msg->id][0].UI8[0], 128);
-    send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_CAL, calData, 129, 132, 152);
+    memcpy((void *)&calData[1],
+           (void *)&TestData.ntcCalibrationTable[msg->id][0].UI8[0], 128);
+    send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_CAL,
+                           calData, 129, 132, 152);
 }
 
 static void DoAnsCalibrationNTCConstantSet(struct internal_rx_msg_s *msg)
@@ -618,17 +609,14 @@ static void DoAnsCalibrationNTCConstantSet(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 8);
 
-    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) {
         TestData.ntcCalibrationConst.UI8[0] = msg->rawdata[3];
         TestData.ntcCalibrationConst.UI8[1] = msg->rawdata[4];
         TestData.ntcCalibrationConst.UI8[2] = msg->rawdata[5];
         TestData.ntcCalibrationConst.UI8[3] = msg->rawdata[6];
 
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
@@ -647,26 +635,28 @@ static void DoAnsCalibrationNTCTableReq(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 130);
 
-    if ((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] == msg->rawdata[132]))
-    {
-        for (int i = 0; i < 32; i++)
-        {
-            TestData.ntcCalibrationTable[msg->id][i].UI8[0] = msg->rawdata[i * 4 + 3];
-            TestData.ntcCalibrationTable[msg->id][i].UI8[1] = msg->rawdata[i * 4 + 4];
-            TestData.ntcCalibrationTable[msg->id][i].UI8[2] = msg->rawdata[i * 4 + 5];
-            TestData.ntcCalibrationTable[msg->id][i].UI8[3] = msg->rawdata[i * 4 + 6];
+    if ((crc.UI8[0] == msg->rawdata[131]) &&
+        (crc.UI8[1] == msg->rawdata[132])) {
+        for (int i = 0; i < 32; i++) {
+            TestData.ntcCalibrationTable[msg->id][i].UI8[0] =
+                msg->rawdata[i * 4 + 3];
+            TestData.ntcCalibrationTable[msg->id][i].UI8[1] =
+                msg->rawdata[i * 4 + 4];
+            TestData.ntcCalibrationTable[msg->id][i].UI8[2] =
+                msg->rawdata[i * 4 + 5];
+            TestData.ntcCalibrationTable[msg->id][i].UI8[3] =
+                msg->rawdata[i * 4 + 6];
         }
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
-    uint8_t data[130] = { 0 };
+    uint8_t data[130] = {0};
     data[0] = msg->id;
     memcpy(&data[1], &TestData.ntcCalibrationTable[msg->id][0].UI8[0], 128);
-    send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ, data, 129, 132, 152);
+    send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ,
+                           data, 129, 132, 152);
 }
 
 static void DoAnsCalibrationNTCConstantReq(struct internal_rx_msg_s *msg)
@@ -680,19 +670,17 @@ static void DoAnsCalibrationNTCConstantReq(struct internal_rx_msg_s *msg)
     uni2Byte crc;
     crc.UI16 = CRC16_Make(&msg->rawdata[1], 8);
 
-    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10]))
-    {
+    if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) {
         TestData.ntcCalibrationConst.UI8[0] = msg->rawdata[3];
         TestData.ntcCalibrationConst.UI8[1] = msg->rawdata[4];
         TestData.ntcCalibrationConst.UI8[2] = msg->rawdata[5];
         TestData.ntcCalibrationConst.UI8[3] = msg->rawdata[6];
 
         crcErrorCount = 0;
-    }
-    else
-    {
+    } else {
         crcErrorCount++;
     }
 
-    send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ, &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
+    send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ,
+                           &TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
 }

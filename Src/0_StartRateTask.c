@@ -6,7 +6,7 @@
 #include "fatfs.h"
 #include "0_SdCard.h"
 
-#include <stdio.h>              /* sprintf() */
+#include <stdio.h>
 
 /*********************************************************************
 *	Private variables
@@ -30,7 +30,6 @@ void StartRateTask(void const * argument)
     /* USER CODE BEGIN 5 */
     portTickType	xLastWakeTime;
     portTickType	xLastWakeTimeChk;
-    uint8_t             i;
 
     /* init code for FATFS */
     MX_FATFS_Init();
@@ -70,14 +69,11 @@ void StartRateTask(void const * argument)
     /*     osDelay(100); */
     /* } */
 
-    if(sdValue.sdMountState == SCS_OK)		//sd card Link 확인
-    {
-        if(MountSDIO() != FR_OK)			//sd card mount 확인
+    if (sdValue.sdMountState == SCS_OK)	{//sd card Link 확인
+        if (MountSDIO() != FR_OK) //sd card mount 확인
         {
             sdValue.sdMountState = SCS_MOUNT_ERROR;
-            send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-            /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
-            /* SendUart485String(tx485DataDMA, 32); */
+            send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32);
         }
         else
         {
@@ -87,9 +83,7 @@ void StartRateTask(void const * argument)
     else
     {
         sdValue.sdState = SCS_MOUNT_ERROR;
-        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, (uint8_t*)sdValue.sdState, 1, 12, 32); */
-        /* SendUart485String(tx485DataDMA, 32); */
+        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32);
     }
 
     /* Infinite loop */
@@ -97,14 +91,14 @@ void StartRateTask(void const * argument)
     {
         xLastWakeTime = osKernelSysTick();
 
-        if(!FindFilelistFlag)	//파일 리스트 검색중 일 ㄷ대 ㅅ스기 안함
+        if(!FindFilelistFlag) //파일 리스트 검색중 일 때 쓰기 안함
         {
             if(SysProperties.InterfaceStep == STEP_TEMP_READ)
             {
-                if(sdValue.sdMountState == SCS_OK)	// Mount 까지 성공 했을때만 시도함.
+                if(sdValue.sdMountState == SCS_OK) // Mount 까지 성공 했을때만 시도함.
                 {
                     DoSdCardFunction();
-                    DoSdCardFreeSpace();			// sd card 공간 부족 에러 발생 확인
+                    DoSdCardFreeSpace(); // sd card 공간 부족 에러 발생 확인
                 }
                 else
                 {
@@ -119,7 +113,7 @@ void StartRateTask(void const * argument)
             DoMCUboardInfo();		//mcu board 정보 전송
             osDelay(10);
 
-            for(i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 DoSlotInfo(i);		//슬롯 정보 전송
                 osDelay(10);
