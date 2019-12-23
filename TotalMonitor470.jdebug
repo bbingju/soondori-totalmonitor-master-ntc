@@ -22,15 +22,16 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
-  Project.AddPathSubstitute ("C:/Users/popla/Documents/11_Firmware/TotalMonitor470", "$(ProjectDir)");
-  Project.AddPathSubstitute ("c:/users/popla/documents/11_firmware/totalmonitor470", "$(ProjectDir)");
+  Project.AddPathSubstitute (".", "$(ProjectDir)");
+  Project.AddPathSubstitute (".", "$(ProjectDir)");
   Project.SetDevice ("STM32F405VG");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("JTAG");
   Project.SetTIFSpeed ("1 MHz");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M4F.svd");
-  Project.SetOSPlugin("FreeRTOSPlugin.dll"); // Windows
-  // Project.SetOSPlugin("FreeRTOSPlugin.so"); // Linux 
+  Project.AddSvdFile ("$(ProjectDir)/Scripts/STM32F405.svd");
+  // Project.SetOSPlugin("FreeRTOSPlugin.dll"); // Windows
+  Project.SetOSPlugin("FreeRTOSPlugin.so"); // Linux 
   // Project.SetOSPlugin("FreeRTOSPlugin.dylib"); // Mac
   //
   // User settings

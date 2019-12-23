@@ -2,6 +2,7 @@ build/
 _si/
 .ccls-cache/
 *~
+*.jdebug.user
 
 ### IAR ###
 # Compiled binaries
