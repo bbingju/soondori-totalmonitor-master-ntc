@@ -11,19 +11,19 @@ extern uint8_t startThreshold;
 extern uint8_t SendSlotNumber;
 extern uint8_t noReturnSendCt;
 
-struct internal_tx_msg_s {
+__PACKED_STRUCT internal_tx_msg_s {
     uint8_t id;
     uint8_t cmd;
-    uint8_t data[6];
+    uint8_t data[8];
     uint16_t length;
     int rx_dma_req_bytes;
-} __packed;
+};
 
 struct internal_rx_msg_s {
     uint8_t id;
     uint8_t type;
     uint16_t length;
-    uint8_t rawdata[150];
+    uint8_t rawdata[164];
     uint8_t *data;
 };
 
@@ -66,7 +66,7 @@ static int bytes_to_request(uint8_t cmd)
     case CMD_ADC_REQ:
     case CMD_RELAY_REQ:
     case CMD_RELAY_SET:
-        return -1;
+        return 0;
 
     case CMD_SLOT_ID_REQ:
         return 12;
@@ -91,7 +91,7 @@ static int bytes_to_request(uint8_t cmd)
     case CMD_CALIBRATION_NTC_CON_TABLE_REQ:
         return 152;
     }
-    return -1;
+    return 0;
 }
 
 int send_internal_req(uint8_t id, uint8_t cmd, void *data, uint16_t length)

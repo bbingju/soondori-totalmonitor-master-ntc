@@ -19,7 +19,7 @@ uint16_t SLAVE_CS_PIN[4] = {
     SLAVE_CS3_Pin}; // back plate 의 컨넥터가 잘못 되어 있음
 
 uint8_t TxDataBuffer[UART_TX_BUF_MAX] = {0}; // dma 용도
-uint8_t RxDataDMA[134 * 10] = {0};           // dma 용도
+/* uint8_t RxDataDMA[134 * 10] = {0};           // dma 용도 */
 
 /* uint8_t         RxSlotData[140]  = { 0 };                       //parsing
  * 용도 */
@@ -49,7 +49,7 @@ extern IWDG_HandleTypeDef hiwdg;
 
 void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
 {
-    uint8_t buf[150] = {0};
+    static uint8_t buf[164] = {0};
 
     for (int i = 0; i < num_of_slots; i++) {
         for (int j = 0; j < 11; j++) {
@@ -81,6 +81,8 @@ void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
                 noReturnSendCt = 0;
         }
 
+	osDelay(100);
+
         slots[i].inserted = noReturnSendCt > 9 ? false : true;
         noReturnSendCt = 0;
     }
@@ -94,6 +96,9 @@ void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
 void system_task(void const *argument)
 {
     SysProperties.InterfaceStep = STEP_SLOT_ID;
+    /* SysProperties.InterfaceStep = STEP_READ_THRESHOLD; */
+    /* SysProperties.InterfaceStep = STEP_TEMP_READ; */
+    /* SysProperties.slots[0].inserted = true; */
 
     HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SLAVE_OE1_GPIO_Port, SLAVE_OE1_Pin, GPIO_PIN_RESET);
@@ -116,20 +121,13 @@ void system_task(void const *argument)
 
             while (!existed_any_slot) {
                 check_slots_inserted(SysProperties.slots, MAX_SLOT_NUM);
-                HAL_IWDG_Refresh(&hiwdg);
-                FOREACH(struct slot_properties_s * s, SysProperties.slots)
-                {
-                    if (s->inserted)
+                for (int i = 0; i < MAX_SLOT_NUM; i++) {
+                    struct slot_properties_s *slot = &SysProperties.slots[i];
+                    if (slot->inserted) {
                         existed_any_slot = true;
+                        break;
+                    }
                 }
-                /* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-                /*     struct slot_properties_s *slot = &SysProperties.slots[i];
-                 */
-                /*     if (slot->inserted) { */
-                /*         existed_any_slot = true; */
-                /*         break; */
-                /*     } */
-                /* } */
             }
             /* if (system_reset_needed) { */
             /*     HAL_IWDG_Refresh(&hiwdg); */
@@ -142,34 +140,22 @@ void system_task(void const *argument)
 
         case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
             startThreshold = TRUE;
-            FOREACH(struct slot_properties_s * s, SysProperties.slots)
-            {
-                DoThresholdReq(s);
+            for (int i = 0; i < MAX_SLOT_NUM; i++) {
+              struct slot_properties_s *slot = &SysProperties.slots[i];
+              DoThresholdReq(slot);
             }
-            /* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-            /*   struct slot_properties_s *slot = &SysProperties.slots[i]; */
-            /*   DoThresholdReq(slot); */
-            /* } */
-            osDelay(1000);
+            osDelay(500);
             SysProperties.InterfaceStep = STEP_TEMP_READ;
             break;
 
-        case STEP_TEMP_READ: // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청
-                             // 한다.
-            FOREACH(struct slot_properties_s * s, SysProperties.slots)
-            {
-                DoReqTemperature(s);
-                DoReqTemperatureState(s);
+        case STEP_TEMP_READ: // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청한다.
+            for (int i = 0; i < MAX_SLOT_NUM; i++) {
+                struct slot_properties_s *slot = &SysProperties.slots[i];
+                DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", slot->id, slot->type, slot->inserted);
+                DoReqTemperature(slot);
+                DoReqTemperatureState(slot);
                 osDelay(SysProperties.interval_ms - 50);
             }
-            /* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-            /*     struct slot_properties_s *slot = &SysProperties.slots[i]; */
-            /*     DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", slot->id,
-             * slot->type, slot->inserted); */
-            /*     DoReqTemperature(slot); */
-            /*     DoReqTemperatureState(slot); */
-            /*     osDelay(SysProperties.interval_ms - 50); */
-            /* } */
 
             if (noReturnSendCt > 10)
                 noReturnSendCt = 0;

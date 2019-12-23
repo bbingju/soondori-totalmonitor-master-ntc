@@ -24,7 +24,7 @@ TARGET = TotalMonitor470
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -Os
+OPT = -Og
 
 
 #######################################
