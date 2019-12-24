@@ -29,7 +29,7 @@
 #include "0_GlobalValue.h"
 #include "0_StartDisplayTask.h"
 #include "external_uart_task.h"
-#include "0_StartSlotUartTask.h"
+#include "job_task.h"
 #include "0_StartRateTask.h"
 #include "0_soonFlashMemory.h"
 /* USER CODE END Includes */
@@ -106,7 +106,7 @@ void external_rx_task(void const * argument);
 void external_tx_task(void const * argument);
 void StartRateTask(void const * argument);
 void internal_uart_task(void const * argument);
-void system_task(void const * argument);
+void job_task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -257,9 +257,8 @@ int main(void)
   osThreadDef(ExtRxTask, external_rx_task, osPriorityAboveNormal, 0, 256);
   ExtRxTaskHandle = osThreadCreate(osThread(ExtRxTask), NULL);
 
-  /* definition and creation of SystemTask */
-  osThreadDef(SystemTask, system_task, osPriorityNormal, 0, 256);
-  SystemTaskHandle = osThreadCreate(osThread(SystemTask), NULL);
+  osThreadDef(JobTask, job_task, osPriorityNormal, 0, 256);
+  osThreadCreate(osThread(JobTask), NULL);
 
   HAL_IWDG_Refresh(&hiwdg);
   /* USER CODE END RTOS_THREADS */

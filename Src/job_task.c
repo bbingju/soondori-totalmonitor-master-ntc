@@ -1,4 +1,4 @@
-#include "0_StartSlotUartTask.h"
+#include "job_task.h"
 #include "0_GlobalValue.h"
 #include "0_UartCallback.h"
 #include "external_uart_task.h"
@@ -81,7 +81,7 @@ void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
                 noReturnSendCt = 0;
         }
 
-	osDelay(100);
+	osDelay(50);
 
         slots[i].inserted = noReturnSendCt > 9 ? false : true;
         noReturnSendCt = 0;
@@ -93,7 +93,7 @@ void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
     }
 }
 
-void system_task(void const *argument)
+void job_task(void const *argument)
 {
     SysProperties.InterfaceStep = STEP_SLOT_ID;
     /* SysProperties.InterfaceStep = STEP_READ_THRESHOLD; */
@@ -144,14 +144,14 @@ void system_task(void const *argument)
               struct slot_properties_s *slot = &SysProperties.slots[i];
               DoThresholdReq(slot);
             }
-            osDelay(500);
+            osDelay(100);
             SysProperties.InterfaceStep = STEP_TEMP_READ;
             break;
 
         case STEP_TEMP_READ: // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청한다.
             for (int i = 0; i < MAX_SLOT_NUM; i++) {
                 struct slot_properties_s *slot = &SysProperties.slots[i];
-                DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", slot->id, slot->type, slot->inserted);
+                /* DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", slot->id, slot->type, slot->inserted); */
                 DoReqTemperature(slot);
                 DoReqTemperatureState(slot);
                 osDelay(SysProperties.interval_ms - 50);
@@ -360,8 +360,7 @@ void DoReqSlotID(uint8_t slotNumber)
 void DoReqTemperature(struct slot_properties_s *slot)
 {
     if (slot && slot->inserted) {
-        HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin,
-                          GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
         send_internal_req(slot->id, CMD_TEMP_REQ, NULL, 0);
     }
 
@@ -379,8 +378,7 @@ void DoReqTemperatureState(struct slot_properties_s *slot)
     /* uint8_t u[1] = {0}; */
 
     if (slot && slot->inserted) {
-        HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin,
-                          GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
         send_internal_req(slot->id, CMD_TEMP_STATE_REQ, NULL, 0);
     }
 
@@ -392,9 +390,8 @@ void DoReqTemperatureState(struct slot_properties_s *slot)
     /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 38); */
 }
 
-void DoRevisionApplySet(
-    uint8_t slotNumber,
-    uint8_t mode) // slot 번호 전달 , 0: 측정온도 모드, 1: 보정온도 모드
+ // slot 번호 전달 , 0: 측정온도 모드, 1: 보정온도 모드
+void DoRevisionApplySet(uint8_t slotNumber, uint8_t mode)
 {
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
