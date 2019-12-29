@@ -4,6 +4,10 @@ _si/
 *~
 *.jdebug.user
 
+GPATH
+GRTAGS
+GTAGS
+
 ### IAR ###
 # Compiled binaries
 *.o
