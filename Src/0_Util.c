@@ -1,6 +1,7 @@
 #include "0_Util.h"
+#include "internal_uart_task.h"
 #include "external_uart_task.h"
-#include "job_task.h"
+#include "system_task.h"
 #include <string.h>
 
 uint8_t *bytes;
@@ -107,17 +108,18 @@ void doMakeSendSlotData(uint8_t* SendData, uint8_t SlotNumber,
 }
 
 
-void doMakeSend485Data(uint8_t* SendData, uint8_t  Command, uint8_t  Option,
+void doMakeSend485Data(uint8_t* outbuffer, uint8_t  Command, uint8_t  Option,
                        uint8_t* Data, uint16_t DataWriteLen, uint16_t DataLen,
                        uint16_t BufferLen)
 {
     uni2Byte crc;
     uni4Byte len;
+    uint8_t * SendData = outbuffer;
 
     len.UI32 = 0;
     len.UI16[0] = BufferLen;
 
-    memset(SendData, 0x00, BufferLen);
+    memset(outbuffer, 0x00, BufferLen);
 
     /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN); */
     /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN); */

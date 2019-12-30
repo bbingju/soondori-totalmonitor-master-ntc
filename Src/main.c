@@ -28,8 +28,10 @@
 #include <stdio.h>
 #include "0_GlobalValue.h"
 #include "0_StartDisplayTask.h"
-#include "external_uart_task.h"
 #include "job_task.h"
+#include "internal_uart_task.h"
+#include "external_uart_task.h"
+#include "system_task.h"
 #include "0_StartRateTask.h"
 #include "0_soonFlashMemory.h"
 /* USER CODE END Includes */
@@ -73,18 +75,13 @@ DMA_HandleTypeDef hdma_usart2_tx;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
-osThreadId myDisplayTaskHandle;
-osThreadId ExtRxTaskHandle;
-osThreadId ExtTxTaskHandle;
-osThreadId SystemTaskHandle;
-osThreadId myRateTaskHandle;
-osThreadId InternalUartTasHandle;
 osSemaphoreId myBinarySemModeHandle;
 osSemaphoreId myBinarySemUpHandle;
 osSemaphoreId myBinarySemDownHandle;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 SYSTEM_STRUCT SysProperties;
+osThreadId init_task_id;
 
 /* USER CODE END PV */
 
@@ -101,12 +98,13 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_IWDG_Init(void);
-void StartDisplayTask(void const * argument);
-void external_rx_task(void const * argument);
-void external_tx_task(void const * argument);
-void StartRateTask(void const * argument);
-void internal_uart_task(void const * argument);
-void job_task(void const * argument);
+void init_task(void const * argument);
+extern void StartDisplayTask(void const * argument);
+extern void external_rx_task(void const * argument);
+extern void external_tx_task(void const * argument);
+extern void StartRateTask(void const * argument);
+extern void internal_uart_task(void const * argument);
+extern void system_task(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -156,7 +154,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
-  MX_IWDG_Init();
+  /* MX_IWDG_Init(); */
   /* USER CODE BEGIN 2 */
 
   /* Check if system reset is caused by IWDG */
@@ -236,31 +234,10 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of myDisplayTask */
-  osThreadDef(myDisplayTask, StartDisplayTask, osPriorityNormal, 0, 128);
-  myDisplayTaskHandle = osThreadCreate(osThread(myDisplayTask), NULL);
+  osThreadDef(InitTask, init_task, osPriorityNormal, 0, 128);
+  init_task_id = osThreadCreate(osThread(InitTask), NULL);
 
-  /* definition and creation of myRateTask */
-  osThreadDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512);
-  myRateTaskHandle = osThreadCreate(osThread(myRateTask), NULL);
-
-  /* definition and creation of InternalUartTas */
-  osThreadDef(InternalUartTas, internal_uart_task, osPriorityNormal, 0, 256);
-  InternalUartTasHandle = osThreadCreate(osThread(InternalUartTas), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-	/* add threads, ... */
-  osThreadDef(ExtTxTask, external_tx_task, osPriorityNormal, 0, 256);
-  ExtTxTaskHandle = osThreadCreate(osThread(ExtTxTask), NULL);
-
-  /* definition and creation of myRs485Task */
-  osThreadDef(ExtRxTask, external_rx_task, osPriorityAboveNormal, 0, 256);
-  ExtRxTaskHandle = osThreadCreate(osThread(ExtRxTask), NULL);
-
-  osThreadDef(JobTask, job_task, osPriorityNormal, 0, 256);
-  osThreadCreate(osThread(JobTask), NULL);
-
-  HAL_IWDG_Refresh(&hiwdg);
+  /* HAL_IWDG_Refresh(&hiwdg); */
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -639,7 +616,8 @@ static void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-
+  USART_TypeDef *regs = huart1.Instance;
+  SET_BIT(regs->CR1, USART_CR1_IDLEIE);
   /* USER CODE END USART1_Init 2 */
 
 }
@@ -670,6 +648,8 @@ static void MX_USART2_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART2_Init 2 */
+  USART_TypeDef *regs = huart2.Instance;
+  SET_BIT(regs->CR1, USART_CR1_IDLEIE);
   /* USER CODE END USART2_Init 2 */
 
 }
@@ -924,132 +904,79 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	switch(GPIO_Pin){
-		case MODE_BUTTON_Pin:
-			osSemaphoreRelease(myBinarySemModeHandle);
-			break;
-		case UP_BUTTON_Pin:
-			osSemaphoreRelease(myBinarySemUpHandle);
-			break;
-		case DOWN_BUTTON_Pin:
-			osSemaphoreRelease(myBinarySemDownHandle);
-			break;
-	}
+    switch (GPIO_Pin) {
+    case MODE_BUTTON_Pin:
+        osSemaphoreRelease(myBinarySemModeHandle);
+        break;
+    case UP_BUTTON_Pin:
+        osSemaphoreRelease(myBinarySemUpHandle);
+        break;
+    case DOWN_BUTTON_Pin:
+        osSemaphoreRelease(myBinarySemDownHandle);
+        break;
+    }
 }
 
-void hard_fault_handler_c(unsigned int * hardfault_args, unsigned int r4, unsigned int r5, unsigned int r6)
-{
-  DBG_LOG ("\n[Hard Fault]\n"); // After Joseph Yiu
+/* void hard_fault_handler_c(uint32_t *hardfault_args, uint32_t r4, uint32_t r5, uint32_t r6) */
+/* { */
+/*     DBG_LOG("\n[Hard Fault]\n"); // After Joseph Yiu */
 
-  DBG_LOG ("r0 = %08X, r1 = %08X, r2 = %08X, r3 = %08X\n",
-    hardfault_args[0], hardfault_args[1], hardfault_args[2], hardfault_args[3]);
-  DBG_LOG ("r4 = %08X, r5 = %08X, r6 = %08X, sp = %08X\n",
-    r4, r5, r6, (unsigned int)&hardfault_args[8]);
-  DBG_LOG ("r12= %08X, lr = %08X, pc = %08X, psr= %08X\n",
-    hardfault_args[4], hardfault_args[5], hardfault_args[6], hardfault_args[7]);
+/*     DBG_LOG("r0 = %08X, r1 = %08X, r2 = %08X, r3 = %08X\n", hardfault_args[0], */
+/*             hardfault_args[1], hardfault_args[2], hardfault_args[3]); */
+/*     DBG_LOG("r4 = %08X, r5 = %08X, r6 = %08X, sp = %08X\n", r4, r5, r6, */
+/*             (unsigned int)&hardfault_args[8]); */
+/*     DBG_LOG("r12= %08X, lr = %08X, pc = %08X, psr= %08X\n", hardfault_args[4], */
+/*             hardfault_args[5], hardfault_args[6], hardfault_args[7]); */
 
-  DBG_LOG ("bfar=%08X, cfsr=%08X, hfsr=%08X, dfsr=%08X, afsr=%08X\n",
-    *((volatile unsigned int *)(0xE000ED38)),
-    *((volatile unsigned int *)(0xE000ED28)),
-    *((volatile unsigned int *)(0xE000ED2C)),
-    *((volatile unsigned int *)(0xE000ED30)),
-    *((volatile unsigned int *)(0xE000ED3C)) );
+/*     DBG_LOG("bfar=%08X, cfsr=%08X, hfsr=%08X, dfsr=%08X, afsr=%08X\n", */
+/*             *((volatile unsigned int *)(0xE000ED38)), */
+/*             *((volatile unsigned int *)(0xE000ED28)), */
+/*             *((volatile unsigned int *)(0xE000ED2C)), */
+/*             *((volatile unsigned int *)(0xE000ED30)), */
+/*             *((volatile unsigned int *)(0xE000ED3C))); */
 
-  while(1);
-}
+/*     while (1) */
+/*         ; */
+/* } */
 
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDisplayTask */
 /**
-  * @brief  Function implementing the DisplayTask thread.
+  * @brief  Function implementing the InitTask thread.
   * @param  argument: Not used 
   * @retval None
   */
 /* USER CODE END Header_StartDisplayTask */
-__weak void StartDisplayTask(void const * argument)
+void init_task(void const *argument)
 {
-  /* init code for FATFS */
-  MX_FATFS_Init();
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END 5 */ 
-}
+    MX_FATFS_Init();
 
-/* USER CODE BEGIN Header_StartRs485Task */
-/**
-* @brief Function implementing the myRs485Task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartRs485Task */
-__weak void StartRs485Task(void const * argument)
-{
-  /* USER CODE BEGIN StartRs485Task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartRs485Task */
-}
+    osThreadDef(myDisplayTask, StartDisplayTask, osPriorityNormal, 0, 128);
+    osThreadCreate(osThread(myDisplayTask), NULL);
 
-/* USER CODE BEGIN Header_system_task */
-/**
-* @brief Function implementing the SystemTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_system_task */
-__weak void system_task(void const * argument)
-{
-  /* USER CODE BEGIN system_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END system_task */
-}
+    osThreadDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512);
+    osThreadCreate(osThread(myRateTask), NULL);
 
-/* USER CODE BEGIN Header_StartRateTask */
-/**
-* @brief Function implementing the myRateTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartRateTask */
-__weak void StartRateTask(void const * argument)
-{
-  /* USER CODE BEGIN StartRateTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartRateTask */
-}
+    osThreadDef(JobTask, job_task, osPriorityNormal, 0, 256);
+    osThreadCreate(osThread(JobTask), NULL);
 
-/* USER CODE BEGIN Header_internal_uart_task */
-/**
-* @brief Function implementing the InternalUartTas thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_internal_uart_task */
-__weak void internal_uart_task(void const * argument)
-{
-  /* USER CODE BEGIN internal_uart_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END internal_uart_task */
+    osThreadDef(IntRxTask, internal_rx_task, osPriorityNormal, 0, 256);
+    osThreadCreate(osThread(IntRxTask), NULL);
+
+    /* osThreadDef(InternalUartTas, internal_uart_task, osPriorityNormal, 0, 256); */
+    /* osThreadCreate(osThread(InternalUartTas), NULL); */
+
+    osThreadDef(SystemTask, system_task, osPriorityNormal, 0, 256);
+    osThreadCreate(osThread(SystemTask), NULL);
+
+    /* osThreadDef(ExtTxTask, external_tx_task, osPriorityNormal, 0, 128); */
+    /* osThreadCreate(osThread(ExtTxTask), NULL); */
+
+    osThreadDef(ExtRxTask, external_rx_task, osPriorityAboveNormal, 0, 256);
+    osThreadCreate(osThread(ExtRxTask), NULL);
+
+    osThreadTerminate(init_task_id);
 }
 
 /**

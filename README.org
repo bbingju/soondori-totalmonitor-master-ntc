@@ -1,8 +1,15 @@
-#+TITLE: Total Monitor 470
+#+TITLE: Total Monitor Main Board 405
 
 * Action Items
 ** TODO Add logging messages
 ** TODO add watchdog
+
+* Protocol for the External
+
+** From External
+*** Request file list in the SD memory
+    1. CMD (1 byte): 0x05
+    2. OPTION (1 byte): 0x01
 
 * Dump
 

@@ -14,24 +14,24 @@ extern int int_rx_completed;
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
-    if(huart->Instance == USART2)       //Slot Interface & Bluetooth
-    {
-        int_rx_completed = 1;
-    }
-    else if(huart->Instance == USART1)
-    {
-        push_external_rx(huart->pRxBuffPtr, huart->RxXferSize);
-    }
+	if(huart->Instance == USART2)       //Slot Interface & Bluetooth
+	{
+		/* int_rx_completed = 1; */
+	}
+	else if(huart->Instance == USART1)
+	{
+	}
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if(huart->Instance == USART2)   //Slot Interface & Bluetooth
-    {
-        int_tx_completed = 1;
-    }
-    else if(huart->Instance == USART1)
-    {
-        ext_tx_completed = 1;
-    }
+	if(huart->Instance == USART2)   //Slot Interface & Bluetooth
+	{
+		int_tx_completed = 1;
+	}
+	else if(huart->Instance == USART1)
+	{
+		ext_tx_completed = 1;
+		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
+	}
 }

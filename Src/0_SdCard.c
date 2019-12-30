@@ -496,8 +496,7 @@ void DoDataWrite(void)
 *	(파일과 폴더를 구분해서 보내지 못한다.)
 *	path : 파일 리스트를 확인할 경로를 보낸다.
 **********************************************************************/
-FRESULT scan_files(
-    char *path) /* Start node to be scanned (***also used as work area***) */
+FRESULT scan_files(char *path) /* Start node to be scanned (***also used as work area***) */
 {
     volatile FRESULT res;
     FILINFO fno;
@@ -513,7 +512,7 @@ FRESULT scan_files(
 
     /* Open the directory */
     res = f_opendir(&sdValue.scanDir[sdValue.scanDirDeep], path);
-    osDelay(1);
+    /* osDelay(1); */
     if (res == FR_OK) {
         i = strlen(path);
         for (;;) {
@@ -521,19 +520,19 @@ FRESULT scan_files(
             res = f_readdir(&sdValue.scanDir[sdValue.scanDirDeep], &fno);
             if (res != FR_OK || fno.fname[0] == 0) {
                 // sdValue.sdState = SCS_READDIR_ERROR;
-                osDelay(1);
+                /* osDelay(1); */
                 break;
             }
 
             pc_fn = fno.fname;
 
             if (*pc_fn == '.') {
-                osDelay(1);
+                /* osDelay(1); */
                 continue;
             }
 
             if (fno.fattrib & AM_SYS) {
-                osDelay(1);
+                /* osDelay(1); */
                 continue;
             }
 
@@ -574,7 +573,7 @@ FRESULT scan_files(
             /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_BODY,
              * (uint8_t*)sdValue.scanFilePath, len1 + len2 - 3, 36, 56); */
             /* SendUart485String(tx485DataDMA, 56); */
-            osDelay(10);
+            /* osDelay(10); */
         }
         printf("f_closedir %d\r",
                f_closedir(&sdValue.scanDir[sdValue.scanDirDeep]));
@@ -583,7 +582,7 @@ FRESULT scan_files(
      {
              sdValue.sdState = SCS_OPENDIR_ERROR;
      }*/
-    osDelay(1);
+    /* osDelay(1); */
 
     return res;
 }

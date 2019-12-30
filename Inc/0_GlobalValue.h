@@ -2,32 +2,14 @@
 #define __GLOBAL_VALUE_H__
 //#endif
 
-#ifndef __STM32F4xx_HAL_SD_H
-  //#include "stm32f4xx_hal_sd.h"
-#endif
-
-#ifndef _STDINT
- #include <stdint.h>
-#endif
-
-#include <stdbool.h>
-
-#ifndef __STM32F4xx_HAL_UART_H
- #include "stm32f4xx_hal_uart.h"
-#endif
-
-/**********************************************************
-* 변수는 소문자로 시작
-* struct 변수는 대문자로 시작
-* struct는 대문자로만 작성
-* 함수는 대문자로 시작
-* enum 은 대문자로만 작성
-***********************************************************/
-
+#include "cmsis_os.h"
 #include "ff.h"
 #include "main.h"
 #include "0_GlobalDefine.h"
 #include "debug.h"
+
+#include <stdint.h>
+#include <stdbool.h>
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;

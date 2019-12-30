@@ -23,8 +23,13 @@
 #include "stm32f4xx_it.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "debug.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32f4xx_ll_dma.h"
+#include "stm32f4xx_ll_usart.h"
+#include "external_uart_task.h"
+#include "internal_uart_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -191,7 +196,18 @@ void EXTI4_IRQHandler(void)
 void DMA1_Stream5_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
+    if (LL_DMA_IsEnabledIT_HT(DMA1, LL_DMA_STREAM_5) && LL_DMA_IsActiveFlag_HT5(DMA1)) {
+        LL_DMA_ClearFlag_HT5(DMA1);
+    	/* DBG_LOG("int rx half completed\n"); */
+        internal_rx_notify();
+    }
 
+    /* Check transfer-complete interrupt */
+    if (LL_DMA_IsEnabledIT_TC(DMA1, LL_DMA_STREAM_5) && LL_DMA_IsActiveFlag_TC5(DMA1)) {
+        LL_DMA_ClearFlag_TC5(DMA1);
+    	/* DBG_LOG("int rx full completed\n"); */
+        internal_rx_notify();
+    }
   /* USER CODE END DMA1_Stream5_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart2_rx);
   /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
@@ -247,13 +263,17 @@ void TIM1_UP_TIM10_IRQHandler(void)
   */
 void USART1_IRQHandler(void)
 {
-  /* USER CODE BEGIN USART1_IRQn 0 */
+    /* USER CODE BEGIN USART1_IRQn 0 */
+    if (LL_USART_IsEnabledIT_IDLE(USART1) && LL_USART_IsActiveFlag_IDLE(USART1)) {
+        LL_USART_ClearFlag_IDLE(USART1);
+        /* DBG_LOG("%s\n", __func__); */
+        ext_rx_notify();
+    }
+    /* USER CODE END USART1_IRQn 0 */
+    HAL_UART_IRQHandler(&huart1);
+    /* USER CODE BEGIN USART1_IRQn 1 */
 
-  /* USER CODE END USART1_IRQn 0 */
-  HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART1_IRQn 1 */
-
-  /* USER CODE END USART1_IRQn 1 */
+    /* USER CODE END USART1_IRQn 1 */
 }
 
 /**
@@ -261,12 +281,15 @@ void USART1_IRQHandler(void)
   */
 void USART2_IRQHandler(void)
 {
-  /* USER CODE BEGIN USART2_IRQn 0 */
-    /* static uint8_t uart_rx_buffer[256] = { 0 }; */
-    /* static uint8_t uart_rx_pos = 0; */
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
+    /* USER CODE BEGIN USART2_IRQn 0 */
+    if (LL_USART_IsEnabledIT_IDLE(USART2) && LL_USART_IsActiveFlag_IDLE(USART2)) {
+        LL_USART_ClearFlag_IDLE(USART2);
+        /* DBG_LOG("%s\n", __func__); */
+        internal_rx_notify();
+    }
+    /* USER CODE END USART2_IRQn 0 */
+    HAL_UART_IRQHandler(&huart2);
+    /* USER CODE BEGIN USART2_IRQn 1 */
     /* __HAL_UART_CLEAR_OREFLAG(&huart2); */
     /* __HAL_UART_CLEAR_FEFLAG(&huart2); */
 
@@ -283,11 +306,13 @@ void USART2_IRQHandler(void)
     /*     /\* } *\/ */
 
     /*     /\* uint8_t payload_len = uart_rx_buffer[3]; *\/ */
-    /*     /\* if (payload_len + 2 /\\* preamble *\\/ + 2 + 3 == uart_rx_pos) { *\/ */
+    /*     /\* if (payload_len + 2 /\\* preamble *\\/ + 2 + 3 == uart_rx_pos) {
+     * *\/ */
     /*     /\*     if (uart_rx_buffer[0] == PREAMBLE_OCTET && *\/ */
     /*     /\*         uart_rx_buffer[1] == PREAMBLE_OCTET && *\/ */
     /*     /\*         uart_rx_buffer[uart_rx_pos - 1] == END_OCTET) { *\/ */
-    /*     /\*         memcpy(msg_rx_buffer, &uart_rx_buffer[2], payload_len + 2); *\/ */
+    /*     /\*         memcpy(msg_rx_buffer, &uart_rx_buffer[2], payload_len +
+     * 2); *\/ */
     /*     /\*         uart_rx_pos = 0; *\/ */
     /*     /\*         msg_exist = 1; *\/ */
     /*     /\*     } *\/ */
@@ -304,7 +329,7 @@ void USART2_IRQHandler(void)
     /* } */
 
     /* __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE); */
-  /* USER CODE END USART2_IRQn 1 */
+    /* USER CODE END USART2_IRQn 1 */
 }
 
 /**
@@ -369,7 +394,16 @@ void DMA2_Stream3_IRQHandler(void)
 void DMA2_Stream5_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA2_Stream5_IRQn 0 */
+    if (LL_DMA_IsEnabledIT_HT(DMA2, LL_DMA_STREAM_5) && LL_DMA_IsActiveFlag_HT5(DMA2)) {
+        LL_DMA_ClearFlag_HT5(DMA2);
+        ext_rx_notify();
+    }
 
+    /* Check transfer-complete interrupt */
+    if (LL_DMA_IsEnabledIT_TC(DMA2, LL_DMA_STREAM_5) && LL_DMA_IsActiveFlag_TC5(DMA2)) {
+        LL_DMA_ClearFlag_TC5(DMA2);
+        ext_rx_notify();
+    }
   /* USER CODE END DMA2_Stream5_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart1_rx);
   /* USER CODE BEGIN DMA2_Stream5_IRQn 1 */
