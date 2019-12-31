@@ -18,34 +18,10 @@ extern uint8_t startThreshold;
 extern uint8_t SendSlotNumber;
 extern uint8_t noReturnSendCt;
 
-/* __PACKED_STRUCT internal_tx_msg_s { */
-/*     uint8_t id; */
-/*     uint8_t cmd; */
-/*     uint8_t data[8]; */
-/*     uint16_t length; */
-/*     int rx_dma_req_bytes; */
-/* }; */
-
-/* struct internal_rx_msg_s { */
-/*     uint8_t id; */
-/*     uint8_t cmd; */
-/*     uint16_t length; */
-/*     uint8_t rawdata[164]; */
-/*     uint8_t *data; */
-/* }; */
-
-/* struct internal_msg_s { */
-/*     struct internal_tx_msg_s request; */
-/*     struct internal_rx_msg_s response; */
-/* }; */
-
-static osMessageQDef(internal_rx_q, 8, uint32_t);
+static osMessageQDef(internal_rx_q, 16, uint32_t);
 static osMessageQId(internal_rx_q_id);
 
 void internal_rx_notify() { osMessagePut(internal_rx_q_id, 1, 0); }
-
-/* osMailQDef(internal_pool_q, 8, struct internal_msg_s); */
-/* osMailQId(internal_pool_q_id); */
 
 int int_tx_completed;
 int int_rx_completed;
@@ -107,45 +83,6 @@ static int bytes_to_request(uint8_t cmd)
     case CMD_CALIBRATION_NTC_CON_TABLE_REQ:
         return 152;
     }
-    return 0;
-}
-
-/* int request_internal(uint8_t id, uint8_t cmd, void *data, uint16_t datalen) */
-/* { */
-/*     static struct internal_tx_msg_s m = {0}; */
-/*     m.id = id; */
-/*     m.cmd = cmd; */
-/*     if (data && datalen > 0) */
-/*         memcpy(m.data, data, datalen); */
-/*     m.length = datalen; */
-
-/*     return post_job(JOB_TYPE_TO_INTERNAL, &m, sizeof(m)); */
-/* } */
-
-int send_internal_req(uint8_t id, uint8_t cmd, void *data, uint16_t length)
-{
-    /* if (SysProperties.InterfaceStep == STEP_SLOT_ID) */
-    /*     return -1; */
-
-    /* struct internal_msg_s *obj; */
-    /* obj = */
-    /*     (struct internal_msg_s *)osMailAlloc(internal_pool_q_id, osWaitForever); */
-    /* if (!obj) { */
-    /*     DBG_LOG("%s: mail allocation failed\n", __func__); */
-    /*     return -1; */
-    /* } */
-
-    /* struct internal_tx_msg_s *req = &obj->request; */
-
-    /* memset(req->data, 0, sizeof(req->data)); */
-    /* if (data) */
-    /*     memcpy(req->data, data, length); */
-    /* req->id = id; */
-    /* req->cmd = cmd; */
-    /* req->length = length; */
-    /* req->rx_dma_req_bytes = bytes_to_request(req->cmd); */
-
-    /* osMailPut(internal_pool_q_id, obj); */
     return 0;
 }
 
@@ -220,10 +157,10 @@ void response_from_internal(struct internal_frame *received)
 		/*     break; */
 	case INTERNAL_CMD_SLOT_ID_REQ:
 		noReturnSendCt = 0;
-		if (SendSlotNumber == received->slot_id) {
+		/* if (SendSlotNumber == received->slot_id) { */
 			SysProperties.slots[received->slot_id].inserted = TRUE;
 			DoIncSlotIdStep(SendSlotNumber);
-		}
+		/* } */
 		break;
 		/* case CMD_HW_VER: */
 		/*     break; */
@@ -276,135 +213,53 @@ void response_from_internal(struct internal_frame *received)
 	}
 }
 
-static void handle_req(struct internal_frame *obj)
-{
-#if 0
-    static uint8_t buf[160] = {0};
-    struct internal_tx_msg_s *req = &obj->request;
-    struct internal_rx_msg_s *resp = &obj->response;
-
-    memset(buf, 0, sizeof(buf));
-
-    doMakeSendSlotData(buf, req->id + 0x30, req->cmd, req->data, req->length,
-                       SEND_DATA_LENGTH);
-    noReturnSendCt++;
-
-    /* if (req->cmd == CMD_THRESHOLD_SET || req->cmd == CMD_THRESHOLD_REQ) { */
-    DBG_LOG("int tx [%d] %s: (%d) ", req->id, cmd_str(req->cmd), req->length);
-    DBG_DUMP(req->data, req->length);
-    /* } */
-
-    int_tx_completed = 0;
-    HAL_UART_Transmit_DMA(&huart2, buf, SEND_DATA_LENGTH);
-
-    if (req->rx_dma_req_bytes > 0) {
-        while (int_tx_completed == 0) {
-            __NOP();
-        };
-
-        /* DBG_LOG("%s: rx_dma_req_bytes %d\n", __func__,
-         * req->rx_dma_req_bytes); */
-        memset(buf, 0, 160);
-        int_rx_completed = 0;
-        HAL_UART_Receive_DMA(&huart2, internal_rx_buffer, req->rx_dma_req_bytes);
-
-        uint32_t old_tick = osKernelSysTick();
-        while (int_rx_completed == 0) {
-            __NOP();
-            if (osKernelSysTick() - old_tick > 100) {
-                DBG_LOG("int rx: %d slot %s is not responsed\n", req->id,
-                        cmd_str(req->cmd));
-                return;
-            }
-        };
-
-        memcpy(buf, internal_rx_buffer, req->rx_dma_req_bytes);
-
-        if (validate_msg(buf, req->rx_dma_req_bytes) < 0) {
-            DBG_LOG("%s: error validate_msg\n", __func__);
-            DBG_DUMP(buf, req->rx_dma_req_bytes);
-            return;
-        }
-
-        DBG_LOG("int rx [%d] %s: (%d) ", resp->id, cmd_str(resp->cmd),
-                resp->length);
-        DBG_DUMP(resp->data, resp->length);
-
-        memcpy(resp->rawdata, buf, req->rx_dma_req_bytes);
-        resp->id = resp->rawdata[1] - '0';
-        resp->cmd = resp->rawdata[2];
-        resp->length = req->rx_dma_req_bytes - 4;
-        resp->data = &resp->rawdata[3];
-
-        handle_resp(resp);
-    }
-#endif
-}
-
 void internal_rx_task(void const *arg)
 {
-    internal_rx_q_id = osMessageCreate(osMessageQ(internal_rx_q), NULL);
-    HAL_UART_Receive_DMA(&huart2, internal_rx_buffer, ARRAY_LEN(internal_rx_buffer));
+	internal_rx_q_id = osMessageCreate(osMessageQ(internal_rx_q), NULL);
+	HAL_UART_Receive_DMA(&huart2, internal_rx_buffer, ARRAY_LEN(internal_rx_buffer));
 
-    while (1) {
-        /* HAL_UART_Receive_DMA(&huart2, internal_rx_buffer, ARRAY_LEN(internal_rx_buffer)); */
-        osEvent e = osMessageGet(internal_rx_q_id, osWaitForever);
-        if (e.status == osEventMessage)
-            internal_rx_check();
-    }
+	while (1) {
+		/* HAL_UART_Receive_DMA(&huart2, internal_rx_buffer, ARRAY_LEN(internal_rx_buffer)); */
+		osEvent e = osMessageGet(internal_rx_q_id, osWaitForever);
+		if (e.status == osEventMessage)
+			internal_rx_check();
+	}
 }
-
-/* void internal_uart_task(void const *arg) */
-/* { */
-/*     HAL_UART_Receive_DMA(&huart2, internal_rx_buffer, ARRAY_LEN(internal_rx_buffer)); */
-
-/*     internal_pool_q_id = osMailCreate(osMailQ(internal_pool_q), NULL); */
-
-/*     while (SysProperties.InterfaceStep == STEP_SLOT_ID) */
-/*         osDelay(1); */
-
-/*     while (1) { */
-/*         osEvent event = osMailGet(internal_pool_q_id, osWaitForever); */
-/*         struct internal_frame *obj = (struct internal_frame *)event.value.p; */
-/*         handle_req(obj); */
-/*         osMailFree(internal_pool_q_id, obj); */
-/*     } */
-/* } */
 
 /**
  * @brief  Check for new data received with DMA
  */
 static void internal_rx_check(void)
 {
-    static size_t old_pos;
-    size_t pos;
+	static size_t old_pos;
+	size_t pos;
 
-    /* Calculate current position in buffer */
-    pos = ARRAY_LEN(internal_rx_buffer) - LL_DMA_GetDataLength(DMA1, LL_DMA_STREAM_5);
-    if (pos != old_pos) {    /* Check change in received data */
-        if (pos > old_pos) { /* Current position is over previous one */
-                             /* We are in "linear" mode */
-            /* Process data directly by subtracting "pointers" */
-            parse_rx(&internal_rx_buffer[old_pos], pos - old_pos);
-            /* DBG_DUMP(&internal_rx_buffer[old_pos], pos - old_pos); */
-        } else {
-            /* We are in "overflow" mode */
-            /* First process data to the end of buffer */
-            parse_rx(&internal_rx_buffer[old_pos], ARRAY_LEN(internal_rx_buffer) - old_pos);
-            /* DBG_DUMP(&internal_rx_buffer[old_pos], ARRAY_LEN(internal_rx_buffer) - old_pos); */
-            /* Check and continue with beginning of buffer */
-            if (pos > 0) {
-                /* DBG_DUMP(&internal_rx_buffer[0], pos); */
-                parse_rx(&internal_rx_buffer[0], pos);
-            }
-        }
-    }
-    old_pos = pos; /* Save current position as old */
+	/* Calculate current position in buffer */
+	pos = ARRAY_LEN(internal_rx_buffer) - LL_DMA_GetDataLength(DMA1, LL_DMA_STREAM_5);
+	if (pos != old_pos) {    /* Check change in received data */
+		if (pos > old_pos) { /* Current position is over previous one */
+			/* We are in "linear" mode */
+			/* Process data directly by subtracting "pointers" */
+			parse_rx(&internal_rx_buffer[old_pos], pos - old_pos);
+			/* DBG_DUMP(&internal_rx_buffer[old_pos], pos - old_pos); */
+		} else {
+			/* We are in "overflow" mode */
+			/* First process data to the end of buffer */
+			parse_rx(&internal_rx_buffer[old_pos], ARRAY_LEN(internal_rx_buffer) - old_pos);
+			/* DBG_DUMP(&internal_rx_buffer[old_pos], ARRAY_LEN(internal_rx_buffer) - old_pos); */
+			/* Check and continue with beginning of buffer */
+			if (pos > 0) {
+				/* DBG_DUMP(&internal_rx_buffer[0], pos); */
+				parse_rx(&internal_rx_buffer[0], pos);
+			}
+		}
+	}
+	old_pos = pos; /* Save current position as old */
 
-    /* Check and manually update if we reached end of buffer */
-    if (old_pos == ARRAY_LEN(internal_rx_buffer)) {
-        old_pos = 0;
-    }
+	/* Check and manually update if we reached end of buffer */
+	if (old_pos == ARRAY_LEN(internal_rx_buffer)) {
+		old_pos = 0;
+	}
 }
 
 /**
@@ -415,21 +270,19 @@ static void internal_rx_check(void)
  */
 static void parse_rx(const void *data, size_t len)
 {
-    /* DBG_DUMP(data, len);  */
+	static  struct internal_frame frm = {0};
 
-    static  struct internal_frame frm = {0};
-
-    for (int i = 0; i < len; i++) {
-        if (parse_internal_frame(&frm, data + i)) {
-            post_job(JOB_TYPE_FROM_INTERNAL, &frm, sizeof(frm));
-        }
-    }
+	for (int i = 0; i < len; i++) {
+		if (parse_internal_frame(&frm, data + i)) {
+			post_job(JOB_TYPE_FROM_INTERNAL, &frm, sizeof(frm));
+		}
+	}
 }
 
 static void DoAnsBoardType(struct internal_frame *msg)
 {
-    if (msg)
-        SysProperties.slots[msg->slot_id].type = msg->data[0];
+	if (msg)
+		SysProperties.slots[msg->slot_id].type = msg->data[0];
 }
 
 void send_slot_id_req(uint8_t id)
@@ -452,41 +305,41 @@ void send_slot_id_req(uint8_t id)
 
 static void handle_temperature(struct internal_frame *msg)
 {
-    /* uni2Byte crc; */
+	/* uni2Byte crc; */
 
-    noReturnSendCt = 0;
-    readSlotNumber = msg->slot_id;
+	noReturnSendCt = 0;
+	readSlotNumber = msg->slot_id;
 
-    /* crc.UI16 = CRC16_Make(&msg->rawdata[1], 130); */
+	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 130); */
 
-    /* if ((crc.UI8[0] == msg->rawdata[131]) && */
-    /*     (crc.UI8[1] == msg->rawdata[132])) { */
+	/* if ((crc.UI8[0] == msg->rawdata[131]) && */
+	/*     (crc.UI8[1] == msg->rawdata[132])) { */
         uni4Byte *temp = &TestData.temperature[msg->slot_id];
         for (int i = 0; i < 32; i++)
-            (temp + i)->Float = *((float *)&msg->data[i * 4]);
-    /*     crcErrorCount = 0; */
-    /* } else { */
-    /*     crcErrorCount++; */
-    /* } */
+		(temp + i)->Float = *((float *)&msg->data[i * 4]);
+	/*     crcErrorCount = 0; */
+	/* } else { */
+	/*     crcErrorCount++; */
+	/* } */
 
-    DoIncSlotIdStep(readSlotNumber);
+	DoIncSlotIdStep(readSlotNumber);
 }
 
 static void handle_temerature_state(struct internal_frame *msg)
 {
-    noReturnSendCt = 0;
-    readSlotNumber = msg->slot_id;
+	noReturnSendCt = 0;
+	readSlotNumber = msg->slot_id;
 
-    struct internal_temp_state_data *sd = &msg->state_data;
+	struct internal_temp_state_data *sd = &msg->state_data;
 
-    memcpy(&TestData.sensorState[msg->slot_id][0], sd, TEMP_STATE_DATA_LENGTH);
-    memcpy(&TestData.sensorState[msg->slot_id][16], sd, TEMP_STATE_DATA_LENGTH);
-    /* for (int i = 0; i < TEMP_STATE_DATA_LENGTH; i++) { */
-    /* 	    LED_DIPLAY_MODE *ss = &TestData.sensorState[msg->slot_id]; */
-    /* 	    *(ss + i) = (LED_DIPLAY_MODE)*(sd + i); */
-    /*     /\* TestData.sensorState[msg->slot_id][i] = (LED_DIPLAY_MODE)sd[i]; *\/ */
-    /* 	/\* TestData.sensorState[msg->slot_id][i + 16] = (LED_DIPLAY_MODE)sd[i]; *\/ */
-    /* } */
+	memcpy(&TestData.sensorState[msg->slot_id][0], sd, TEMP_STATE_DATA_LENGTH);
+	memcpy(&TestData.sensorState[msg->slot_id][16], sd, TEMP_STATE_DATA_LENGTH);
+	/* for (int i = 0; i < TEMP_STATE_DATA_LENGTH; i++) { */
+	/* 	    LED_DIPLAY_MODE *ss = &TestData.sensorState[msg->slot_id]; */
+	/* 	    *(ss + i) = (LED_DIPLAY_MODE)*(sd + i); */
+	/*     /\* TestData.sensorState[msg->slot_id][i] = (LED_DIPLAY_MODE)sd[i]; *\/ */
+	/* 	/\* TestData.sensorState[msg->slot_id][i + 16] = (LED_DIPLAY_MODE)sd[i]; *\/ */
+	/* } */
 }
 
 static void handle_threshold_req(struct internal_frame *msg)
@@ -514,11 +367,11 @@ static void handle_threshold_req(struct internal_frame *msg)
 	// 초기화 하는 동안은 486 전송 하지 않는다, 초기화 중일때
 	// startThreshold == TRUE 임.
 	/* if (startThreshold != TRUE) { */
-		uint8_t thresholdData[130] = {0};
-		thresholdData[0] = msg->slot_id;
-		memcpy(&thresholdData[1], &TestData.threshold[msg->slot_id][0].UI8[0], 128);
-		send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ,
-				thresholdData, 129, 132, 152);
+	uint8_t thresholdData[130] = {0};
+	thresholdData[0] = msg->slot_id;
+	memcpy(&thresholdData[1], &TestData.threshold[msg->slot_id][0].UI8[0], 128);
+	send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ,
+			thresholdData, 129, 132, 152);
 	/* } */
 
 	if (startThreshold == TRUE) {
@@ -569,8 +422,8 @@ static void DoAnsRevisionApplySet(struct internal_frame *msg)
 	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 8); */
 
 	/* if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) { */
-		TestData.revisionApply[msg->slot_id] = msg->data[0];
-		/* crcErrorCount = 0; */
+	TestData.revisionApply[msg->slot_id] = msg->data[0];
+	/* crcErrorCount = 0; */
 	/* } else { */
 	/* 	crcErrorCount++; */
 	/* } */

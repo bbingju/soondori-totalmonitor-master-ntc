@@ -283,7 +283,7 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 	case 6: { /* crc lsb */
 		received_crc[1] = *byte;
 
-		uint16_t calcurated = CRC16_Make(_frame_for_crc, 28);
+		uint16_t calcurated = CRC16_Make(&_frame_for_crc[1], 28);
 		if (calcurated != *((uint16_t*)received_crc)) {
 			DBG_LOG("%s: mismatch with crc, received (0x%04X), calcurated (0x%04X)\n", __func__,
 				*((uint16_t*)received_crc), calcurated);

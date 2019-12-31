@@ -13,6 +13,13 @@
 
 #define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
 
+uint8_t Rx485ReadCount = 0;
+uint8_t noReturn485SendCt = 0;
+uint8_t ReadFileBuf[MAX_485_BUF_LEN];
+uint8_t FindFilelistFlag = 0; //0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
+
+int ext_tx_completed = 1;
+
 static void parse_rx(const void *data, size_t len);
 
 /*********************************************************************
@@ -25,39 +32,37 @@ static uint8_t ext_rx_buffer[64];
 
 void ext_rx_notify() { osMessagePut(ext_rx_q_id, 1, 0); }
 
-int ext_tx_completed = 1;
-
 /**
  * @brief  Check for new data received with DMA
  */
 static void ext_rx_check(void)
 {
-    static size_t old_pos;
-    size_t pos;
+	static size_t old_pos;
+	size_t pos;
 
-    /* Calculate current position in buffer */
-    pos = ARRAY_LEN(ext_rx_buffer) - LL_DMA_GetDataLength(DMA2, LL_DMA_STREAM_5);
-    if (pos != old_pos) {    /* Check change in received data */
-        if (pos > old_pos) { /* Current position is over previous one */
-            /* We are in "linear" mode */
-            /* Process data directly by subtracting "pointers" */
-            parse_rx(&ext_rx_buffer[old_pos], pos - old_pos);
-        } else {
-            /* We are in "overflow" mode */
-            /* First process data to the end of buffer */
-            parse_rx(&ext_rx_buffer[old_pos], ARRAY_LEN(ext_rx_buffer) - old_pos);
-            /* Check and continue with beginning of buffer */
-            if (pos > 0) {
-                parse_rx(&ext_rx_buffer[0], pos);
-            }
-        }
-    }
-    old_pos = pos; /* Save current position as old */
+	/* Calculate current position in buffer */
+	pos = ARRAY_LEN(ext_rx_buffer) - LL_DMA_GetDataLength(DMA2, LL_DMA_STREAM_5);
+	if (pos != old_pos) {    /* Check change in received data */
+		if (pos > old_pos) { /* Current position is over previous one */
+			/* We are in "linear" mode */
+			/* Process data directly by subtracting "pointers" */
+			parse_rx(&ext_rx_buffer[old_pos], pos - old_pos);
+		} else {
+			/* We are in "overflow" mode */
+			/* First process data to the end of buffer */
+			parse_rx(&ext_rx_buffer[old_pos], ARRAY_LEN(ext_rx_buffer) - old_pos);
+			/* Check and continue with beginning of buffer */
+			if (pos > 0) {
+				parse_rx(&ext_rx_buffer[0], pos);
+			}
+		}
+	}
+	old_pos = pos; /* Save current position as old */
 
-    /* Check and manually update if we reached end of buffer */
-    if (old_pos == ARRAY_LEN(ext_rx_buffer)) {
-        old_pos = 0;
-    }
+	/* Check and manually update if we reached end of buffer */
+	if (old_pos == ARRAY_LEN(ext_rx_buffer)) {
+		old_pos = 0;
+	}
 }
 
 /**
@@ -77,31 +82,20 @@ static void parse_rx(const void *data, size_t len)
 	}
 }
 
-uint8_t         Rx485ReadCount = 0;
-uint8_t         noReturn485SendCt = 0;
-
-uint8_t 	ReadFileBuf[MAX_485_BUF_LEN];
-
-
-//SD_CARD_STRUCT SdCard;
-//TEST_STATE_STRUCT TestState;
-uint8_t			FindFilelistFlag = 0;		//0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
-
-
 void SendUart485NonDma(uint8_t *data, uint16_t length)
 {
-    HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
-    osDelay(1);
-    HAL_UART_Transmit(&UART_RS485_HANDEL, data, length, 100);
-    osDelay(100);
-    HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
+	osDelay(1);
+	HAL_UART_Transmit(&UART_RS485_HANDEL, data, length, 100);
+	osDelay(100);
+	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
 }
 
 void handle_rx_msg(struct external_frame_rx *received)
 {
-	DBG_LOG("ext rx [%s::%s]: ", ext_cmd_str(received->cmd),
-		ext_option_str(received->cmd, received->option));
-	DBG_DUMP(received->data, 22);
+	/* DBG_LOG("ext rx [%s::%s]: ", ext_cmd_str(received->cmd), */
+	/* 	ext_option_str(received->cmd, received->option)); */
+	/* DBG_DUMP(received->data, 22); */
 
 	switch (received->cmd) {
 	case CMD_TEMP_TEST:
@@ -243,7 +237,6 @@ void DoSendFile(struct external_frame_rx *msg)
 
 void DoSendFileOpen(struct external_frame_rx *msg)
 {
-#if 0
 	uint8_t t[1] = {0};
 	FRESULT res = FR_OK;
 	uint8_t fileNameLen = 0;
@@ -300,90 +293,89 @@ void DoSendFileOpen(struct external_frame_rx *msg)
 			/* SendUart485String(tx485DataDMA, 32); */
 		}
 	}
-#endif
 }
 
 void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 {
-    /* uint8_t t[1] = {0}; */
-    int32_t ReadSize;
-    uint16_t i = 0;
-    uni4Byte temp;
+	/* uint8_t t[1] = {0}; */
+	int32_t ReadSize;
+	uint16_t i = 0;
+	uni4Byte temp;
 
-    /* if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
-    /*     osSemaphoreRelease(CountingSem485TxHandle); */
+	/* if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
+	/*     osSemaphoreRelease(CountingSem485TxHandle); */
 
-    do {
-        memset(ReadFileBuf, 0x00, sizeof(ReadFileBuf));
-        temp.UI32 = Offset + (packetSize * i);
-        ReadFileBuf[0] = temp.UI8[0];
-        ReadFileBuf[1] = temp.UI8[1];
-        ReadFileBuf[2] = temp.UI8[2];
-        ReadFileBuf[3] = temp.UI8[3];
-        // util_mem_cpy(&ReadFileBuf[0], &temp.UI8[0], 4);
-        temp.UI32 = Offset + (packetSize * (i + 1));
-        ReadFileBuf[4] = temp.UI8[0];
-        ReadFileBuf[5] = temp.UI8[1];
-        ReadFileBuf[6] = temp.UI8[2];
-        ReadFileBuf[7] = temp.UI8[3];
-        // util_mem_cpy(&ReadFileBuf[4], &temp.UI8[0], 4);
+	do {
+		memset(ReadFileBuf, 0x00, sizeof(ReadFileBuf));
+		temp.UI32 = Offset + (packetSize * i);
+		ReadFileBuf[0] = temp.UI8[0];
+		ReadFileBuf[1] = temp.UI8[1];
+		ReadFileBuf[2] = temp.UI8[2];
+		ReadFileBuf[3] = temp.UI8[3];
+		// util_mem_cpy(&ReadFileBuf[0], &temp.UI8[0], 4);
+		temp.UI32 = Offset + (packetSize * (i + 1));
+		ReadFileBuf[4] = temp.UI8[0];
+		ReadFileBuf[5] = temp.UI8[1];
+		ReadFileBuf[6] = temp.UI8[2];
+		ReadFileBuf[7] = temp.UI8[3];
+		// util_mem_cpy(&ReadFileBuf[4], &temp.UI8[0], 4);
 
-        ReadSize = DoSendFileRead(Offset + (packetSize * i), packetSize);
-        send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY,
-                               &ReadFileBuf[0], ReadSize + 8, packetSize + 8,
-                               packetSize + 8 + 20);
-        /* doMakeSend485DataDownLoad(tx485DataDMA, CMD_SD_CARD,
-         * OP_SDCARD_DOWNLOAD_BADY, &ReadFileBuf[0], ReadSize + 8, packetSize +
-         * 8, packetSize + 8 + 20); */
-        /* SendUart485String(&tx485DataDMA[0], packetSize + 8 + 20); */
+		ReadSize = DoSendFileRead(Offset + (packetSize * i), packetSize);
+		send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY,
+				&ReadFileBuf[0], ReadSize + 8, packetSize + 8,
+				packetSize + 8 + 20);
+		/* doMakeSend485DataDownLoad(tx485DataDMA, CMD_SD_CARD,
+		 * OP_SDCARD_DOWNLOAD_BADY, &ReadFileBuf[0], ReadSize + 8, packetSize +
+		 * 8, packetSize + 8 + 20); */
+		/* SendUart485String(&tx485DataDMA[0], packetSize + 8 + 20); */
 
-        /*		uint16_t len = (packetSize + 8 + 20);
-                        uint16_t ct  = (len / 32);
+		/*		uint16_t len = (packetSize + 8 + 20);
+				uint16_t ct  = (len / 32);
 
-                        for(int j = 0; j < ct; j++)
-                        {
-                        SendUart485String(&tx485DataDMA[j * 32], 32);
-                        len -= 32;
-                        }
-                        osDelay(1);
-                        SendUart485String(&tx485DataDMA[j * 32], len);
-        */
-        if (packetSize != ReadSize) //마지막 페킷
-        {
-            osDelay(1);
-            break;
-        }
-        i++;
-    } while (1);
+				for(int j = 0; j < ct; j++)
+				{
+				SendUart485String(&tx485DataDMA[j * 32], 32);
+				len -= 32;
+				}
+				osDelay(1);
+				SendUart485String(&tx485DataDMA[j * 32], len);
+		*/
+		if (packetSize != ReadSize) //마지막 페킷
+		{
+			osDelay(1);
+			break;
+		}
+		i++;
+	} while (1);
 
-    osDelay(1);
+	osDelay(1);
 }
 
 void DoSendFileClose(void)
 {
-    FRESULT res = FR_OK;
-    uint8_t t[1] = {0};
+	FRESULT res = FR_OK;
+	uint8_t t[1] = {0};
 
-    res = f_close(&sdValue.sendFileObject);
-    if (res == FR_OK) //파일 정상으로 닫힘
-    {
-        sdValue.sdState = SCS_OK;
-        send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER,
-                               sdValue.sendFileName, sdValue.sendFileNameLen,
-                               36, 56);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD,
-         * OP_SDCARD_DOWNLOAD_FOOTER, sdValue.sendFileName,
-         * sdValue.sendFileNameLen, 36, 56); */
-        /* SendUart485String(tx485DataDMA, 56); */
-    } else //파일 닫기 에러
-    {
-        sdValue.sdState = SCS_CLOSE_ERROR;
-        t[0] = SCS_CLOSE_ERROR;
-        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
-         * 12, 32); */
-        /* SendUart485String(tx485DataDMA, 32); */
-    }
+	res = f_close(&sdValue.sendFileObject);
+	if (res == FR_OK) //파일 정상으로 닫힘
+	{
+		sdValue.sdState = SCS_OK;
+		send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER,
+				sdValue.sendFileName, sdValue.sendFileNameLen,
+				36, 56);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD,
+		 * OP_SDCARD_DOWNLOAD_FOOTER, sdValue.sendFileName,
+		 * sdValue.sendFileNameLen, 36, 56); */
+		/* SendUart485String(tx485DataDMA, 56); */
+	} else //파일 닫기 에러
+	{
+		sdValue.sdState = SCS_CLOSE_ERROR;
+		t[0] = SCS_CLOSE_ERROR;
+		send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
+		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
+		 * 12, 32); */
+		/* SendUart485String(tx485DataDMA, 32); */
+	}
 }
 
 int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)

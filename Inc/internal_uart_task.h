@@ -2,6 +2,7 @@
 #define INTERNAL_UART_TASK_H
 
 #include "0_GlobalValue.h"
+#include "frame.h"
 #include <stdint.h>
 
 // to Slave UART
@@ -43,11 +44,10 @@ struct internal_uart_msg_s;
 extern "C" {
 #endif
 
+void response_from_internal(struct internal_frame *received);
 void internal_rx_task(void const *arg);
 void internal_rx_notify();
 void send_slot_id_req(uint8_t id);
-int send_internal_req(uint8_t id, uint8_t cmd, void *data, uint16_t length);
-int push_internal_resp(void *data, uint16_t length);
 
 void UartInternalTxFunction(uint8_t* datas, uint16_t length);
 void DoCalibrationNTCTableCal(uint8_t slotNumber);

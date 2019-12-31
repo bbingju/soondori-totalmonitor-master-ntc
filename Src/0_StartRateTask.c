@@ -33,8 +33,6 @@ void StartRateTask(void const * argument)
     portTickType	xLastWakeTimeChk;
 
     /* init code for FATFS */
-    /* MX_FATFS_Init(); */
-    /* HAL_IWDG_Refresh(&hiwdg); */
 
     //시간 초기화
     HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
@@ -134,7 +132,6 @@ void StartRateTask(void const * argument)
         else
             osDelayUntil(&xLastWakeTime, (uint32_t)SysProperties.interval_ms);
     }
-    /* USER CODE END 5 */
 }
 
 void DoSmpsCheck(void)
@@ -167,8 +164,6 @@ void DoSdCardFreeSpace(void)
     {
         sdValue.sdState = SCS_DISK_FULL;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32); */
-        /* SendUart485String(tx485DataDMA, 32); */
     }
     else
     {
@@ -192,8 +187,6 @@ void DoSdCardFunction(void)
         sdValue.sdState = SCS_MKDIR_ERROR;
         tempData[0] = (uint8_t)sdValue.sdState;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, tempData, 1, 12, 32);
-        /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, tempData, 1, 12, 32); */
-        /* SendUart485String(tx485DataDMA, 32); */
     }
 }
 
@@ -204,8 +197,6 @@ void DoMCUboardInfo(void)
 	RealTimeSendData[17] = sdValue.sdState;
 
 	send_external_response(CMD_TEMP_TEST, OP_TEMP_MAIN_INFO, &RealTimeSendData[0], 17, 32, 52);
-	/* doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_MAIN_INFO, &RealTimeSendData[0], 17, 32, 52); */
-	/* SendUart485String(tx485DataDMA, 52); */
 }
 
 void DoSlotInfo(uint8_t slot)
@@ -216,8 +207,6 @@ void DoSlotInfo(uint8_t slot)
 	RealTimeSendData[3] = TestData.revisionApply[slot];
 
 	send_external_response(CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &RealTimeSendData[0], 4, 32, 52);
-	/* doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &RealTimeSendData[0], 4, 32, 52); */
-	/* SendUart485String(tx485DataDMA, 52); */
 }
 
 void DoChannelInfo(uint8_t slot)
@@ -226,8 +215,6 @@ void DoChannelInfo(uint8_t slot)
 	memcpy(&RealTimeSendData[1], &TestData.sensorState[slot][0], 32);
 
 	send_external_response(CMD_TEMP_TEST, OP_TEMP_CHANNEL_INFO, &RealTimeSendData[0], 33, 36, 56);
-	/* doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_CHANNEL_INFO, &RealTimeSendData[0], 33, 36, 56); */
-	/* SendUart485String(tx485DataDMA, 56); */
 }
 
 void DoChannelValue(uint8_t slot)
@@ -236,6 +223,4 @@ void DoChannelValue(uint8_t slot)
 	memcpy(&RealTimeSendData[1], &TestData.temperature[slot][0].UI8[0], sizeof(float) * 32);
 
 	send_external_response(CMD_TEMP_TEST, OP_TEMP_CHANNEL_VALUE, &RealTimeSendData[0], 129, 132, 152);
-	/* doMakeSend485Data(tx485DataDMA, CMD_TEMP_TEST, OP_TEMP_CHANNEL_VALUE, &RealTimeSendData[0], 129, 132, 152); */
-	/* SendUart485String(tx485DataDMA, 152); */
 }

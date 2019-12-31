@@ -316,30 +316,3 @@ float midADC_float(float * inData) /* using Bubble sort */
         }
         return sortData[6];
 }
-
-/*-----------------------------------------------------------------------*/
-/* String functions                                                      */
-/*-----------------------------------------------------------------------*/
-
-/* Copy memory to memory */
-/* void util_mem_cpy (void* dst, const void* src, UINT cnt)  */
-/* { */
-/*      BYTE *d = (BYTE*)dst; */
-/*      const BYTE *s = (const BYTE*)src; */
-
-/*      if (cnt) { */
-/*              do { */
-/*                      *d++ = *s++; */
-/*              } while (--cnt); */
-/*      } */
-/* } */
-
-/* Fill memory block */
-/* void util_mem_set (void* dst, int val, UINT cnt)  */
-/* { */
-/*      BYTE *d = (BYTE*)dst; */
-
-/*      do { */
-/*              *d++ = (BYTE)val; */
-/*      } while (--cnt); */
-/* } */

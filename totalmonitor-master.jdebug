@@ -30,13 +30,13 @@ void OnProjectLoad (void) {
   Project.SetTIFSpeed ("1 MHz");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M4F.svd");
   Project.AddSvdFile ("$(ProjectDir)/Scripts/STM32F405.svd");
-  // Project.SetOSPlugin("FreeRTOSPlugin.dll"); // Windows
-  Project.SetOSPlugin("FreeRTOSPlugin.so"); // Linux 
+  Project.SetOSPlugin("FreeRTOSPlugin.dll"); // Windows
+  // Project.SetOSPlugin("FreeRTOSPlugin.so"); // Linux 
   // Project.SetOSPlugin("FreeRTOSPlugin.dylib"); // Mac
   //
   // User settings
   //
-  File.Open ("$(ProjectDir)/build/TotalMonitor470.elf");
+  File.Open ("$(ProjectDir)/build/totalmonitor-master.elf");
 }
 
 /*********************************************************************

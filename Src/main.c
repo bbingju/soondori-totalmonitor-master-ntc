@@ -952,14 +952,14 @@ void init_task(void const *argument)
 {
     MX_FATFS_Init();
 
+    osThreadDef(JobTask, job_task, osPriorityNormal, 0, 256);
+    osThreadCreate(osThread(JobTask), NULL);
+
     osThreadDef(myDisplayTask, StartDisplayTask, osPriorityNormal, 0, 128);
     osThreadCreate(osThread(myDisplayTask), NULL);
 
     osThreadDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512);
     osThreadCreate(osThread(myRateTask), NULL);
-
-    osThreadDef(JobTask, job_task, osPriorityNormal, 0, 256);
-    osThreadCreate(osThread(JobTask), NULL);
 
     osThreadDef(IntRxTask, internal_rx_task, osPriorityNormal, 0, 256);
     osThreadCreate(osThread(IntRxTask), NULL);
@@ -973,7 +973,7 @@ void init_task(void const *argument)
     /* osThreadDef(ExtTxTask, external_tx_task, osPriorityNormal, 0, 128); */
     /* osThreadCreate(osThread(ExtTxTask), NULL); */
 
-    osThreadDef(ExtRxTask, external_rx_task, osPriorityAboveNormal, 0, 256);
+    osThreadDef(ExtRxTask, external_rx_task, osPriorityNormal, 0, 512);
     osThreadCreate(osThread(ExtRxTask), NULL);
 
     osThreadTerminate(init_task_id);

@@ -66,20 +66,20 @@
 #define ALL_SLOT            0xFF
 
 
-struct internal_rx_msg_s {
-    uint8_t id;
-    uint8_t cmd;
-    size_t datalen;
-    uint8_t data[164];
-};
+/* struct internal_rx_msg_s { */
+/*     uint8_t id; */
+/*     uint8_t cmd; */
+/*     size_t datalen; */
+/*     uint8_t data[164]; */
+/* }; */
 
-__PACKED_STRUCT internal_tx_msg_s {
-    uint8_t id;
-    uint8_t cmd;
-    uint8_t data[8];
-    uint8_t length;
-    int rx_dma_req_bytes;
-};
+/* __PACKED_STRUCT internal_tx_msg_s { */
+/*     uint8_t id; */
+/*     uint8_t cmd; */
+/*     uint8_t data[8]; */
+/*     uint8_t length; */
+/*     int rx_dma_req_bytes; */
+/* }; */
 
 #ifdef __cplusplus
 extern "C" {

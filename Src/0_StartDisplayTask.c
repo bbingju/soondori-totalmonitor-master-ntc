@@ -12,20 +12,20 @@ uint32_t	adc_battery[110];
 uint32_t	adc_mainBoardSensor[310];
 uint32_t	adc_battert_add = 0;
 uint32_t	adc_mainBoardRTD_add = 0;
-float 		adc_mainBoardTEMP_add = 0;
-float 		adc_mainBoardHUMI_add = 0;
+float		adc_mainBoardTEMP_add = 0;
+float		adc_mainBoardHUMI_add = 0;
 
 BUTTONMODE	modeButtonEnter = BTN_NORMAL;
 uint8_t		modeButtonDelay;
 
-SEGMENT_SPECIAL_FONT 	digit_L = SSP_HYPHEN;
+SEGMENT_SPECIAL_FONT	digit_L = SSP_HYPHEN;
 SEGMENT_SPECIAL_FONT	digit_R = SSP_HYPHEN;
 
-uint8_t 	tempErrorChennal = 0;
+uint8_t		tempErrorChennal = 0;
 
-uint32_t 	revid;
-uint32_t 	devid;
-uint32_t 	uid[3];
+uint32_t	revid;
+uint32_t	devid;
+uint32_t	uid[3];
 
 uint8_t iiii;
 
@@ -63,38 +63,38 @@ void StartDisplayTask(void const * argument)
     /* Infinite loop */
     for(;;)
     {
-        static uint8_t ct = 0;
-        xLastWakeTime = osKernelSysTick();
+	static uint8_t ct = 0;
+	xLastWakeTime = osKernelSysTick();
 
-        if(ct++ % 2 == 0)	// 1초에 한번씩 점멸
-        {
-            HAL_GPIO_TogglePin(POWER_LED_GPIO_Port, POWER_LED_Pin);
-            DoDisplayModeChange();
-            doSegmentDisplay(ct);
-        }
+	if(ct++ % 2 == 0)	// 1초에 한번씩 점멸
+	{
+	    HAL_GPIO_TogglePin(POWER_LED_GPIO_Port, POWER_LED_Pin);
+	    DoDisplayModeChange();
+	    doSegmentDisplay(ct);
+	}
 
-        doBatteryVoltageCheck();
-        doMainBoardSensorCheck();
-        doModeButton();
+	doBatteryVoltageCheck();
+	doMainBoardSensorCheck();
+	doModeButton();
 
-        //Up Button
-        if(myBinarySemUpHandle != NULL)
-        {
-            //if(osSemaphoreWait(myBinarySemUpHandle, 100) == osOK)
-            {
-                HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
-            }
-        }
+	//Up Button
+	if(myBinarySemUpHandle != NULL)
+	{
+	    //if(osSemaphoreWait(myBinarySemUpHandle, 100) == osOK)
+	    {
+		HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
+	    }
+	}
 
-        //Down Button
-        if(myBinarySemDownHandle != NULL)
-        {
-            //if(osSemaphoreWait(myBinarySemDownHandle, 100) == osOK)
-            {
-                HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
-            }
-        }
-        osDelayUntil(&xLastWakeTime, 250);
+	//Down Button
+	if(myBinarySemDownHandle != NULL)
+	{
+	    //if(osSemaphoreWait(myBinarySemDownHandle, 100) == osOK)
+	    {
+		HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
+	    }
+	}
+	osDelayUntil(&xLastWakeTime, 250);
     }
     /* USER CODE END 5 */
 }
@@ -139,7 +139,7 @@ void DoDisplayModeChange(void)
 **********************************************************************/
 void doSegmentDisplay(uint8_t quarterSec)
 {
-	switch(SysProperties.displayMode){
+	switch (SysProperties.displayMode) {
 		case DPM_NORMAL:
 			HAL_GPIO_WritePin(RELAY_SEL_GPIO_Port, RELAY_SEL_Pin, GPIO_PIN_SET);
 
@@ -149,7 +149,7 @@ void doSegmentDisplay(uint8_t quarterSec)
 			digit_L++;
 			digit_R++;
 
-			if(digit_L > SSP_SLASH)
+			if (digit_L > SSP_SLASH)
 			{
 				digit_L = SSP_HYPHEN;
 				digit_R = SSP_HYPHEN;
@@ -159,7 +159,7 @@ void doSegmentDisplay(uint8_t quarterSec)
 			HAL_GPIO_WritePin(RELAY_SEL_GPIO_Port, RELAY_SEL_Pin, GPIO_PIN_RESET);
 			doBuzzerPlay(200);
 
-			if((quarterSec % 4) < 2)
+			if ((quarterSec % 4) < 2)
 			{
 				SegmentDisplay(1, doTextToDigitdata('E'));
 				SegmentDisplay(2, doTextToDigitdata('T'));
@@ -201,26 +201,26 @@ void doModeButton(void)
 	//Mode Button
 	if(myBinarySemModeHandle != NULL)
 	{
-		if(osSemaphoreWait(myBinarySemModeHandle, 0) == osOK)	// 버튼 눌렸는지 확인
+		if(osSemaphoreWait(myBinarySemModeHandle, 0) == osOK) // 버튼 눌렸는지 확인
 		{
-			modeButtonEnter = BTN_FALLING;		// 버튼 눌림
+			modeButtonEnter = BTN_FALLING; // 버튼 눌림
 		}
 	}
 
-	if(HAL_GPIO_ReadPin(MODE_BUTTON_GPIO_Port, MODE_BUTTON_Pin) == GPIO_PIN_SET)	//버튼에서 손 때면 복귀
+	if(HAL_GPIO_ReadPin(MODE_BUTTON_GPIO_Port, MODE_BUTTON_Pin) == GPIO_PIN_SET) //버튼에서 손 때면 복귀
 	{
 		modeButtonEnter = BTN_NORMAL;
 		modeButtonDelay = 0;
 	}
 
-	if(modeButtonEnter == BTN_FALLING)		//버튼 눌린거 확인됬을때
+	if(modeButtonEnter == BTN_FALLING) //버튼 눌린거 확인됬을때
 	{
 		modeButtonDelay++;
-		if(modeButtonDelay > 12)						//버튼 누르고 3초 확인
+		if(modeButtonDelay > 12) //버튼 누르고 3초 확인
 		{
 			if(SysProperties.displayMode == DPM_NORMAL)
 			{
-				modeButtonEnter = BTN_ENTERED;		//버튼 3초 이상 눌렸음, 제진입 금지
+				modeButtonEnter = BTN_ENTERED; //버튼 3초 이상 눌렸음, 제진입 금지
 				doBuzzerPlay(90);
 				osDelay(40);
 				doBuzzerPlay(90);
@@ -228,7 +228,7 @@ void doModeButton(void)
 			}
 			else if(SysProperties.displayMode == DPM_SETTING)
 			{
-				modeButtonEnter = BTN_ENTERED;		//버튼 3초 이상 눌렸음, 제진입 금지
+				modeButtonEnter = BTN_ENTERED; //버튼 3초 이상 눌렸음, 제진입 금지
 				doBuzzerPlay(90);
 				osDelay(40);
 				doBuzzerPlay(90);
@@ -244,19 +244,17 @@ void doModeButton(void)
 **********************************************************************/
 void doBatteryVoltageCheck(void)
 {
-	uint8_t i;
-
 	adc_battert_add = 0;
-	for(i = 10; i < 100; i++){	//dma 로 일ㄱ어낸 데이터중 처름 몇개의 값이 오차가 생겨서 10개는 건너ㄷ뒤어서 게산 함.
+	for (int i = 10; i < 100; i++){	//dma 로 일ㄱ어낸 데이터중 처름 몇개의 값이 오차가 생겨서 10개는 건너ㄷ뒤어서 게산 함.
 		adc_battert_add += adc_battery[i];
 	}
 	TestData.mainBoard[MBS_BATTERY].Float = (float)(((double)( ( (double) ((double)adc_battert_add
-																					/ 90) 						// 90 : 합게된 수량
-																					* 2)						// 2 : 내부에서 1/2로 배율됨
-																					* 3300						// 3.3V * 1000
-																					/ 0xfff)					// 4095 resolution
-																					/ 1000) 					// 3.3V 로 환산
-																					+ 0.1);						// diode drop voltage 보상
+										/ 90) /* 90 : 합게된 수량 */
+										* 2) /* 2 : 내부에서 1/2로 배율됨 */
+										* 3300 /* 3.3V * 1000 */
+										/ 0xfff) /* 4095 resolution */
+										/ 1000) /* 3.3V 로 환산 */
+										+ 0.1);	/* diode drop voltage 보상 */
 
 	HAL_ADC_Start_DMA(&hadc1, adc_battery, 100);
 }
@@ -267,15 +265,12 @@ void doBatteryVoltageCheck(void)
 **********************************************************************/
 void doMainBoardSensorCheck(void)
 {
-	uint8_t i;
-  //float returnedValue = 0;
-
 	adc_mainBoardRTD_add = 0;
 	adc_mainBoardTEMP_add = 0;
 	adc_mainBoardHUMI_add = 0;
 
 	// RTD DATA
-	for(i = 0; i < 100; i++)
+	for (int i = 0; i < 100; i++)
 	{
 	    adc_mainBoardRTD_add += adc_mainBoardSensor[i * 3];
 	}
@@ -283,13 +278,13 @@ void doMainBoardSensorCheck(void)
 	TestData.mainBoard[MBS_RTD].Float = Calc_Temp_RTD(TestData.mainBoardADC[MBS_RTD]) + TestData.rtdCalibrationConst.Float;	//교정 상수 추
 
 	// BOARD TEMP
-	for(i = 0; i < 100; i++){
+	for (int i = 0; i < 100; i++) {
 		adc_mainBoardTEMP_add += Calc_BD_Temp(adc_mainBoardSensor[i * 3 + 1]);
 	}
 	TestData.mainBoard[MBS_TEMP].Float = adc_mainBoardTEMP_add / 100;
 
 	// BOARD HUMIDITY
-	for(i = 0; i < 100; i++){
+	for (int i = 0; i < 100; i++) {
 		adc_mainBoardHUMI_add += Calc_BD_Humi(adc_mainBoardSensor[i * 3 + 2]);
 	}
 	TestData.mainBoard[MBS_HUMI].Float = adc_mainBoardHUMI_add / 100;
