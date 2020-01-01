@@ -38,12 +38,20 @@ static const uint16_t crc16tab[256] = {
 	0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 };
 
+__STATIC_INLINE uint16_t crc16_ccitt_update(uint16_t crc, uint8_t a)
+{
+	return (crc << 8) ^ crc16tab[((crc >> 8) ^ a) & 0x00FF];
+}
+
 static uint16_t crc16_ccitt(const uint8_t *buf, int len)
 {
 	register int counter;
 	register uint16_t crc = 0;
 	for (counter = 0; counter < len; counter++)
-		crc = (crc << 8) ^ crc16tab[((crc >> 8) ^ *(uint8_t *)buf++) & 0x00FF];
+		/* crc = (crc << 8) ^ crc16tab[((crc >> 8) ^ *(uint8_t *)buf++) & 0x00FF]; */
+		crc = crc16_ccitt_update(crc, *(uint8_t *)buf++);
+	return crc;
+}
 	return crc;
 }
 
@@ -78,7 +86,7 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte)
 	static uint8_t state = 0;
 	static uint8_t datalen = 0;
 	static uint8_t received_crc[2] = {0};
-	static uint8_t *offset_for_crc = NULL;
+	static uint16_t crc = 0;
 
 	if (!frm || !byte)
 		return 0;
@@ -89,6 +97,7 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte)
 			datalen = 0;
 			received_crc[0] = 0;
 			received_crc[1] = 0;
+			crc = 0;
 			++state;
 		}
 		break;
@@ -96,19 +105,21 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte)
 
 	case 1: { /* slot_id */
 		frm->slot_id = *byte;
-		offset_for_crc = (uint8_t *)byte;
+		crc = crc16_ccitt_update(crc, *byte);
 		++state;
 		break;
 	}
 
 	case 2: { /* cmd */
 		frm->cmd = *byte;
+		crc = crc16_ccitt_update(crc, *byte);
 		++state;
 		break;
 	}
 
 	case 3: { /* datalen */
 		frm->datalen = *byte;
+		crc = crc16_ccitt_update(crc, *byte);
 		++state;
 		if (frm->datalen == 0)
 			++state;
@@ -117,18 +128,13 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte)
 		else {
 			datalen = frm->datalen;
 			memset(frm->data, 0, datalen);
-			/* frm->data = calloc(1, sizeof(datalen)); */
-			/* if (!frm->data) { */
-			/* 	DBG_LOG("%s calloc error\n", __func__); */
-			/* 	state = 0; */
-			/* 	return 0; */
-			/* } */
 		}
 		break;
 	}
 
 	case 4: { /* data */
 		frm->data[frm->datalen - datalen] = *byte;
+		crc = crc16_ccitt_update(crc, *byte);
 		if (--datalen == 0) {
 			++state;
 		}
@@ -143,16 +149,10 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte)
 
 	case 6: { /* crc lsb */
 		received_crc[1] = *byte;
-		/* uint16_t calculated_crc = crc16_ccitt(offset_for_crc, frm->datalen +
-		 * 3); */
-		/* if (*((uint16_t *)&received_crc) != calculated_crc) { */
-		/* 	state = 0; */
-		/* 	if (frm->data) { */
-		/* 	  free(frm->data);  */
-		/* 	  frm->data = NULL; */
-		/* 	} */
-		/* 	return 0; */
-		/* } */
+		if (*((uint16_t *)received_crc) != crc) {
+			state = 0;
+			return 0;
+		}
 		++state;
 		break;
 	}
