@@ -8,7 +8,9 @@
 **********************************************************************/
 TEST_DATA TestData;
 
-uint32_t	adc_battery[110];
+#define BATTERY_SAMPLE_NBR 100
+
+static uint32_t adc_battery[BATTERY_SAMPLE_NBR + 10];
 uint32_t	adc_mainBoardSensor[310];
 uint32_t	adc_battert_add = 0;
 uint32_t	adc_mainBoardRTD_add = 0;
@@ -230,7 +232,7 @@ void doModeButton(void)
 void doBatteryVoltageCheck(void)
 {
 	adc_battert_add = 0;
-	for (int i = 10; i < 100; i++){	//dma 로 일ㄱ어낸 데이터중 처름 몇개의 값이 오차가 생겨서 10개는 건너ㄷ뒤어서 게산 함.
+	for (int i = 10; i < BATTERY_SAMPLE_NBR; i++){	//dma 로 일ㄱ어낸 데이터중 처음 몇개의 값이 오차가 생겨서 10개는 건너ㄷ뒤어서 게산 함.
 		adc_battert_add += adc_battery[i];
 	}
 	TestData.mainBoard[MBS_BATTERY].Float = (float)(((double)( ( (double) ((double)adc_battert_add
@@ -255,24 +257,24 @@ void doMainBoardSensorCheck(void)
 	adc_mainBoardHUMI_add = 0;
 
 	// RTD DATA
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < BATTERY_SAMPLE_NBR; i++)
 	{
 	    adc_mainBoardRTD_add += adc_mainBoardSensor[i * 3];
 	}
-	TestData.mainBoardADC[MBS_RTD] = adc_mainBoardRTD_add / 100;
+	TestData.mainBoardADC[MBS_RTD] = adc_mainBoardRTD_add / BATTERY_SAMPLE_NBR;
 	TestData.mainBoard[MBS_RTD].Float = Calc_Temp_RTD(TestData.mainBoardADC[MBS_RTD]) + TestData.rtdCalibrationConst.Float;	//교정 상수 추
 
 	// BOARD TEMP
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < BATTERY_SAMPLE_NBR; i++) {
 		adc_mainBoardTEMP_add += Calc_BD_Temp(adc_mainBoardSensor[i * 3 + 1]);
 	}
 	TestData.mainBoard[MBS_TEMP].Float = adc_mainBoardTEMP_add / 100;
 
 	// BOARD HUMIDITY
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < BATTERY_SAMPLE_NBR; i++) {
 		adc_mainBoardHUMI_add += Calc_BD_Humi(adc_mainBoardSensor[i * 3 + 2]);
 	}
-	TestData.mainBoard[MBS_HUMI].Float = adc_mainBoardHUMI_add / 100;
+	TestData.mainBoard[MBS_HUMI].Float = adc_mainBoardHUMI_add / BATTERY_SAMPLE_NBR;
 
 	HAL_ADC_Start_DMA(&hadc2, adc_mainBoardSensor, 300);
 }
