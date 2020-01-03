@@ -82,15 +82,6 @@ static void parse_rx(const void *data, size_t len)
 	}
 }
 
-void SendUart485NonDma(uint8_t *data, uint16_t length)
-{
-	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
-	osDelay(1);
-	HAL_UART_Transmit(&UART_RS485_HANDEL, data, length, 100);
-	osDelay(100);
-	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
-}
-
 void handle_rx_msg(struct external_frame_rx *received)
 {
 	/* DBG_LOG("ext rx [%s::%s]: ", ext_cmd_str(received->cmd), */
@@ -268,29 +259,17 @@ void DoSendFileOpen(struct external_frame_rx *msg)
 
 	res = f_stat((const TCHAR *)sdValue.sendFileName, &fno);
 
-	/* if(osSemaphoreGetCount(CountingSem485TxHandle) == 0) */
-	/*     osSemaphoreRelease(CountingSem485TxHandle); */
-
 	if (res == FR_OK) {
 		res = f_open(&sdValue.sendFileObject, sdValue.sendFileName,
 			FA_OPEN_EXISTING | FA_READ);
-		if (res == FR_OK) //파일 정상 오픈
-		{
+		if (res == FR_OK) { //파일 정상 오픈
 			sdValue.sdState = SCS_OK;
 			send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_HEADER,
 					sdValue.sendFileName, fileNameLen, 36, 56);
-			/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD,
-			 * OP_SDCARD_DOWNLOAD_HEADER, sdValue.sendFileName, fileNameLen, 36,
-			 * 56); */
-			/* SendUart485String(tx485DataDMA, 56); */
-		} else //파일 오픈 에러
-		{
+		} else {	//파일 오픈 에러
 			sdValue.sdState = SCS_OPEN_ERROR;
 			t[0] = SCS_OPEN_ERROR;
 			send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-			/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t,
-			 * 1, 12, 32); */
-			/* SendUart485String(tx485DataDMA, 32); */
 		}
 	}
 }
@@ -595,7 +574,6 @@ void CmdCalibrationNTCTableReq(struct external_frame_rx *msg)
 void CmdCalibrationNTCConstantReq(struct external_frame_rx *msg)
 {
 	uint8_t id = msg->data[0];
-	/* DoCalibrationNTCConstantReq(Rx485Data[7]); //slot 번호 전달 */
 	DoCalibrationNTCConstantReq(id); //slot 번호 전달
 }
 
@@ -607,13 +585,13 @@ void doSetTime(struct external_frame_rx *msg)
 	RTC_DateTypeDef setDate, getDate;
 	RTC_TimeTypeDef setTime, getTime;
 
-	setDate.Year = msg->data[0];    // Rx485Data[7];
-	setDate.Month = msg->data[1];   // Rx485Data[8];
-	setDate.Date = msg->data[2];    // Rx485Data[9];
-	setDate.WeekDay = msg->data[6]; // Rx485Data[13];
-	setTime.Hours = msg->data[3];   // Rx485Data[10];
-	setTime.Minutes = msg->data[4]; // Rx485Data[11];
-	setTime.Seconds = msg->data[5]; // Rx485Data[12];
+	setDate.Year = msg->data[0];
+	setDate.Month = msg->data[1];
+	setDate.Date = msg->data[2];
+	setDate.WeekDay = msg->data[6];
+	setTime.Hours = msg->data[3];
+	setTime.Minutes = msg->data[4];
+	setTime.Seconds = msg->data[5];
 	setTime.TimeFormat = RTC_HOURFORMAT_24;
 	setTime.StoreOperation = RTC_STOREOPERATION_RESET;
 
@@ -634,13 +612,6 @@ void doSetTime(struct external_frame_rx *msg)
 		HAL_RTC_GetTime(&hrtc, &getTime, RTC_FORMAT_BIN);
 		HAL_RTC_GetDate(&hrtc, &getDate, RTC_FORMAT_BIN);
 
-		/*i++;
-		  if(i > 100)
-		  {
-		  res = FALSE;
-		  break;
-		  }*/
-
 		if ((setDate.Year == getDate.Year) &&
 			(setDate.Month == getDate.Month) &&
 			(setDate.Date == getDate.Date) &&
@@ -652,9 +623,6 @@ void doSetTime(struct external_frame_rx *msg)
 	} while (1);
 
 	send_external_response(CMD_TIME, OP_TIME_SET, &res, 1, 12, 32);
-	/* doMakeSend485Data(tx485DataDMA, CMD_TIME, OP_TIME_SET, &res, 1, 12, 32);
-	 */
-	/* SendUart485String(tx485DataDMA, 32); */
 }
 
 void doGetTime(struct external_frame_rx *msg)
@@ -662,7 +630,4 @@ void doGetTime(struct external_frame_rx *msg)
 	uint8_t res = 0;
 
 	send_external_response(CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32);
-	/* doMakeSend485Data(tx485DataDMA, CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32);
-	 */
-	/* SendUart485String(tx485DataDMA, 32); */
 }

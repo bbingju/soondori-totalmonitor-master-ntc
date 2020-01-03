@@ -82,8 +82,8 @@ typedef enum {
 typedef __PACKED_STRUCT {
     uni4Byte mainBoard[4];    // MAINBOARDSENSOR 사용 해서 선택
     uint32_t mainBoardADC[4]; // main board 내부 센서 adc 값
-    /* float   temperature[4][32]; // adc 완료후 온도값으로
-     * 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널 */
+    /* float   temperature[4][32]; // adc 완료후 온도값으로 */
+    /* 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널 */
     uni4Byte temperature[4][32]; // adc 완료후 온도값으로 환산된 값, 0 :
                                  // 피대상물 온도, 1 : 환경온도 , 0~15채널
     uni4Byte adcMidValue[4][32]; // 컨버팅 완료된 ADC 값중 중간 값,  0 :
@@ -143,22 +143,22 @@ struct slot_properties_s {
 
 
 typedef struct {
-    /* DISPLAYMODE 사용해서 선택,
-       NORMAL MODE 에서는 -, \, |, / 을 순차적으로 표시 한다.
-       SETTING MODE 에서는 설정 값들을 변경 한다. */
-    DISPLAYMODE displayMode;
+	/* DISPLAYMODE 사용해서 선택,
+	   NORMAL MODE 에서는 -, \, |, / 을 순차적으로 표시 한다.
+	   SETTING MODE 에서는 설정 값들을 변경 한다. */
+	DISPLAYMODE displayMode;
 
-    /* 초기화 단계 표시용 */
-    uint8_t InterfaceStep;
+	/* 초기화 단계 표시용 */
+	uint8_t InterfaceStep;
 
-    /* sample rate 를 만들기 위한 task delay time 설정 */
-    uint32_t interval_ms;
+	/* sample rate 를 만들기 위한 task delay time 설정 */
+	uint32_t interval_ms;
 
-    /* 온도 실시간 감시 플레 */
-    uint8_t start_flag;
+	/* 온도 실시간 감시 플레 */
+	uint8_t start_flag;
 
-    uni4Byte mcuUUID[3]; // MCU UUID
-    uint8_t smpsState;   // smps 신호 확인
+	uni4Byte mcuUUID[3]; // MCU UUID
+	uint8_t smpsState;   // smps 신호 확인
 
     struct slot_properties_s slots[MAX_SLOT_NUM];
 } SYSTEM_STRUCT;

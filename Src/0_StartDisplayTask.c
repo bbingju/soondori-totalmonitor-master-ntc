@@ -45,28 +45,13 @@ void StartDisplayTask(void const * argument)
     revid = HAL_GetREVID();
     devid = HAL_GetDEVID();
 
-    //Task 부팅 완료 플레그
-    /* SysProperties.bootingWate[0] = TRUE; */
-
-    /* while(1) */
-    /* { */
-    /*     if( (SysProperties.bootingWate[0] == TRUE) &&   // 0 : StartDiaplayTask, */
-    /*         (SysProperties.bootingWate[1] == TRUE) &&   // 1 : StartRs485Task, */
-    /*         (SysProperties.bootingWate[2] == TRUE) &&   // 2 : StartSlotUartTask, */
-    /*         (SysProperties.bootingWate[3] == TRUE) )    // 3 : StartRateTask */
-    /*     { */
-    /*         break; */
-    /*     } */
-    /*     osDelay(100); */
-    /* } */
-
     /* Infinite loop */
     for(;;)
     {
 	static uint8_t ct = 0;
 	xLastWakeTime = osKernelSysTick();
 
-	if(ct++ % 2 == 0)	// 1초에 한번씩 점멸
+	if (ct++ % 2 == 0)	// 1초에 한번씩 점멸
 	{
 	    HAL_GPIO_TogglePin(POWER_LED_GPIO_Port, POWER_LED_Pin);
 	    DoDisplayModeChange();

@@ -53,21 +53,6 @@ void StartRateTask(void const * argument)
         HAL_RTC_SetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
     }
 
-    /* //Task 부팅 완료 플레그 */
-    /* SysProperties.bootingWate[3] = TRUE; */
-
-    /* while(1) */
-    /* { */
-    /*     if( (SysProperties.bootingWate[0] == TRUE) &&	// 0 : StartDiaplayTask, */
-    /*         (SysProperties.bootingWate[1] == TRUE) &&	// 1 : StartRs485Task, */
-    /*         (SysProperties.bootingWate[2] == TRUE) &&	// 2 : StartSlotUartTask, */
-    /*         (SysProperties.bootingWate[3] == TRUE) )	// 3 : StartRateTask */
-    /*     { */
-    /*         break; */
-    /*     } */
-    /*     osDelay(100); */
-    /* } */
-
     if (sdValue.sdMountState == SCS_OK)	{ //sd card Link 확인
         if (MountSDIO() != FR_OK)	  //sd card mount 확인
         {
