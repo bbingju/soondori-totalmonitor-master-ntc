@@ -3,10 +3,10 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko">
 <head>
-<!-- 2019-12-27 Fri 22:50 -->
+<!-- 2019-12-31 화 13:06 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Total Manager Protocol</title>
+<title>Protocol for Total Temp Monitor</title>
 <meta name="generator" content="Org mode" />
 <meta name="author" content="Phil Hwang" />
 <style type="text/css">
@@ -235,59 +235,36 @@ for the JavaScript code in this tag.
 </head>
 <body>
 <div id="content">
-<h1 class="title">Total Manager Protocol</h1>
+<h1 class="title">Protocol for Total Temp Monitor</h1>
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgcb2edbf">1. General Serial Frame</a></li>
-<li><a href="#org7feca84">2. For the External</a></li>
-<li><a href="#orgd7bc3a7">3. For the Internal</a>
+<li><a href="#org016d55c">1. Serial Frame Format</a>
 <ul>
-<li><a href="#org0a4c803">3.1. Frame Format</a></li>
-<li><a href="#org0ee1b38">3.2. Internal CMDs</a>
+<li><a href="#orgf4ca17c">1.1. Frame Format fo the External</a></li>
+<li><a href="#org1c2b841">1.2. Frame Format for the Internal</a>
 <ul>
-<li><a href="#org5e1c381">3.2.1. <code>INTERNAL_CMD_BOARD_TYPE_REQ</code>, (<code>0x01</code>)</a></li>
-<li><a href="#org29d3568">3.2.2. <code>INTERNAL_CMD_RESET</code>, (<code>0x02</code>)</a></li>
-<li><a href="#org3ae7831">3.2.3. <code>INTERNAL_CMD_SLOT_ID_REQ</code>, (<code>0x03</code>)</a></li>
-<li><a href="#orgdcbad83">3.2.4. <code>INTERNAL_CMD_TEMPERATURE_REQ</code>, (<code>0x04</code>)</a></li>
-<li><a href="#orgef5ff49">3.2.5. <code>INTERNAL_CMD_TEMPERATURE_STATE_REQ</code>, (<code>0x05</code>)</a></li>
-<li><a href="#orgb866ad8">3.2.6. <code>INTERNAL_CMD_ADC_REQ</code>, (<code>0x06</code>)</a></li>
-<li><a href="#org71bfd0b">3.2.7. <code>INTERNAL_CMD_THRESHOLD_REQ</code>, (<code>0x07</code>)</a></li>
-<li><a href="#orgea05463">3.2.8. <code>INTERNAL_CMD_THRESHOLD_SET</code>, (<code>0x08</code>)</a></li>
-<li><a href="#orgaa60d18">3.2.9. <code>INTERNAL_CMD_RELAY_REQ</code>, (<code>0x09</code>)</a></li>
-<li><a href="#orgdd48f11">3.2.10. <code>INTERNAL_CMD_RELAY_SET</code>, (<code>0x0A</code>)</a></li>
-<li><a href="#org2797cf7">3.2.11. <code>INTERNAL_CMD_REVISION_CONSTANT_REQ</code>, (<code>0x0B</code>)</a></li>
-<li><a href="#orgd5421e5">3.2.12. <code>INTERNAL_CMD_REVISION_CONSTANT_SET</code>, (<code>0x0C</code>)</a></li>
-<li><a href="#org1c8b88c">3.2.13. <code>INTERNAL_CMD_REVISION_APPLY_REQ</code>, (<code>0x0D</code>)</a></li>
-<li><a href="#orgae97318">3.2.14. <code>INTERNAL_CMD_REVISION_APPLY_SET</code>, (<code>0x0E</code>)</a></li>
-<li><a href="#org23c90d5">3.2.15. <code>INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_CAL</code>, (<code>0x0F</code>)</a></li>
-<li><a href="#org863a680">3.2.16. <code>INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_REQ</code>, (<code>0x10</code>)</a></li>
-<li><a href="#org1b4c6e1">3.2.17. <code>INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ</code>, (<code>0x11</code>)</a></li>
-<li><a href="#org2f92ed1">3.2.18. <code>INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET</code>, (<code>0x12</code>)</a></li>
+<li><a href="#org2e30219">1.2.1. Internal CMDs</a></li>
+<li><a href="#org43b05f8">1.2.2. CRC</a></li>
 </ul>
 </li>
-<li><a href="#org7a8cf21">3.3. CRC</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orgcb2edbf" class="outline-2">
-<h2 id="orgcb2edbf"><span class="section-number-2">1</span> General Serial Frame</h2>
+<div id="outline-container-org016d55c" class="outline-2">
+<h2 id="org016d55c"><span class="section-number-2">1</span> Serial Frame Format</h2>
+<div class="outline-text-2" id="text-1">
 </div>
-
-<div id="outline-container-org7feca84" class="outline-2">
-<h2 id="org7feca84"><span class="section-number-2">2</span> For the External</h2>
+<div id="outline-container-orgf4ca17c" class="outline-3">
+<h3 id="orgf4ca17c"><span class="section-number-3">1.1</span> Frame Format fo the External</h3>
 </div>
-<div id="outline-container-orgd7bc3a7" class="outline-2">
-<h2 id="orgd7bc3a7"><span class="section-number-2">3</span> For the Internal</h2>
-<div class="outline-text-2" id="text-3">
-</div>
-<div id="outline-container-org0a4c803" class="outline-3">
-<h3 id="org0a4c803"><span class="section-number-3">3.1</span> Frame Format</h3>
-<div class="outline-text-3" id="text-3-1">
+<div id="outline-container-org1c2b841" class="outline-3">
+<h3 id="org1c2b841"><span class="section-number-3">1.2</span> Frame Format for the Internal</h3>
+<div class="outline-text-3" id="text-1-2">
 <ul class="org-ul">
 <li>Octet 2개(<code>STR</code>: <code>0xFE</code>, <code>END</code>: <code>0xFD</code>)가 예약되어 있음</li>
 <li>Frame의 시작은 <code>STR</code>, 끝은 <code>END</code></li>
@@ -306,79 +283,44 @@ for the JavaScript code in this tag.
 <dt>CMD</dt><dd>1 octet. 아래에서 구체적으로 설명함.</dd>
 <dt>Payload length</dt><dd>1 octet. payload의 최대 크기는 <code>0xFF</code> (256) bytes.</dd>
 <dt>Payload</dt><dd>N1</dd>
-<dt>CRC</dt><dd>2 octets.</dd>
+<dt>CRC</dt><dd>2 octets. Slot ID부터 데이터 끝까지의 구간을 계산함.</dd>
 </dl></li>
 </ul>
 </div>
+
+<div id="outline-container-org2e30219" class="outline-4">
+<h4 id="org2e30219"><span class="section-number-4">1.2.1</span> Internal CMDs</h4>
+<div class="outline-text-4" id="text-1-2-1">
+</div>
+<ol class="org-ol">
+<li><a id="org6eb2c69"></a><code>INTERNAL_CMD_BOARD_TYPE_REQ</code>, (<code>0x01</code>)<br /></li>
+<li><a id="org3a82a9c"></a><code>INTERNAL_CMD_RESET</code>, (<code>0x02</code>)<br /></li>
+<li><a id="orgbc57200"></a><code>INTERNAL_CMD_SLOT_ID_REQ</code>, (<code>0x03</code>)<br /></li>
+<li><a id="org671bcd4"></a><code>INTERNAL_CMD_TEMPERATURE_REQ</code>, (<code>0x04</code>)<br /></li>
+<li><a id="orgf48efc1"></a><code>INTERNAL_CMD_TEMPERATURE_STATE_REQ</code>, (<code>0x05</code>)<br /></li>
+<li><a id="org1bdd291"></a><code>INTERNAL_CMD_ADC_REQ</code>, (<code>0x06</code>)<br /></li>
+<li><a id="orgba4c800"></a><code>INTERNAL_CMD_THRESHOLD_REQ</code>, (<code>0x07</code>)<br /></li>
+<li><a id="orgb2bed29"></a><code>INTERNAL_CMD_THRESHOLD_SET</code>, (<code>0x08</code>)<br /></li>
+<li><a id="org34986ed"></a><code>INTERNAL_CMD_RELAY_REQ</code>, (<code>0x09</code>)<br /></li>
+<li><a id="org67752f8"></a><code>INTERNAL_CMD_RELAY_SET</code>, (<code>0x0A</code>)<br /></li>
+<li><a id="org07ca557"></a><code>INTERNAL_CMD_REVISION_CONSTANT_REQ</code>, (<code>0x0B</code>)<br /></li>
+<li><a id="orge36b7d1"></a><code>INTERNAL_CMD_REVISION_CONSTANT_SET</code>, (<code>0x0C</code>)<br /></li>
+<li><a id="orgb63ef6e"></a><code>INTERNAL_CMD_REVISION_APPLY_REQ</code>, (<code>0x0D</code>)<br /></li>
+<li><a id="org1591723"></a><code>INTERNAL_CMD_REVISION_APPLY_SET</code>, (<code>0x0E</code>)<br /></li>
+<li><a id="org457d5a5"></a><code>INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_CAL</code>, (<code>0x0F</code>)<br /></li>
+<li><a id="org16edd68"></a><code>INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_REQ</code>, (<code>0x10</code>)<br /></li>
+<li><a id="orgfe7f64d"></a><code>INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ</code>, (<code>0x11</code>)<br /></li>
+<li><a id="orga3c3bfb"></a><code>INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET</code>, (<code>0x12</code>)<br /></li>
+</ol>
 </div>
 
-<div id="outline-container-org0ee1b38" class="outline-3">
-<h3 id="org0ee1b38"><span class="section-number-3">3.2</span> Internal CMDs</h3>
-<div class="outline-text-3" id="text-3-2">
-</div>
-<div id="outline-container-org5e1c381" class="outline-4">
-<h4 id="org5e1c381"><span class="section-number-4">3.2.1</span> <code>INTERNAL_CMD_BOARD_TYPE_REQ</code>, (<code>0x01</code>)</h4>
-</div>
-<div id="outline-container-org29d3568" class="outline-4">
-<h4 id="org29d3568"><span class="section-number-4">3.2.2</span> <code>INTERNAL_CMD_RESET</code>, (<code>0x02</code>)</h4>
-</div>
-<div id="outline-container-org3ae7831" class="outline-4">
-<h4 id="org3ae7831"><span class="section-number-4">3.2.3</span> <code>INTERNAL_CMD_SLOT_ID_REQ</code>, (<code>0x03</code>)</h4>
-</div>
-<div id="outline-container-orgdcbad83" class="outline-4">
-<h4 id="orgdcbad83"><span class="section-number-4">3.2.4</span> <code>INTERNAL_CMD_TEMPERATURE_REQ</code>, (<code>0x04</code>)</h4>
-</div>
-<div id="outline-container-orgef5ff49" class="outline-4">
-<h4 id="orgef5ff49"><span class="section-number-4">3.2.5</span> <code>INTERNAL_CMD_TEMPERATURE_STATE_REQ</code>, (<code>0x05</code>)</h4>
-</div>
-<div id="outline-container-orgb866ad8" class="outline-4">
-<h4 id="orgb866ad8"><span class="section-number-4">3.2.6</span> <code>INTERNAL_CMD_ADC_REQ</code>, (<code>0x06</code>)</h4>
-</div>
-<div id="outline-container-org71bfd0b" class="outline-4">
-<h4 id="org71bfd0b"><span class="section-number-4">3.2.7</span> <code>INTERNAL_CMD_THRESHOLD_REQ</code>, (<code>0x07</code>)</h4>
-</div>
-<div id="outline-container-orgea05463" class="outline-4">
-<h4 id="orgea05463"><span class="section-number-4">3.2.8</span> <code>INTERNAL_CMD_THRESHOLD_SET</code>, (<code>0x08</code>)</h4>
-</div>
-<div id="outline-container-orgaa60d18" class="outline-4">
-<h4 id="orgaa60d18"><span class="section-number-4">3.2.9</span> <code>INTERNAL_CMD_RELAY_REQ</code>, (<code>0x09</code>)</h4>
-</div>
-<div id="outline-container-orgdd48f11" class="outline-4">
-<h4 id="orgdd48f11"><span class="section-number-4">3.2.10</span> <code>INTERNAL_CMD_RELAY_SET</code>, (<code>0x0A</code>)</h4>
-</div>
-<div id="outline-container-org2797cf7" class="outline-4">
-<h4 id="org2797cf7"><span class="section-number-4">3.2.11</span> <code>INTERNAL_CMD_REVISION_CONSTANT_REQ</code>, (<code>0x0B</code>)</h4>
-</div>
-<div id="outline-container-orgd5421e5" class="outline-4">
-<h4 id="orgd5421e5"><span class="section-number-4">3.2.12</span> <code>INTERNAL_CMD_REVISION_CONSTANT_SET</code>, (<code>0x0C</code>)</h4>
-</div>
-<div id="outline-container-org1c8b88c" class="outline-4">
-<h4 id="org1c8b88c"><span class="section-number-4">3.2.13</span> <code>INTERNAL_CMD_REVISION_APPLY_REQ</code>, (<code>0x0D</code>)</h4>
-</div>
-<div id="outline-container-orgae97318" class="outline-4">
-<h4 id="orgae97318"><span class="section-number-4">3.2.14</span> <code>INTERNAL_CMD_REVISION_APPLY_SET</code>, (<code>0x0E</code>)</h4>
-</div>
-<div id="outline-container-org23c90d5" class="outline-4">
-<h4 id="org23c90d5"><span class="section-number-4">3.2.15</span> <code>INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_CAL</code>, (<code>0x0F</code>)</h4>
-</div>
-<div id="outline-container-org863a680" class="outline-4">
-<h4 id="org863a680"><span class="section-number-4">3.2.16</span> <code>INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_REQ</code>, (<code>0x10</code>)</h4>
-</div>
-<div id="outline-container-org1b4c6e1" class="outline-4">
-<h4 id="org1b4c6e1"><span class="section-number-4">3.2.17</span> <code>INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ</code>, (<code>0x11</code>)</h4>
-</div>
-<div id="outline-container-org2f92ed1" class="outline-4">
-<h4 id="org2f92ed1"><span class="section-number-4">3.2.18</span> <code>INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET</code>, (<code>0x12</code>)</h4>
-</div>
-</div>
-
-<div id="outline-container-org7a8cf21" class="outline-3">
-<h3 id="org7a8cf21"><span class="section-number-3">3.3</span> CRC</h3>
-<div class="outline-text-3" id="text-3-3">
+<div id="outline-container-org43b05f8" class="outline-4">
+<h4 id="org43b05f8"><span class="section-number-4">1.2.2</span> CRC</h4>
+<div class="outline-text-4" id="text-1-2-2">
 <div class="org-src-container">
-<pre class="src src-c"><span style="color: #5B6268;">/* </span><span style="color: #5B6268;">CRC16 implementation acording to CCITT standards </span><span style="color: #5B6268;">*/</span>
+<pre class="src src-c"><span style="color: #62686E;">/* </span><span style="color: #62686E;">CRC16 implementation acording to CCITT standards </span><span style="color: #62686E;">*/</span>
 
-<span style="color: #51afef;">static</span> <span style="color: #51afef;">const</span> <span style="color: #ECBE7B;">uint16_t</span> <span style="color: #dcaeea;">crc16tab</span>[256]= {
+<span style="color: #51afef;">static</span> <span style="color: #51afef;">const</span> <span style="color: #FCCE7B;">uint16_t</span> <span style="color: #DFDFDF;">crc16tab</span><span style="color: #51afef;">[</span>256<span style="color: #51afef;">]</span>= <span style="color: #51afef;">{</span>
         0x0000,0x1021,0x2042,0x3063,0x4084,0x50a5,0x60c6,0x70e7,
         0x8108,0x9129,0xa14a,0xb16b,0xc18c,0xd1ad,0xe1ce,0xf1ef,
         0x1231,0x0210,0x3273,0x2252,0x52b5,0x4294,0x72f7,0x62d6,
@@ -411,17 +353,18 @@ for the JavaScript code in this tag.
         0x7c26,0x6c07,0x5c64,0x4c45,0x3ca2,0x2c83,0x1ce0,0x0cc1,
         0xef1f,0xff3e,0xcf5d,0xdf7c,0xaf9b,0xbfba,0x8fd9,0x9ff8,
         0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
-};
+<span style="color: #51afef;">}</span>;
 
-<span style="color: #ECBE7B;">uint16_t</span> <span style="color: #c678dd;">crc16_ccitt</span>(<span style="color: #51afef;">const</span> <span style="color: #ECBE7B;">uint8_t</span> *<span style="color: #dcaeea;">buf</span>, <span style="color: #ECBE7B;">int</span> <span style="color: #dcaeea;">len</span>)
-{
-        <span style="color: #51afef;">register</span> <span style="color: #ECBE7B;">int</span> <span style="color: #dcaeea;">counter</span>;
-        <span style="color: #51afef;">register</span> <span style="color: #ECBE7B;">uint16_t</span> <span style="color: #dcaeea;">crc</span> = 0;
-        <span style="color: #51afef;">for</span>( counter = 0; counter &lt; len; counter++)
-                crc = (crc&lt;&lt;8) ^ crc16tab[((crc&gt;&gt;8) ^ *(<span style="color: #ECBE7B;">uint8_t</span> *)buf++)&amp;0x00FF];
+<span style="color: #FCCE7B;">uint16_t</span> <span style="color: #5cEfFF;">crc16_ccitt</span><span style="color: #51afef;">(</span><span style="color: #51afef;">const</span> <span style="color: #FCCE7B;">uint8_t</span> *<span style="color: #DFDFDF;">buf</span>, <span style="color: #FCCE7B;">int</span> <span style="color: #DFDFDF;">len</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">{</span>
+        <span style="color: #51afef;">register</span> <span style="color: #FCCE7B;">int</span> <span style="color: #DFDFDF;">counter</span>;
+        <span style="color: #51afef;">register</span> <span style="color: #FCCE7B;">uint16_t</span> <span style="color: #DFDFDF;">crc</span> = 0;
+        <span style="color: #51afef;">for</span><span style="color: #C57BDB;">(</span> counter = 0; counter &lt; len; counter++<span style="color: #C57BDB;">)</span>
+                crc = <span style="color: #C57BDB;">(</span>crc&lt;&lt;8<span style="color: #C57BDB;">)</span> ^ crc16tab<span style="color: #C57BDB;">[</span><span style="color: #7bc275;">(</span><span style="color: #e69055;">(</span>crc&gt;&gt;8<span style="color: #e69055;">)</span> ^ *<span style="color: #e69055;">(</span><span style="color: #FCCE7B;">uint8_t</span> *<span style="color: #e69055;">)</span>buf++<span style="color: #7bc275;">)</span>&amp;0x00FF<span style="color: #C57BDB;">]</span>;
         <span style="color: #51afef;">return</span> crc;
-}
+<span style="color: #51afef;">}</span>
 </pre>
+</div>
 </div>
 </div>
 </div>
@@ -430,7 +373,7 @@ for the JavaScript code in this tag.
 <div id="postamble" class="status">
 <p class="author">Author: Phil Hwang</p>
 <p class="email">Email: <a href="mailto:pjhwang@gmail.com">pjhwang@gmail.com</a></p>
-<p class="date">Created: 2019-12-27 Fri 22:50</p>
+<p class="date">Created: 2019-12-31 화 13:06</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

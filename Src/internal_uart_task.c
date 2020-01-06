@@ -2,23 +2,25 @@
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_usart.h"
 #include "job_task.h"
-#include "system_task.h"
+#include "fs_task.h"
+#include "app_task.h"
 #include "external_uart_task.h"
 #include "0_Util.h"
 #include "cmsis_os.h"
 #include "protocol.h"
+#include "debug.h"
 
 #include <string.h>
 
 #define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
 
-extern uint8_t readSlotNumber;
+/* extern uint8_t readSlotNumber; */
 extern uint8_t crcErrorCount;
 extern uint8_t startThreshold;
-extern uint8_t SendSlotNumber;
-extern uint8_t noReturnSendCt;
+/* extern uint8_t SendSlotNumber; */
+/* extern uint8_t noReturnSendCt; */
 
-static osMessageQDef(internal_rx_q, 16, uint32_t);
+static osMessageQDef(internal_rx_q, 24, uint32_t);
 static osMessageQId(internal_rx_q_id);
 
 void internal_rx_notify() { osMessagePut(internal_rx_q_id, 1, 0); }
@@ -142,9 +144,9 @@ void response_from_internal(struct internal_frame *received)
 {
 	/* if (received->cmd == CMD_THRESHOLD_SET || received->cmd ==
 	 * CMD_THRESHOLD_REQ) { */
-	DBG_LOG("int rx [%d] %s - (data length: %d) ",
-		received->slot_id, cmd_str(received->cmd), received->datalen);
-	DBG_DUMP(received->data, received->datalen);
+	/* DBG_LOG("int rx [%d] %s - (data length: %d) ", */
+	/* 	received->slot_id, cmd_str(received->cmd), received->datalen); */
+	/* DBG_DUMP(received->data, received->datalen); */
 	/* } */
 
 	switch (received->cmd) {
@@ -156,10 +158,10 @@ void response_from_internal(struct internal_frame *received)
 		/* case CMD_BOARD_EN_SET: */
 		/*     break; */
 	case INTERNAL_CMD_SLOT_ID_REQ:
-		noReturnSendCt = 0;
+		/* noReturnSendCt = 0; */
 		/* if (SendSlotNumber == received->slot_id) { */
 			SysProperties.slots[received->slot_id].inserted = TRUE;
-			DoIncSlotIdStep(SendSlotNumber);
+			/* DoIncSlotIdStep(SendSlotNumber); */
 		/* } */
 		break;
 		/* case CMD_HW_VER: */
@@ -241,15 +243,12 @@ static void internal_rx_check(void)
 			/* We are in "linear" mode */
 			/* Process data directly by subtracting "pointers" */
 			parse_rx(&internal_rx_buffer[old_pos], pos - old_pos);
-			/* DBG_DUMP(&internal_rx_buffer[old_pos], pos - old_pos); */
 		} else {
 			/* We are in "overflow" mode */
 			/* First process data to the end of buffer */
 			parse_rx(&internal_rx_buffer[old_pos], ARRAY_LEN(internal_rx_buffer) - old_pos);
-			/* DBG_DUMP(&internal_rx_buffer[old_pos], ARRAY_LEN(internal_rx_buffer) - old_pos); */
 			/* Check and continue with beginning of buffer */
 			if (pos > 0) {
-				/* DBG_DUMP(&internal_rx_buffer[0], pos); */
 				parse_rx(&internal_rx_buffer[0], pos);
 			}
 		}
@@ -305,41 +304,40 @@ void send_slot_id_req(uint8_t id)
 
 static void handle_temperature(struct internal_frame *msg)
 {
-	/* uni2Byte crc; */
+	if (msg) {
+		uni4Byte *temp = &TestData.temperature[msg->slot_id];
+		for (int i = 0; i < 32; i++)
+			(temp + i)->Float = *((float *)&msg->data[i * 4]);
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
+		/* write log */
+		if (SysProperties.last_slot_id == msg->slot_id)
+			post_fs_job(FS_JOB_TYPE_SAVE_LOG);
+	}
+	/* send temperature values to the external */
+	/* DoChannelValue(msg->slot_id); */
 
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 130); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[131]) && */
-	/*     (crc.UI8[1] == msg->rawdata[132])) { */
-        uni4Byte *temp = &TestData.temperature[msg->slot_id];
-        for (int i = 0; i < 32; i++)
-		(temp + i)->Float = *((float *)&msg->data[i * 4]);
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
-
-	DoIncSlotIdStep(readSlotNumber);
+	/* DoIncSlotIdStep(readSlotNumber); */
 }
 
 static void handle_temerature_state(struct internal_frame *msg)
 {
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
+	if (msg) {
+		struct internal_temp_state_data *sd = &msg->state_data;
 
-	struct internal_temp_state_data *sd = &msg->state_data;
+		memcpy(&TestData.sensorState[msg->slot_id][0], sd, TEMP_STATE_DATA_LENGTH);
+		memcpy(&TestData.sensorState[msg->slot_id][16], sd, TEMP_STATE_DATA_LENGTH);
+	}
 
-	memcpy(&TestData.sensorState[msg->slot_id][0], sd, TEMP_STATE_DATA_LENGTH);
-	memcpy(&TestData.sensorState[msg->slot_id][16], sd, TEMP_STATE_DATA_LENGTH);
-	/* for (int i = 0; i < TEMP_STATE_DATA_LENGTH; i++) { */
-	/* 	    LED_DIPLAY_MODE *ss = &TestData.sensorState[msg->slot_id]; */
-	/* 	    *(ss + i) = (LED_DIPLAY_MODE)*(sd + i); */
-	/*     /\* TestData.sensorState[msg->slot_id][i] = (LED_DIPLAY_MODE)sd[i]; *\/ */
-	/* 	/\* TestData.sensorState[msg->slot_id][i + 16] = (LED_DIPLAY_MODE)sd[i]; *\/ */
-	/* } */
+	/* send slot info to the external */
+	/* struct external_slot_info info = { */
+	/* 	.parent_id = 0, */
+	/* 	.slot_id = msg->slot_id, */
+	/* 	.slot_type = SBT_NTC, */
+	/* 	.revision_apply = TestData.revisionApply[msg->slot_id], */
+	/* }; */
+	/* send_external_response(CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &info, sizeof(info), 32, 52); */
+	/* DoSlotInfo(msg->slot_id); */
+	/* DoChannelInfo(msg->slot_id); */
 }
 
 static void handle_threshold_req(struct internal_frame *msg)
@@ -347,22 +345,10 @@ static void handle_threshold_req(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 130); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[131]) && */
-	/*     (crc.UI8[1] == msg->rawdata[132])) { */
         uni4Byte *threshold = &TestData.threshold[msg->slot_id];
         for (int i = 0; i < 32; i++) {
 		(threshold + i)->Float = *((float *)&msg->data[i * 4]);
         }
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	// 초기화 하는 동안은 486 전송 하지 않는다, 초기화 중일때
 	// startThreshold == TRUE 임.
@@ -374,9 +360,9 @@ static void handle_threshold_req(struct internal_frame *msg)
 			thresholdData, 129, 132, 152);
 	/* } */
 
-	if (startThreshold == TRUE) {
-		DoIncSlotIdStep(msg->slot_id);
-	}
+	/* if (startThreshold == TRUE) { */
+	/* 	DoIncSlotIdStep(msg->slot_id); */
+	/* } */
 }
 
 static void handle_threshold_set(struct internal_frame *msg)
@@ -384,24 +370,10 @@ static void handle_threshold_set(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* uint16_t calculated_crc = CRC16_Make(&msg->rawdata[1], 130); */
-	/* uint16_t received_crc = *((uint16_t *)&msg->rawdata[131]); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[131]) && (crc.UI8[1] ==
-	 * msg->rawdata[132])) */
-	/* if (calculated_crc == received_crc) { */
         uni4Byte *threshold = &TestData.threshold[msg->slot_id];
         for (int i = 0; i < 32; i++) {
 		(threshold + i)->Float = *((float *)&msg->data[i * 4]);
         }
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	uint8_t data[130] = {0};
 	data[0] = msg->slot_id;
@@ -415,18 +387,7 @@ static void DoAnsRevisionApplySet(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 8); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) { */
 	TestData.revisionApply[msg->slot_id] = msg->data[0];
-	/* crcErrorCount = 0; */
-	/* } else { */
-	/* 	crcErrorCount++; */
-	/* } */
 
 	uint8_t data[2] = {0};
 	data[0] = msg->slot_id;
@@ -439,18 +400,7 @@ static void DoAnsRevisionApplyReq(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 8); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) { */
         TestData.revisionApply[msg->slot_id] = msg->data[0];
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	uint8_t data[2];
 	data[0] = msg->slot_id;
@@ -464,21 +414,10 @@ static void DoAnsRevisionConstantSet(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 8); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) { */
         TestData.revisionConstant[msg->slot_id].UI8[0] = msg->data[0];
         TestData.revisionConstant[msg->slot_id].UI8[1] = msg->data[1];
         TestData.revisionConstant[msg->slot_id].UI8[2] = msg->data[2];
         TestData.revisionConstant[msg->slot_id].UI8[3] = msg->data[3];
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	uint8_t data[5] = {0};
 	data[0] = msg->slot_id;
@@ -494,21 +433,11 @@ static void DoAnsRevisionConstantReq(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 8); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) { */
         TestData.revisionConstant[msg->slot_id].UI8[0] = msg->data[0];
         TestData.revisionConstant[msg->slot_id].UI8[1] = msg->data[1];
         TestData.revisionConstant[msg->slot_id].UI8[2] = msg->data[2];
         TestData.revisionConstant[msg->slot_id].UI8[3] = msg->data[3];
         crcErrorCount = 0;
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	uint8_t data[5];
 	data[0] = msg->slot_id;
@@ -524,29 +453,12 @@ static void DoAnsCalibrationNTCTableCal(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 130); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[131]) && */
-	/*     (crc.UI8[1] == msg->rawdata[132])) { */
         for (int i = 0; i < 32; i++) {
-		/* osDelay(1); */
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[0] =
-			msg->data[i * 4 + 0];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[1] =
-			msg->data[i * 4 + 1];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[2] =
-			msg->data[i * 4 + 2];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[3] =
-			msg->data[i * 4 + 3];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[0] = msg->data[i * 4 + 0];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[1] = msg->data[i * 4 + 1];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[2] = msg->data[i * 4 + 2];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[3] = msg->data[i * 4 + 3];
         }
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	uint8_t calData[130] = { 0 };
 	calData[0] = msg->slot_id;
@@ -561,22 +473,10 @@ static void DoAnsCalibrationNTCConstantSet(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 8); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) { */
-		TestData.ntcCalibrationConst.UI8[0] = msg->data[0];
-		TestData.ntcCalibrationConst.UI8[1] = msg->data[1];
-		TestData.ntcCalibrationConst.UI8[2] = msg->data[2];
-		TestData.ntcCalibrationConst.UI8[3] = msg->data[3];
-
-	/* 	crcErrorCount = 0; */
-	/* } else { */
-	/* 	crcErrorCount++; */
-	/* } */
+	TestData.ntcCalibrationConst.UI8[0] = msg->data[0];
+	TestData.ntcCalibrationConst.UI8[1] = msg->data[1];
+	TestData.ntcCalibrationConst.UI8[2] = msg->data[2];
+	TestData.ntcCalibrationConst.UI8[3] = msg->data[3];
 
 	send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_SET,
 			&TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
@@ -587,28 +487,12 @@ static void DoAnsCalibrationNTCTableReq(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 130); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[131]) && */
-	/*     (crc.UI8[1] == msg->rawdata[132])) { */
         for (int i = 0; i < 32; i++) {
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[0] =
-			msg->data[i * 4 + 0];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[1] =
-			msg->data[i * 4 + 1];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[2] =
-			msg->data[i * 4 + 2];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[3] =
-			msg->data[i * 4 + 3];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[0] = msg->data[i * 4 + 0];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[1] = msg->data[i * 4 + 1];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[2] = msg->data[i * 4 + 2];
+		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[3] = msg->data[i * 4 + 3];
         }
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	uint8_t data[130] = {0};
 	data[0] = msg->slot_id;
@@ -622,22 +506,10 @@ static void DoAnsCalibrationNTCConstantReq(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-	noReturnSendCt = 0;
-	readSlotNumber = msg->slot_id;
-
-	/* uni2Byte crc; */
-	/* crc.UI16 = CRC16_Make(&msg->rawdata[1], 8); */
-
-	/* if ((crc.UI8[0] == msg->rawdata[9]) && (crc.UI8[1] == msg->rawdata[10])) { */
         TestData.ntcCalibrationConst.UI8[0] = msg->data[0];
         TestData.ntcCalibrationConst.UI8[1] = msg->data[1];
         TestData.ntcCalibrationConst.UI8[2] = msg->data[2];
         TestData.ntcCalibrationConst.UI8[3] = msg->data[3];
-
-	/*     crcErrorCount = 0; */
-	/* } else { */
-	/*     crcErrorCount++; */
-	/* } */
 
 	send_external_response(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ,
 			&TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
@@ -894,19 +766,10 @@ void DoReqTemperature(struct slot_properties_s *slot)
 		};
 		post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
 	}
-
-	/* uint8_t u[1] = {0}; */
-	/* slotNumber += 0x30; */
-	/* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-	/* doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_REQ, u, 0,
-	 * SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134); */
 }
 
 void DoReqTemperatureState(struct slot_properties_s *slot)
 {
-	/* uint8_t u[1] = {0}; */
 	if (slot && slot->inserted) {
 		/* HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET); */
 		/* request_internal(slot->id, CMD_TEMP_STATE_REQ, NULL, 0); */
@@ -918,13 +781,6 @@ void DoReqTemperatureState(struct slot_properties_s *slot)
 		};
 		post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
 	}
-
-	/* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-	/* slotNumber += 0x30; */
-	/* doMakeSendSlotData(TxDataBuffer, slotNumber, CMD_TEMP_STATE_REQ, u, 0,
-	 * SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 38); */
 }
 
  // slot 번호 전달 , 0: 측정온도 모드, 1: 보정온도 모드
@@ -1019,56 +875,56 @@ void DoRevisionConstantReq(uint8_t slotNumber)
  *       슬롯이 4개(차후 6개로 증가 예정)를 순차적으로 요청 하시 위한 함수
  *   slotNumber : SLOT 지정
  **********************************************************************/
-void DoIncSlotIdStep(uint8_t slotNumber)
-{
-    uint8_t ct = 0;
+/* void DoIncSlotIdStep(uint8_t slotNumber) */
+/* { */
+/*     uint8_t ct = 0; */
 
-    switch (SysProperties.InterfaceStep) {
-    case STEP_SLOT_ID:
-        SendSlotNumber = slotNumber + 1;
-        if (SendSlotNumber > 3) {
-            SendSlotNumber = 0;
-            SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
-            /* RxQueue_Clear(&RxQueue); */
+/*     switch (SysProperties.InterfaceStep) { */
+/*     case STEP_SLOT_ID: */
+/*         SendSlotNumber = slotNumber + 1; */
+/*         if (SendSlotNumber > 3) { */
+/*             SendSlotNumber = 0; */
+/*             SysProperties.InterfaceStep = STEP_READ_THRESHOLD; */
+/*             /\* RxQueue_Clear(&RxQueue); *\/ */
 
-            bool system_reset_needed = true;
-            for (int i = 0; i < 4; i++) {
-                if (SysProperties.slots[i].inserted) {
-                    system_reset_needed = false;
-                    break;
-                }
-            }
-            if (system_reset_needed)
-                HAL_NVIC_SystemReset();
-        }
-        break;
-    case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
-        do {
-            SendSlotNumber = ++slotNumber;
-            if (SendSlotNumber > 3) {
-                SendSlotNumber = 0;
-                SysProperties.InterfaceStep = STEP_TEMP_READ;
-                /* RxQueue_Clear(&RxQueue); */
-            }
-            ct++;
-            if (ct > 3)
-                break;
-        } while (!SysProperties.slots[SendSlotNumber].inserted);
-        break;
-    case STEP_TEMP_READ:
-        do {
-            SendSlotNumber = ++slotNumber;
-            if (SendSlotNumber > 3) {
-                SendSlotNumber = 0;
-                startThreshold = FALSE;
-            }
-            ct++;
-            if (ct > 3)
-                break;
-        } while (!SysProperties.slots[SendSlotNumber].inserted);
-        break;
-    }
-}
+/*             bool system_reset_needed = true; */
+/*             for (int i = 0; i < 4; i++) { */
+/*                 if (SysProperties.slots[i].inserted) { */
+/*                     system_reset_needed = false; */
+/*                     break; */
+/*                 } */
+/*             } */
+/*             if (system_reset_needed) */
+/*                 HAL_NVIC_SystemReset(); */
+/*         } */
+/*         break; */
+/*     case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다. */
+/*         do { */
+/*             SendSlotNumber = ++slotNumber; */
+/*             if (SendSlotNumber > 3) { */
+/*                 SendSlotNumber = 0; */
+/*                 SysProperties.InterfaceStep = STEP_TEMP_READ; */
+/*                 /\* RxQueue_Clear(&RxQueue); *\/ */
+/*             } */
+/*             ct++; */
+/*             if (ct > 3) */
+/*                 break; */
+/*         } while (!SysProperties.slots[SendSlotNumber].inserted); */
+/*         break; */
+/*     case STEP_TEMP_READ: */
+/*         do { */
+/*             SendSlotNumber = ++slotNumber; */
+/*             if (SendSlotNumber > 3) { */
+/*                 SendSlotNumber = 0; */
+/*                 startThreshold = FALSE; */
+/*             } */
+/*             ct++; */
+/*             if (ct > 3) */
+/*                 break; */
+/*         } while (!SysProperties.slots[SendSlotNumber].inserted); */
+/*         break; */
+/*     } */
+/* } */
 
 /*********************************************************************
 **********************************************************************

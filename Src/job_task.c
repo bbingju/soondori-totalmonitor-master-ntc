@@ -7,6 +7,7 @@
 #include <string.h>
 #include "debug.h"
 
+#define JOB_TANSACTION_TIMEOUT 300
 
 struct _job {
 	JOB_TYPE_E type;
@@ -17,7 +18,7 @@ struct _job {
 	};
 };
 
-static osMailQDef(job_q, 12, struct _job);
+static osMailQDef(job_q, 21, struct _job);
 static osMailQId (job_q_id);
 
 static int is_transaction;
@@ -29,6 +30,7 @@ static void handle_from_external(struct external_frame_rx *obj);
 static void request_to_internal(struct internal_frame *);
 
 extern void handle_rx_msg(struct external_frame_rx *received);
+extern int int_tx_completed;
 extern int ext_tx_completed;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
@@ -39,7 +41,7 @@ int post_job(JOB_TYPE_E type, void *data, size_t datalen)
 		return -1;
 
 	struct _job *obj;
-	obj = (struct _job *)osMailAlloc(job_q_id, osWaitForever);
+	obj = (struct _job *)osMailCAlloc(job_q_id, osWaitForever);
 	if (!obj) {
 		DBG_LOG("error: mail alloc in %s\n", __func__);
 		return -1;
@@ -75,7 +77,7 @@ void job_task(void const *arg)
 
 	while (1) {
 		if (is_transaction &&
-			osKernelSysTick() - transaction_timeout > 300) {
+			osKernelSysTick() - transaction_timeout > JOB_TANSACTION_TIMEOUT) {
 			/* Cancel the internal transction */
 			is_transaction = 0;
 		}
@@ -123,19 +125,22 @@ static void do_job(struct _job *job)
 static void send_to_external(struct external_frame_tx *ftx)
 {
 	static uint8_t tx_buffer[512] = {0};
-	DBG_LOG("ext tx [%s::%s] (%d): ", ext_cmd_str(ftx->cmd),
-		ext_option_str(ftx->cmd, ftx->option), ftx->len);
+	/* DBG_LOG("ext tx [%s::%s] (%d): ", ext_cmd_str(ftx->cmd), */
+	/* 	ext_option_str(ftx->cmd, ftx->option), ftx->len); */
 
 	memset(tx_buffer, 0, sizeof(uint8_t) * 512);
 	doMakeSend485Data(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len, ftx->len - 20, ftx->len);
 	/* int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, */
 	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
 
-	DBG_DUMP(tx_buffer, ftx->len);
+	/* DBG_DUMP(tx_buffer, ftx->len); */
 	if (ext_tx_completed) {
 		ext_tx_completed = 0;
 		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
 		HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftx->len);
+
+		while (ext_tx_completed == 0)
+			__NOP();
 	}
 }
 
@@ -152,11 +157,18 @@ static void request_to_internal(struct internal_frame *frm)
 	frame_size = fill_internal_frame(buffer, frm->slot_id, frm->cmd,
 					frm->datalen, frm->data);
 
-	DBG_LOG("JOB_TYPE_TO_INTERNAL:");
-	DBG_DUMP(buffer, frame_size);
+	/* DBG_LOG("JOB_TYPE_TO_INTERNAL:"); */
+	/* DBG_DUMP(buffer, frame_size); */
 
-	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
-	/* HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_SET); */
+	/* if (int_tx_completed) { */
+		int_tx_completed = 0;
+		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+		/* HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_SET); */
 
-	HAL_UART_Transmit_DMA(&huart2, buffer, frame_size);
+		HAL_UART_Transmit_DMA(&huart2, buffer, frame_size);
+
+		osDelay(1);
+		/* while (int_tx_completed == 0) */
+		/* 	__NOP(); */
+	/* } */
 }

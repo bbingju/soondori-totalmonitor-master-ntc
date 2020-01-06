@@ -1,17 +1,14 @@
-#include "system_task.h"
+#include "app_task.h"
 #include "0_GlobalValue.h"
 #include "0_UartCallback.h"
 #include "protocol.h"
 #include "external_uart_task.h"
 #include "internal_uart_task.h"
+#include "debug.h"
 
 #include <math.h>
 #include <string.h>
 
-/*********************************************************************
- *       Private variables
- **********************************************************************/
-// UPDATA_FLAG     Updata_Flag;
 
 GPIO_TypeDef *SLAVE_CS_PORT[4] = {
     SLAVE_CS0_GPIO_Port, SLAVE_CS1_GPIO_Port, SLAVE_CS2_GPIO_Port,
@@ -20,82 +17,62 @@ uint16_t SLAVE_CS_PIN[4] = {
     SLAVE_CS0_Pin, SLAVE_CS1_Pin, SLAVE_CS2_Pin,
     SLAVE_CS3_Pin}; // back plate 의 컨넥터가 잘못 되어 있음
 
-uint8_t TxDataBuffer[UART_TX_BUF_MAX] = {0}; // dma 용도
-/* uint8_t RxDataDMA[134 * 10] = {0};           // dma 용도 */
-
-/* uint8_t         RxSlotData[140]  = { 0 };                       //parsing
- * 용도 */
-uint8_t RxSlotDataLength = 0;
-uint8_t RxReadCount = 0;
-
-uint8_t ReceveDataLength = 0;
-uint8_t SendSlotNumber = 0;
-uint8_t SendChannel = 0;
-uint8_t SlotCheck = FALSE;
 uint8_t noReturnSendCt = 0;
-
-uni4Byte readTemp;
-uint8_t readSlotNumber;
-
-uint8_t temp;
 uint8_t crcErrorCount = 0;
-
-uint8_t tempReqFlag = FALSE;
-uint8_t semCount = 0;
-uint8_t startThreshold = FALSE;
-/* RX_QUEUE_STRUCT RxQueue; */
 
 extern int int_tx_completed;
 extern int int_rx_completed;
 extern IWDG_HandleTypeDef hiwdg;
 
+#if 0
 void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
 {
-    static uint8_t buf[164] = {0};
+	static uint8_t buf[164] = {0};
 
-    for (int i = 0; i < num_of_slots; i++) {
-        for (int j = 0; j < 11; j++) {
-            HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin,
-                              GPIO_PIN_RESET);
+	for (int i = 0; i < num_of_slots; i++) {
+		for (int j = 0; j < 11; j++) {
+			HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin,
+					GPIO_PIN_RESET);
 
-            doMakeSendSlotData(buf, slots[i].id + 0x30, CMD_TEMP_REQ, buf, 0,
-                               SEND_DATA_LENGTH);
-            noReturnSendCt++;
-            int_tx_completed = 0;
-            HAL_UART_Transmit_DMA(&huart2, buf, SEND_DATA_LENGTH);
-            while (int_tx_completed == 0) {
-                __NOP();
-            };
+			doMakeSendSlotData(buf, slots[i].id + 0x30, CMD_TEMP_REQ, buf, 0,
+					SEND_DATA_LENGTH);
+			noReturnSendCt++;
+			int_tx_completed = 0;
+			HAL_UART_Transmit_DMA(&huart2, buf, SEND_DATA_LENGTH);
+			while (int_tx_completed == 0) {
+				__NOP();
+			};
 
-            int_rx_completed = 0;
-            HAL_UART_Receive_DMA(&huart2, buf, 134);
+			int_rx_completed = 0;
+			HAL_UART_Receive_DMA(&huart2, buf, 134);
 
-            /* DBG_LOG("slot %d, %d times\n", i, j); */
+			/* DBG_LOG("slot %d, %d times\n", i, j); */
 
-            uint32_t old_tick = osKernelSysTick();
-            while (int_rx_completed == 0) {
-                __NOP();
-                if (osKernelSysTick() - old_tick > 100)
-                    break;
-            };
+			uint32_t old_tick = osKernelSysTick();
+			while (int_rx_completed == 0) {
+				__NOP();
+				if (osKernelSysTick() - old_tick > 100)
+					break;
+			};
 
-            if (int_rx_completed)
-                noReturnSendCt = 0;
-        }
+			if (int_rx_completed)
+				noReturnSendCt = 0;
+		}
 
-    	osDelay(100);
+		osDelay(100);
 
-        slots[i].inserted = noReturnSendCt > 9 ? false : true;
-        noReturnSendCt = 0;
-    }
+		slots[i].inserted = noReturnSendCt > 9 ? false : true;
+		noReturnSendCt = 0;
+	}
 
-    for (int i = 0; i < num_of_slots; i++) {
-        DBG_LOG("slot %d inserted %s\n", slots[i].id,
-                slots[i].inserted ? "TRUE" : "FALSE");
-    }
+	for (int i = 0; i < num_of_slots; i++) {
+		DBG_LOG("slot %d inserted %s\n", slots[i].id,
+			slots[i].inserted ? "TRUE" : "FALSE");
+	}
 }
+#endif	/* 0 */
 
-void system_task(void const *argument)
+void app_task(void const *argument)
 {
 	SysProperties.InterfaceStep = STEP_SLOT_ID;
 	/* SysProperties.InterfaceStep = STEP_READ_THRESHOLD; */
@@ -116,11 +93,14 @@ void system_task(void const *argument)
 	HAL_IWDG_Refresh(&hiwdg);
 	// todo : 센서 타입을 슬레이브 보드에서 읽어 와야 함.
 
+	uint32_t next_wait = osKernelSysTick();
+
 	for (;;) {
 		switch (SysProperties.InterfaceStep) {
 
 		case STEP_SLOT_ID: { // 부팅 하면 각 슬롯의 id 를 지정 한다. id 는
 			volatile bool existed_any_slot = false;
+			__IO uint8_t last_slot_id = 0;
 
 			while (!existed_any_slot) {
 				/* check_slots_inserted(SysProperties.slots, MAX_SLOT_NUM); */
@@ -136,7 +116,7 @@ void system_task(void const *argument)
 					struct slot_properties_s *slot = &SysProperties.slots[i];
 					if (slot->inserted) {
 						existed_any_slot = true;
-						break;
+						last_slot_id = i;
 					}
 				}
 
@@ -147,34 +127,53 @@ void system_task(void const *argument)
 			/*     HAL_NVIC_SystemReset(); */
 			/* } */
 
+			SysProperties.last_slot_id = last_slot_id;
 			SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
 			break;
 		}
 
 		case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
-			startThreshold = TRUE;
+			/* startThreshold = TRUE; */
 			for (int i = 0; i < MAX_SLOT_NUM; i++) {
 				struct slot_properties_s *slot = &SysProperties.slots[i];
 				DoThresholdReq(slot);
+				osDelay(10);
 			}
-			osDelay(100);
+			osDelay(50);
 			SysProperties.InterfaceStep = STEP_TEMP_READ;
 			break;
 
-		case STEP_TEMP_READ: // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청한다.
+		case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청한다.
 			for (int i = 0; i < MAX_SLOT_NUM; i++) {
 				struct slot_properties_s *slot = &SysProperties.slots[i];
-				/* DBG_LOG("slot->id: %d, type: %d, inserted: %d\n",
-				   slot->id, slot->type, slot->inserted); */
-				DoReqTemperature(slot);
-				osDelay(SysProperties.interval_ms / 4);
+				/* DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", */
+				/*    slot->id, slot->type, slot->inserted); */
 				DoReqTemperatureState(slot);
-				osDelay(SysProperties.interval_ms / 4);
+				osDelay(20);
+				DoReqTemperature(slot);
+				osDelay(20);
 			}
-			/* SysProperties.InterfaceStep = STEP_READ_THRESHOLD; */
-			if (noReturnSendCt > 10)
-				noReturnSendCt = 0;
+			/* next_wait += SysProperties.interval_ms * 1000; */
+			/* osDelay(100); */
+
+			/* if (SysProperties.start_flag) { */
+			/* 	DoMCUboardInfo(); // transmit board info */
+			/* 	osDelay(10); */
+
+			/* 	for (int i = 0; i < MAX_SLOT_NUM; i++) { */
+			/* 		struct slot_properties_s *slot = &SysProperties.slots[i]; */
+			/* 		DoSlotInfo(slot->id); */
+			/* 		osDelay(10); */
+			/* 		DoChannelInfo(slot->id); */
+			/* 		osDelay(10); */
+			/* 		DoChannelValue(slot->id); */
+			/* 		osDelay(10); */
+			/* 	} */
+			/* } */
+			/* DoSmpsCheck(); */
+			osDelayUntil(&next_wait, SysProperties.interval_ms);
 			break;
+		}
 		}
 	}
 }

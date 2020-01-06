@@ -1,4 +1,4 @@
-USE_RTT_FOR_DEBUG = 1
+USE_RTT_FOR_DEBUG = 0
 
 RTT_C_SOURCES = \
 Lib/RTT/SEGGER_RTT.c \
@@ -9,9 +9,11 @@ RTT_C_INCLUDES = \
 -ILib/RTT
 
 APP_C_SOURCES = \
+Src/app_ctx.c \
 Src/frame.c \
 Src/protocol.c \
 Src/job_task.c \
+Src/fs_task.c \
 Src/0_16Segment.c \
 Src/0_BCD110DS.c \
 Src/0_SdCard.c \
@@ -23,5 +25,5 @@ Src/0_Util.c \
 Src/0_soonFlashMemory.c \
 Src/external_uart_task.c \
 Src/internal_uart_task.c \
-Src/system_task.c
+Src/app_task.c
 

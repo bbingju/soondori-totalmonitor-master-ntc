@@ -5,19 +5,17 @@
 #include "stm32f4xx_ll_dma.h"
 #include "external_uart_task.h"
 #include "internal_uart_task.h"
-#include "system_task.h"
+#include "app_task.h"
 #include "0_soonFlashMemory.h"
 #include "0_SdCard.h"
 #include "protocol.h"
 #include "job_task.h"
+#include "fs_task.h"
 
 #define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
 
-uint8_t Rx485ReadCount = 0;
-uint8_t noReturn485SendCt = 0;
 uint8_t ReadFileBuf[MAX_485_BUF_LEN];
 uint8_t FindFilelistFlag = 0; //0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
-
 int ext_tx_completed = 1;
 
 static void parse_rx(const void *data, size_t len);
@@ -25,7 +23,7 @@ static void parse_rx(const void *data, size_t len);
 /*********************************************************************
 *	Private variables
 **********************************************************************/
-static osMessageQDef(ext_rx_q, 16, uint32_t);
+static osMessageQDef(ext_rx_q, 24, uint32_t);
 static osMessageQId(ext_rx_q_id);
 
 static uint8_t ext_rx_buffer[64];
@@ -153,9 +151,10 @@ void handle_rx_msg(struct external_frame_rx *received)
 	case CMD_SD_CARD:
 		switch (received->option) {
 		case OP_SDCARD_LIST:
-			FindFilelistFlag = 1;
-			DoReadFileList(received);
-			FindFilelistFlag = 0;
+			post_fs_job(FS_JOB_TYPE_QUERY_FILELIST);
+			/* FindFilelistFlag = 1; */
+			/* DoReadFileList(received); */
+			/* FindFilelistFlag = 0; */
 			break;
 		case OP_SDCARD_DOWNLOAD:
 			DoSendFile(received);
@@ -212,7 +211,8 @@ int send_external_response(uint8_t cmd, uint8_t option, void *data,
 	ext_frm_tx.cmd = cmd;
 	ext_frm_tx.option = option;
 	ext_frm_tx.len = buffer_len;
-	memcpy(ext_frm_tx.data, data, data_len);
+	if (data)
+		memcpy(ext_frm_tx.data, data, data_len);
 	ext_frm_tx.data_padding_len = data_padding_len;
 	post_job(JOB_TYPE_TO_EXTERNAL, &ext_frm_tx, sizeof(struct external_frame_tx)/* ext_frm_tx.len - 20 */);
 
@@ -228,6 +228,7 @@ void DoSendFile(struct external_frame_rx *msg)
 
 void DoSendFileOpen(struct external_frame_rx *msg)
 {
+#if 0
 	uint8_t t[1] = {0};
 	FRESULT res = FR_OK;
 	uint8_t fileNameLen = 0;
@@ -272,6 +273,7 @@ void DoSendFileOpen(struct external_frame_rx *msg)
 			send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
 		}
 	}
+#endif	/* 0 */
 }
 
 void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
@@ -332,6 +334,7 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 
 void DoSendFileClose(void)
 {
+#if 0
 	FRESULT res = FR_OK;
 	uint8_t t[1] = {0};
 
@@ -342,23 +345,18 @@ void DoSendFileClose(void)
 		send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER,
 				sdValue.sendFileName, sdValue.sendFileNameLen,
 				36, 56);
-		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD,
-		 * OP_SDCARD_DOWNLOAD_FOOTER, sdValue.sendFileName,
-		 * sdValue.sendFileNameLen, 36, 56); */
-		/* SendUart485String(tx485DataDMA, 56); */
 	} else //파일 닫기 에러
 	{
 		sdValue.sdState = SCS_CLOSE_ERROR;
 		t[0] = SCS_CLOSE_ERROR;
 		send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
-		 * 12, 32); */
-		/* SendUart485String(tx485DataDMA, 32); */
 	}
+#endif /* 0 */
 }
 
 int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
 {
+#if 0
 	FRESULT res = FR_OK;
 	UINT br = 0;
 	uint8_t t[1] = {0};
@@ -368,9 +366,6 @@ int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
 		sdValue.sdState = SCS_OK;
 		t[0] = SCS_SEEK_ERROR;
 		send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
-		 * 12, 32); */
-		/* SendUart485String(tx485DataDMA, 32); */
 	}
 
 	res = f_read(&sdValue.sendFileObject, &ReadFileBuf[8], ReadSize, &br);
@@ -378,53 +373,47 @@ int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
 		sdValue.sdState = SCS_READ_ERROR;
 		t[0] = SCS_READ_ERROR;
 		send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
-		/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR, t, 1,
-		 * 12, 32); */
-		/* SendUart485String(tx485DataDMA, 32); */
 	}
 
 	return (int32_t)br;
+#endif
+	return 0;
 }
 
-void DoReadFileList(struct external_frame_rx *msg)
-{
-	uint8_t t[1] = {0};
-	TCHAR root_directory[3] = "0:";
+/* void DoReadFileList(struct external_frame_rx *msg) */
+/* { */
+/* 	uint8_t t[1] = {0}; */
+/* 	TCHAR root_directory[3] = "0:"; */
 
-	send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0, 12, 32);
-	/* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0,
-	 * 12, 32); */
-	/* SendUart485String(tx485DataDMA, 32); */
+/* 	send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0, 12, 32); */
 
-	memset(&sdValue.scanDir[0], 0x00, sizeof(sdValue.scanDir));
-	/* osDelay(1); */
-	sdValue.scanDirDeep = 0;
-	memset(&sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
-	/* osDelay(1); */
+/* 	memset(&sdValue.scanDir[0], 0x00, sizeof(sdValue.scanDir)); */
+/* 	sdValue.scanDirDeep = 0; */
+/* 	memset(&sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath)); */
 
-	if (msg->data[0] /* Rx485Data[7] */ == '.') //루트를 요청 했을 경우
-	{
-		osDelay(1);
-		scan_files(root_directory);
-	} else {			//경로 지정 했을 경우
-		memset(&sdValue.scanReadFileName[0], 0x00, sizeof(sdValue.scanReadFileName));
-		sdValue.scanReadFileName[0] = '0';
-		sdValue.scanReadFileName[1] = ':';
+/* 	if (msg->data[0] /\* Rx485Data[7] *\/ == '.') //루트를 요청 했을 경우 */
+/* 	{ */
+/* 		osDelay(1); */
+/* 		scan_files(root_directory); */
+/* 	} else {			//경로 지정 했을 경우 */
+/* 		memset(&sdValue.scanReadFileName[0], 0x00, sizeof(sdValue.scanReadFileName)); */
+/* 		sdValue.scanReadFileName[0] = '0'; */
+/* 		sdValue.scanReadFileName[1] = ':'; */
 
-		for (int i = 0; i < 22; i++) {
-			if (msg->data[/* Rx485Data[7 + */ i] == '>')
-				break;
+/* 		for (int i = 0; i < 22; i++) { */
+/* 			if (msg->data[/\* Rx485Data[7 + *\/ i] == '>') */
+/* 				break; */
 
-			sdValue.scanReadFileName[2 + i] = msg->data[/* Rx485Data[7 + */ i];
-		}
+/* 			sdValue.scanReadFileName[2 + i] = msg->data[/\* Rx485Data[7 + *\/ i]; */
+/* 		} */
 
-		while (scan_files((char *)sdValue.scanReadFileName) != FR_OK) {
-			osDelay(1);
-		}
-	}
+/* 		while (scan_files((char *)sdValue.scanReadFileName) != FR_OK) { */
+/* 			osDelay(1); */
+/* 		} */
+/* 	} */
 
-	send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_END, t, 0, 12, 32);
-}
+/* 	send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_END, t, 0, 12, 32); */
+/* } */
 
 void doSaveIntervalTime(struct external_frame_rx *msg) //샘플레이트
 {
@@ -622,12 +611,13 @@ void doSetTime(struct external_frame_rx *msg)
 		}
 	} while (1);
 
+	SysProperties.time_synced = true;
 	send_external_response(CMD_TIME, OP_TIME_SET, &res, 1, 12, 32);
 }
 
 void doGetTime(struct external_frame_rx *msg)
 {
-	uint8_t res = 0;
-
-	send_external_response(CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32);
+	/* uint8_t res = 0; */
+	/* send_external_response(CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32); */
+	send_external_response(CMD_TIME, OP_TIME_REQ, NULL, 0, 12, 32);
 }

@@ -1,12 +1,10 @@
-#ifndef __GLOBAL_VALUE_H__
-#define __GLOBAL_VALUE_H__
-//#endif
+#ifndef _GLOBALVALUE_H
+#define _GLOBALVALUE_H
 
 #include "cmsis_os.h"
-#include "ff.h"
+#include "fatfs.h"
 #include "main.h"
 #include "0_GlobalDefine.h"
-#include "debug.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -160,7 +158,12 @@ typedef struct {
 	uni4Byte mcuUUID[3]; // MCU UUID
 	uint8_t smpsState;   // smps 신호 확인
 
-    struct slot_properties_s slots[MAX_SLOT_NUM];
+	bool time_synced;
+	FATFS *fatfs;
+	bool sd_writing_available;
+
+	struct slot_properties_s slots[MAX_SLOT_NUM];
+	uint8_t last_slot_id;
 } SYSTEM_STRUCT;
 
 extern SYSTEM_STRUCT SysProperties;
@@ -196,7 +199,7 @@ typedef enum {
 } SD_CARD_STATE;
 
 typedef struct {
-    FATFS sdFatFs;
+    /* FATFS sdFatFs; */
     const TCHAR *path;
     FIL fileObject; // File object
     TCHAR loadFileName[40];
@@ -205,12 +208,12 @@ typedef struct {
     SD_CARD_STATE sdMountState;
     FILINFO fno; // 파일 정보 리턴용
 
-    DIR scanDir[5]; // 파일 리스트 전송용
-    FIL sendFileObject;
-    uint8_t scanDirDeep;
+    /* DIR scanDir[5]; // 파일 리스트 전송용 */
+    /* FIL sendFileObject; */
+    /* uint8_t scanDirDeep; */
     uint8_t scanFilePath[50];
     uint32_t scanFileListCount;
-    uint8_t scanReadFileName[50];
+    /* uint8_t scanReadFileName[50]; */
 
     uint8_t sendFileName[50]; // 파일 다운로드용
     uint8_t sendFileNameLen;
@@ -224,4 +227,4 @@ extern uint8_t   FindFilelistFlag;               //0 : 파일 리스트 검색 �
 extern GPIO_TypeDef *   SLAVE_CS_PORT[4];
 extern uint16_t         SLAVE_CS_PIN[4];
 
-#endif
+#endif /* _GLOBALVALUE_H */

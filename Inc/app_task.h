@@ -1,5 +1,5 @@
-#ifndef SYSTEM_TASK_H
-#define SYSTEM_TASK_H
+#ifndef APP_TASK_H
+#define APP_TASK_H
 
 #include "cmsis_os.h"
 #include "0_Util.h"
@@ -15,6 +15,7 @@ void DoSelectSlot(uint8_t slot);
 void DoRejectSlot(void);
 
 //  Tx
+void app_task(void const *argument);
 
-#endif /* SYSTEM_TASK_H */
+#endif /* APP_TASK_H */
 

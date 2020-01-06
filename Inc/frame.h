@@ -48,7 +48,7 @@ struct internal_frame {
 	union {
 		struct internal_temp_data temp_data;
 		struct internal_temp_state_data state_data;
-		uint8_t data[256];
+		uint8_t data[168];
 	};
 };
 
@@ -83,6 +83,19 @@ __PACKED_STRUCT external_temp_state_data {
 	uint8_t padding[3];
 };
 
+__PACKED_STRUCT external_slot_info {
+	uint8_t parent_id;
+	uint8_t slot_id;
+	uint8_t slot_type;
+	uint8_t revision_apply;
+};
+
+__PACKED_STRUCT external_sd_filelist {
+	uint16_t index;
+	uint8_t time_data[48];
+	uint8_t time_nbr;
+};
+
 struct external_frame_tx {
 	uint8_t cmd;
 	uint8_t option;
@@ -94,6 +107,8 @@ struct external_frame_tx {
 	union {
 		struct external_temp_data temp_data;
 		struct external_temp_state_data temp_state_data;
+		struct external_slot_info slot_info;
+		struct external_sd_filelist sd_filelist;
 		uint8_t data[256];
 	};
 };

@@ -25,15 +25,19 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
+#include "app_ctx.h"
 #include "0_GlobalValue.h"
 #include "0_StartDisplayTask.h"
 #include "job_task.h"
+#include "fs_task.h"
 #include "internal_uart_task.h"
 #include "external_uart_task.h"
-#include "system_task.h"
+#include "app_task.h"
 #include "0_StartRateTask.h"
 #include "0_soonFlashMemory.h"
+#include "debug.h"
+
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,23 +85,27 @@ osSemaphoreId myBinarySemDownHandle;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 SYSTEM_STRUCT SysProperties;
+app_ctx_t ctx;
 osThreadId init_task_id;
 
 /* osThreadId JobTaskHandle; */
 uint32_t JobTaskBuffer[256];
 osStaticThreadDef_t JobTaskControlBlock;
 
+uint32_t FSTaskBuffer[512];
+osStaticThreadDef_t FSTaskControlBlock;
+
 uint32_t DisplayTaskBuffer[128];
 osStaticThreadDef_t DisplayTaskControlBlock;
 
-uint32_t RateTaskBuffer[512];
+uint32_t RateTaskBuffer[256];
 osStaticThreadDef_t RateTaskControlBlock;
 
 uint32_t InternalRxTaskBuffer[256];
 osStaticThreadDef_t InternalRxTaskControlBlock;
 
-uint32_t SystemTaskBuffer[256];
-osStaticThreadDef_t SystemTaskControlBlock;
+uint32_t AppTaskBuffer[256];
+osStaticThreadDef_t AppTaskControlBlock;
 
 uint32_t ExternalRxTaskBuffer[512];
 osStaticThreadDef_t ExternalRxControlBlock;
@@ -252,7 +260,7 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  osThreadDef(InitTask, init_task, osPriorityNormal, 0, 128);
+  osThreadDef(InitTask, init_task, osPriorityNormal, 0, 1024 + 1024);
   init_task_id = osThreadCreate(osThread(InitTask), NULL);
 
   /* HAL_IWDG_Refresh(&hiwdg); */
@@ -968,33 +976,38 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 /* USER CODE END Header_StartDisplayTask */
 void init_task(void const *argument)
 {
-    MX_FATFS_Init();
+	/* MX_FATFS_Init(); */
+	app_ctx_init(&ctx);
 
-    osThreadStaticDef(JobTask, job_task, osPriorityNormal, 0, 256,
-		    JobTaskBuffer, &JobTaskControlBlock);
-    osThreadCreate(osThread(JobTask), NULL);
+	osThreadStaticDef(JobTask, job_task, osPriorityNormal, 0, 256,
+			JobTaskBuffer, &JobTaskControlBlock);
+	osThreadCreate(osThread(JobTask), NULL);
 
-    osThreadStaticDef(myDisplayTask, StartDisplayTask, osPriorityNormal, 0, 128,
-		    DisplayTaskBuffer, &DisplayTaskControlBlock);
-    osThreadCreate(osThread(myDisplayTask), NULL);
+	osThreadStaticDef(FSTask, fs_task, osPriorityBelowNormal, 0, 512,
+			FSTaskBuffer, &FSTaskControlBlock);
+	osThreadCreate(osThread(FSTask), NULL);
 
-    osThreadStaticDef(myRateTask, StartRateTask, osPriorityNormal, 0, 512,
-		    RateTaskBuffer, &RateTaskControlBlock);
-    osThreadCreate(osThread(myRateTask), NULL);
+	osThreadStaticDef(myDisplayTask, StartDisplayTask, osPriorityBelowNormal, 0, 128,
+			DisplayTaskBuffer, &DisplayTaskControlBlock);
+	osThreadCreate(osThread(myDisplayTask), NULL);
 
-    osThreadStaticDef(IntRxTask, internal_rx_task, osPriorityNormal, 0, 256,
-		    InternalRxTaskBuffer, &InternalRxTaskControlBlock);
-    osThreadCreate(osThread(IntRxTask), NULL);
+	osThreadStaticDef(myRateTask, StartRateTask, osPriorityBelowNormal, 0, 128,
+			RateTaskBuffer, &RateTaskControlBlock);
+	osThreadCreate(osThread(myRateTask), NULL);
 
-    osThreadStaticDef(SystemTask, system_task, osPriorityNormal, 0, 256,
-		    SystemTaskBuffer, &SystemTaskControlBlock);
-    osThreadCreate(osThread(SystemTask), NULL);
+	osThreadStaticDef(IntRxTask, internal_rx_task, osPriorityNormal, 0, 256,
+			InternalRxTaskBuffer, &InternalRxTaskControlBlock);
+	osThreadCreate(osThread(IntRxTask), NULL);
 
-    osThreadStaticDef(ExtRxTask, external_rx_task, osPriorityNormal, 0, 512,
-		    ExternalRxTaskBuffer, &ExternalRxControlBlock);
-    osThreadCreate(osThread(ExtRxTask), NULL);
+	osThreadStaticDef(AppTask, app_task, osPriorityBelowNormal, 0, 128,
+			AppTaskBuffer, &AppTaskControlBlock);
+	osThreadCreate(osThread(AppTask), NULL);
 
-    osThreadTerminate(init_task_id);
+	osThreadStaticDef(ExtRxTask, external_rx_task, osPriorityNormal, 0, 512,
+			ExternalRxTaskBuffer, &ExternalRxControlBlock);
+	osThreadCreate(osThread(ExtRxTask), NULL);
+
+	osThreadTerminate(init_task_id);
 }
 
 /**

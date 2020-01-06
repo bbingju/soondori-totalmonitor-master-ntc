@@ -29,7 +29,7 @@ uint32_t	revid;
 uint32_t	devid;
 uint32_t	uid[3];
 
-uint8_t iiii;
+//uint8_t iiii;
 
 extern IWDG_HandleTypeDef hiwdg;
 
@@ -39,51 +39,51 @@ extern IWDG_HandleTypeDef hiwdg;
 **********************************************************************/
 void StartDisplayTask(void const * argument)
 {
-    portTickType	  xLastWakeTime;
+	portTickType	  xLastWakeTime;
 
-    HAL_IWDG_Refresh(&hiwdg);
-    osDelay(500);
+	HAL_IWDG_Refresh(&hiwdg);
+	osDelay(500);
 
-    revid = HAL_GetREVID();
-    devid = HAL_GetDEVID();
+	revid = HAL_GetREVID();
+	devid = HAL_GetDEVID();
 
-    /* Infinite loop */
-    for(;;)
-    {
-	static uint8_t ct = 0;
-	xLastWakeTime = osKernelSysTick();
-
-	if (ct++ % 2 == 0)	// 1초에 한번씩 점멸
+	/* Infinite loop */
+	for(;;)
 	{
-	    HAL_GPIO_TogglePin(POWER_LED_GPIO_Port, POWER_LED_Pin);
-	    DoDisplayModeChange();
-	    doSegmentDisplay(ct);
-	}
+		static uint8_t ct = 0;
+		xLastWakeTime = osKernelSysTick();
 
-	doBatteryVoltageCheck();
-	doMainBoardSensorCheck();
-	doModeButton();
+		if (ct++ % 2 == 0)	// 1초에 한번씩 점멸
+		{
+			HAL_GPIO_TogglePin(POWER_LED_GPIO_Port, POWER_LED_Pin);
+			DoDisplayModeChange();
+			doSegmentDisplay(ct);
+		}
 
-	//Up Button
-	if(myBinarySemUpHandle != NULL)
-	{
-	    //if(osSemaphoreWait(myBinarySemUpHandle, 100) == osOK)
-	    {
-		HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
-	    }
-	}
+		doBatteryVoltageCheck();
+		doMainBoardSensorCheck();
+		doModeButton();
 
-	//Down Button
-	if(myBinarySemDownHandle != NULL)
-	{
-	    //if(osSemaphoreWait(myBinarySemDownHandle, 100) == osOK)
-	    {
-		HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
-	    }
+		//Up Button
+		if(myBinarySemUpHandle != NULL)
+		{
+			//if(osSemaphoreWait(myBinarySemUpHandle, 100) == osOK)
+			{
+				HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
+			}
+		}
+
+		//Down Button
+		if(myBinarySemDownHandle != NULL)
+		{
+			//if(osSemaphoreWait(myBinarySemDownHandle, 100) == osOK)
+			{
+				HAL_GPIO_TogglePin(SD_LED_GPIO_Port, SD_LED_Pin);
+			}
+		}
+		osDelayUntil(&xLastWakeTime, 250);
 	}
-	osDelayUntil(&xLastWakeTime, 250);
-    }
-    /* USER CODE END 5 */
+	/* USER CODE END 5 */
 }
 
 /*********************************************************************

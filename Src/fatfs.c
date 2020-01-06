@@ -34,7 +34,7 @@ void MX_FATFS_Init(void)
 
   /* USER CODE BEGIN Init */
 	/* additional user code for init */
-	if(retSD != 0)	// 0이면 정상
+	if (retSD != 0)	// 0이면 정상
 	{
 		sdValue.sdState = SCS_LINK_ERROR;
 	}
@@ -50,23 +50,23 @@ void MX_FATFS_Init(void)
   * @param  None
   * @retval Time in DWORD
   */
-DWORD get_fattime(void)
-{
-  /* USER CODE BEGIN get_fattime */
-  RTC_TimeTypeDef Time_Value;
-  RTC_DateTypeDef Date_Value;
+/* DWORD get_fattime(void) */
+/* { */
+/*   /\* USER CODE BEGIN get_fattime *\/ */
+/*   RTC_TimeTypeDef Time_Value; */
+/*   RTC_DateTypeDef Date_Value; */
 	
-  HAL_RTC_GetTime(&hrtc, &Time_Value, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &Date_Value, RTC_FORMAT_BIN);
+/*   HAL_RTC_GetTime(&hrtc, &Time_Value, RTC_FORMAT_BIN); */
+/*   HAL_RTC_GetDate(&hrtc, &Date_Value, RTC_FORMAT_BIN); */
 
-  return (DWORD)((  Date_Value.Year + 20 ) 	<< 25
-                 | Date_Value.Month   		<< 21
-                 | Date_Value.Date    		<< 16
-                 | Time_Value.Hours   		<< 11
-                 | Time_Value.Minutes 		<< 5
-                 | Time_Value.Seconds );
-  /* USER CODE END get_fattime */  
-}
+/*   return (DWORD)((  Date_Value.Year + 20 ) 	<< 25 */
+/*                  | Date_Value.Month   		<< 21 */
+/*                  | Date_Value.Date    		<< 16 */
+/*                  | Time_Value.Hours   		<< 11 */
+/*                  | Time_Value.Minutes 		<< 5 */
+/*                  | Time_Value.Seconds ); */
+/*   /\* USER CODE END get_fattime *\/   */
+/* } */
 
 /* USER CODE BEGIN Application */
      

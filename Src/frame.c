@@ -52,6 +52,18 @@ static uint16_t crc16_ccitt(const uint8_t *buf, int len)
 		crc = crc16_ccitt_update(crc, *(uint8_t *)buf++);
 	return crc;
 }
+
+static uint16_t crc16_modbus_update(uint16_t crc, uint8_t a)
+{
+	register int i;
+	crc ^= (uint16_t)a;
+	for (i = 0; i < 8; ++i) {
+		if (crc & 1)
+			crc = (crc >> 1) ^ 0xA001;
+		else
+			crc = (crc >> 1);
+	}
+
 	return crc;
 }
 
@@ -157,7 +169,7 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte)
 		break;
 	}
 
-	case 7: { /* ending preamble */
+	case 7: {
 		if (*byte != INT_ETX) {
 			state = 0;
 			return 0;
@@ -224,7 +236,7 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 	static uint8_t datalen = 0;
 	static uint8_t ipaddrlen = 0;
 	static uint8_t received_crc[2] = {0};
-	static uint8_t _frame_for_crc[32] = {0};
+	static uint16_t crc = 0xFFFF;
 
 	if (!frm)
 		return 0;
@@ -232,9 +244,9 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 	switch (state) {
 	case 0: {
 		if (*byte == EXT_STX) {
-			_frame_for_crc[0] = *byte;
 			received_crc[0] = 0;
 			received_crc[1] = 0;
+			crc = 0xFFFF;
 			++state;
 		}
 		break;
@@ -242,14 +254,14 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 
 	case 1: {		/* cmd */
 		frm->cmd = *byte;
-		_frame_for_crc[1] = *byte;
+		crc = crc16_modbus_update(crc, *byte);
 		++state;
 		break;
 	}
 
 	case 2: {		/* option */
 		frm->option = *byte;
-		_frame_for_crc[2] = *byte;
+		crc = crc16_modbus_update(crc, *byte);
 		ipaddrlen = 4;
 		++state;
 		break;
@@ -257,7 +269,7 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 
 	case 3: {		/* ipaddr */
 		frm->ipaddr[4 - ipaddrlen] = *byte;
-		_frame_for_crc[3 + 4 - ipaddrlen] = *byte;
+		crc = crc16_modbus_update(crc, *byte);
 		if (--ipaddrlen == 0) {
 			datalen = 22;
 			++state;
@@ -267,26 +279,24 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 
 	case 4: {		/* data */
 		frm->data[22 - datalen] = *byte;
-		_frame_for_crc[3 + 22 - datalen] = *byte;
+		crc = crc16_modbus_update(crc, *byte);
 		if (--datalen == 0) {
 			++state;
 		}
 		break;
 	}
 
-	case 5: { /* crc msb */
+	case 5: {
 		received_crc[0] = *byte;
 		++state;
 		break;
 	}
 
-	case 6: { /* crc lsb */
+	case 6: {
 		received_crc[1] = *byte;
-
-		uint16_t calcurated = CRC16_Make(&_frame_for_crc[1], 28);
-		if (calcurated != *((uint16_t*)received_crc)) {
+		if (crc != *((uint16_t*)received_crc)) {
 			DBG_LOG("%s: mismatch with crc, received (0x%04X), calcurated (0x%04X)\n", __func__,
-				*((uint16_t*)received_crc), calcurated);
+				*((uint16_t*)received_crc), crc);
 		}
 		++state;
 		break;

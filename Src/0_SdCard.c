@@ -4,7 +4,7 @@
 #include "0_SdCard.h"
 #include "0_GlobalValue.h"
 #include "external_uart_task.h"
-
+#include "debug.h"
 
 uint8_t 	wData[420];
 
@@ -14,11 +14,12 @@ uint8_t 	wData[420];
 **********************************************************************/
 FRESULT MountSDIO(void)
 {
-    FRESULT res = f_mount(&sdValue.sdFatFs, (const TCHAR *)SDPath, 0);
-    if (res != FR_OK) {
-    } else {
-    }
-    return res;
+	/* FRESULT res = f_mount(&sdValue.sdFatFs, (const TCHAR *)SDPath, 0); */
+	FRESULT res = f_mount(&SDFatFS, (const TCHAR *)SDPath, 0);
+	if (res != FR_OK) {
+	} else {
+	}
+	return res;
 }
 
 /*********************************************************************
@@ -27,25 +28,25 @@ FRESULT MountSDIO(void)
 **********************************************************************/
 FRESULT UnMountSDIO(void)
 {
-    FRESULT res = f_mount(NULL, (const TCHAR *)"", 1);
-    if (res != FR_OK) {
-    } else {
-    }
-    return res;
+	FRESULT res = f_mount(NULL, (const TCHAR *)"", 1);
+	if (res != FR_OK) {
+	} else {
+	}
+	return res;
 }
 
 static FRESULT check_n_create_directory(const TCHAR *dirname)
 {
-    FRESULT result = FR_OK;
-    DIR dir;
+	FRESULT result = FR_OK;
+	DIR dir;
 
-    result = f_opendir(&dir, dirname);
-    if (result == FR_OK) {
-        f_closedir(&dir);
-        return result;
-    }
+	result = f_opendir(&dir, dirname);
+	if (result == FR_OK) {
+		f_closedir(&dir);
+		return result;
+	}
 
-    return f_mkdir(dirname);
+	return f_mkdir(dirname);
 }
 
 /*********************************************************************
@@ -54,33 +55,33 @@ static FRESULT check_n_create_directory(const TCHAR *dirname)
 **********************************************************************/
 FRESULT DoFolderCheck(void)
 {
-    TCHAR dirname[16] = {0};
-    FRESULT res = FR_OK;
-    RTC_DateTypeDef *date = &SysTime.Date;
+	TCHAR dirname[16] = {0};
+	FRESULT res = FR_OK;
+	RTC_DateTypeDef *date = &SysTime.Date;
 
-    sprintf(dirname, "20%02d", date->Year);
-    res = check_n_create_directory(dirname);
-    if (res != FR_OK) {
-        DBG_LOG("%s: Error to create a directory!\n", __func__);
-        goto ret;
-    }
+	sprintf(dirname, "20%02d", date->Year);
+	res = check_n_create_directory(dirname);
+	if (res != FR_OK) {
+		DBG_LOG("%s: Error to create a directory!\n", __func__);
+		goto ret;
+	}
 
-    sprintf(dirname, "20%02d/%02d", date->Year, date->Month);
-    res = check_n_create_directory(dirname);
-    if (res != FR_OK) {
-        DBG_LOG("%s: Error to create a directory!\n", __func__);
-        goto ret;
-    }
+	sprintf(dirname, "20%02d/%02d", date->Year, date->Month);
+	res = check_n_create_directory(dirname);
+	if (res != FR_OK) {
+		DBG_LOG("%s: Error to create a directory!\n", __func__);
+		goto ret;
+	}
 
-    sprintf(dirname, "20%02d/%02d/%02d", date->Year, date->Month, date->Date);
-    res = check_n_create_directory(dirname);
-    if (res != FR_OK) {
-        DBG_LOG("%s: Error to create a directory!\n", __func__);
-        goto ret;
-    }
+	sprintf(dirname, "20%02d/%02d/%02d", date->Year, date->Month, date->Date);
+	res = check_n_create_directory(dirname);
+	if (res != FR_OK) {
+		DBG_LOG("%s: Error to create a directory!\n", __func__);
+		goto ret;
+	}
 
 ret:
-    return res;
+	return res;
 }
 
 /*********************************************************************
@@ -90,31 +91,25 @@ ret:
 **********************************************************************/
 void DoFileCheck(void)
 {
-    if (sdValue.loadFileName[0] == 0) //열려 있는 파일이 없을 경우
-    {
-        DoMakeLoadFileName();
-        DoMakeFile();
-    } else //열려있는 파일이 있는 경우
-    {
-        if ((sdValue.loadFileName[2] == SysTime.Date.Year / 10 + '0') &&
-            (sdValue.loadFileName[3] == SysTime.Date.Year % 10 + '0') &&
-            (sdValue.loadFileName[5] == SysTime.Date.Month / 10 + '0') &&
-            (sdValue.loadFileName[6] == SysTime.Date.Month % 10 + '0') &&
-            (sdValue.loadFileName[8] == SysTime.Date.Date / 10 + '0') &&
-            (sdValue.loadFileName[9] ==
-             SysTime.Date.Date % 10 + '0') && //날짜 비교
-            (sdValue.loadFileName[18] == SysTime.Time.Hours / 10 + '0') &&
-            (sdValue.loadFileName[19] ==
-             SysTime.Time.Hours % 10 + '0')) //시간 확인
-        {
-            osDelay(1);
-        } else //시간이 변경된 경우
-        {
-            DoFileClose();
-            DoMakeLoadFileName();
-            DoMakeFile();
-        }
-    }
+	if (sdValue.loadFileName[0] == 0) { //열려 있는 파일이 없을 경우
+		DoMakeLoadFileName();
+		DoMakeFile();
+	} else {		//열려있는 파일이 있는 경우
+		if ((sdValue.loadFileName[2] == SysTime.Date.Year / 10 + '0') &&
+			(sdValue.loadFileName[3] == SysTime.Date.Year % 10 + '0') &&
+			(sdValue.loadFileName[5] == SysTime.Date.Month / 10 + '0') &&
+			(sdValue.loadFileName[6] == SysTime.Date.Month % 10 + '0') &&
+			(sdValue.loadFileName[8] == SysTime.Date.Date / 10 + '0') &&
+			(sdValue.loadFileName[9] == SysTime.Date.Date % 10 + '0') && //날짜 비교
+			(sdValue.loadFileName[18] == SysTime.Time.Hours / 10 + '0') &&
+			(sdValue.loadFileName[19] == SysTime.Time.Hours % 10 + '0')) { //시간 확인
+			osDelay(1);
+		} else { //시간이 변경된 경우
+			DoFileClose();
+			DoMakeLoadFileName();
+			DoMakeFile();
+		}
+	}
 }
 
 /*********************************************************************
@@ -137,9 +132,6 @@ void DoMakeFile(void)
             sdValue.sdState = SCS_OPEN_ERROR;
             send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
                                    (uint8_t *)sdValue.sdState, 1, 12, 32);
-            /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR,
-             * (uint8_t*)sdValue.sdState, 1, 12, 32); */
-            /* SendUart485String(tx485DataDMA, 32); */
             return;
         } else {
             sdValue.sdState = SCS_OK;
@@ -154,9 +146,6 @@ void DoMakeFile(void)
             sdValue.sdState = SCS_OPEN_ERROR;
             send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
                                    (uint8_t *)sdValue.sdState, 1, 12, 32);
-            /* doMakeSend485Data(tx485DataDMA, CMD_SD_CARD, OP_SDCARD_ERROR,
-             * (uint8_t*)sdValue.sdState, 1, 12, 32); */
-            /* SendUart485String(tx485DataDMA, 32); */
             return;
         } else {
             sdValue.sdState = SCS_OK;
@@ -451,6 +440,7 @@ void DoDataWrite(void)
 *	(파일과 폴더를 구분해서 보내지 못한다.)
 *	path : 파일 리스트를 확인할 경로를 보낸다.
 **********************************************************************/
+#if 0
 FRESULT scan_files(char *path) /* Start node to be scanned (***also used as work area***) */
 {
     volatile FRESULT res;
@@ -505,10 +495,8 @@ FRESULT scan_files(char *path) /* Start node to be scanned (***also used as work
 
             if (fno.fattrib & AM_DIR) {
                 sdValue.scanFilePath[len1 + len2++] = '>';
-                sdValue.scanFilePath[len1 + len2] = 0;
-            } else {
-                sdValue.scanFilePath[len1 + len2] = 0;
             }
+	    sdValue.scanFilePath[len1 + len2] = 0;
 
             printf("%s\r", sdValue.scanFilePath);
             sdValue.scanFileListCount++;
@@ -537,3 +525,4 @@ FRESULT scan_files(char *path) /* Start node to be scanned (***also used as work
 
     return res;
 }
+#endif	/* 0 */

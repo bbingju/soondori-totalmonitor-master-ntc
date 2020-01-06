@@ -1,7 +1,7 @@
 #include "0_Util.h"
 #include "internal_uart_task.h"
 #include "external_uart_task.h"
-#include "system_task.h"
+#include "app_task.h"
 #include <string.h>
 
 uint8_t *bytes;
@@ -267,8 +267,8 @@ void doNOP(uint16_t count)
 // CRC16
 uint16_t CRC16_Make(uint8_t *byMsg, uint16_t len)
 {
-    uint16_t  crc = 0xFFFF;
-
+	__IO uint16_t  crc = 0xFFFF;
+	uint16_t flag;
         for (int i = 0; i < len; i++)
         {
                 crc ^= byMsg[i];

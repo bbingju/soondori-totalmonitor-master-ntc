@@ -290,45 +290,6 @@ void USART2_IRQHandler(void)
     /* USER CODE END USART2_IRQn 0 */
     HAL_UART_IRQHandler(&huart2);
     /* USER CODE BEGIN USART2_IRQn 1 */
-    /* __HAL_UART_CLEAR_OREFLAG(&huart2); */
-    /* __HAL_UART_CLEAR_FEFLAG(&huart2); */
-
-    /* if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE)) */
-    /* { */
-    /*     uint32_t c = *(&huart2.Instance->DR); */
-
-    /*     SEGGER_RTT_printf(0, "%02x ", (uint8_t)c); */
-    /*     /\* uart_rx_buffer[uart_rx_pos++] = (uint8_t)c; *\/ */
-
-    /*     /\* if (uart_rx_pos >= sizeof(uart_rx_buffer)) { *\/ */
-    /*     /\*     uart_rx_pos = 0; *\/ */
-    /*     /\*     return; *\/ */
-    /*     /\* } *\/ */
-
-    /*     /\* uint8_t payload_len = uart_rx_buffer[3]; *\/ */
-    /*     /\* if (payload_len + 2 /\\* preamble *\\/ + 2 + 3 == uart_rx_pos) {
-     * *\/ */
-    /*     /\*     if (uart_rx_buffer[0] == PREAMBLE_OCTET && *\/ */
-    /*     /\*         uart_rx_buffer[1] == PREAMBLE_OCTET && *\/ */
-    /*     /\*         uart_rx_buffer[uart_rx_pos - 1] == END_OCTET) { *\/ */
-    /*     /\*         memcpy(msg_rx_buffer, &uart_rx_buffer[2], payload_len +
-     * 2); *\/ */
-    /*     /\*         uart_rx_pos = 0; *\/ */
-    /*     /\*         msg_exist = 1; *\/ */
-    /*     /\*     } *\/ */
-    /*     /\*     else { *\/ */
-    /*     /\*         /\\* error!! *\\/ *\/ */
-    /*     /\*         uart_rx_pos = 0; *\/ */
-    /*     /\*     } *\/ */
-    /*     /\* } *\/ */
-    /* } */
-    /* else */
-    /* { */
-    /*     __HAL_UART_CLEAR_OREFLAG(&huart2); */
-    /*     __HAL_UART_CLEAR_FEFLAG(&huart2); */
-    /* } */
-
-    /* __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE); */
     /* USER CODE END USART2_IRQn 1 */
 }
 
