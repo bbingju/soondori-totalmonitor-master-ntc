@@ -48,7 +48,7 @@ struct internal_frame {
 	union {
 		struct internal_temp_data temp_data;
 		struct internal_temp_state_data state_data;
-		uint8_t data[168];
+		uint8_t data[130];
 	};
 };
 

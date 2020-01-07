@@ -44,6 +44,9 @@
 #define OP_REVISION_CONSTANT_SET 2
 #define OP_REVISION_APPLY_REQ 3
 #define OP_REVISION_CONSTANT_REQ 4
+/* Thermal Resistance Constant */
+#define OP_REVISION_TR_CONST_SET 5
+#define OP_REVISION_TR_CONST_REQ 6
 
 #define OP_CALIBRATION_RTD_CONSTANT_SET 1
 #define OP_CALIBRATION_NTC_CON_TABLE_CAL 2
@@ -76,19 +79,10 @@ struct ext_rx_msg_s;
 extern "C" {
 #endif
 
-
-//////////////////////////////////////////////////////////////////
-//	Private function prototypes
-//////////////////////////////////////////////////////////////////
 void ext_rx_notify();
-/* void ext_rx_job_task(void const * argument); */
-/* int push_external_rx(void *data, uint16_t length); */
 int send_external_response(uint8_t cmd, uint8_t option, void *data,
                            uint16_t data_writhe_len, uint16_t data_len, uint16_t buffer_len);
 
-void SendUart485String(uint8_t *data, uint16_t length);
-void SendUart485NonDma(uint8_t *data, uint16_t length);
-void StartRs485Task(void const * argument);
 void DoReadFileList(struct external_frame_rx *);
 
 void doSaveIntervalTime(struct external_frame_rx *);
@@ -98,22 +92,6 @@ void DoSendFileOpen(struct external_frame_rx *);
 void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize);
 void DoSendFileClose(void);
 int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize);
-
-void CmdWarningTempSet(struct external_frame_rx *);
-void CmdWarningTempReq(struct external_frame_rx *);
-void CmdCalibrationRTDConstSet(struct external_frame_rx *);
-void CmdCalibrationNTCTableCal(struct external_frame_rx *);
-void CmdCalibrationNTCConstantSet(struct external_frame_rx *);
-void CmdCalibrationRTDConstReq(struct external_frame_rx *);
-void CmdCalibrationNTCTableReq(struct external_frame_rx *);
-void CmdCalibrationNTCConstantReq(struct external_frame_rx *);
-void CmdRevisionApplySet(struct external_frame_rx *);
-void CmdRevisionConstantSet(struct external_frame_rx *);
-void CmdRevisionApplyReq(struct external_frame_rx *);
-void CmdRevisionConstantReq(struct external_frame_rx *);
-
-void doSetTime(struct external_frame_rx *);
-void doGetTime(struct external_frame_rx *);
 
 #ifdef __cplusplus
 }

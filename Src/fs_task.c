@@ -27,11 +27,46 @@ static FRESULT check_n_create_dir(const char *dirname);
 static FRESULT check_dir_for_current_date(void);
 static void write_log_file_header(FIL *fil);
 static FRESULT write_data(FIL *fil);
+static FRESULT update_metafile(FIL *fil);
 
+extern app_ctx_t ctx;
 extern uint8_t wData[];
+
+__PACKED_STRUCT ymd {
+	uint8_t y;
+	uint8_t m;
+	uint8_t d;
+};
+
+static int translate_ymd(struct ymd *pymd, const char *str_ymd)
+{
+	char *n;
+
+	if (!pymd || !str_ymd)
+		return -1;
+
+	n = strndup(str_ymd, 2);
+	pymd->y = (uint8_t)strtol(n, NULL, 16);
+	free(n);
+
+	/* month */
+	n = strndup(str_ymd + 2, 2);
+	pymd->m = (uint8_t)strtol(n, NULL, 16);
+	free(n);
+
+	/* day */
+	n = strndup(str_ymd + 4, 2);
+	pymd->d = (uint8_t)strtol(n, NULL, 16);
+	free(n);
+
+	return 0;
+}
 
 int post_fs_job(FS_JOB_TYPE_E type)
 {
+	if (!ctx.sd_inserted)
+		return -1;
+
 	if (osMessagePut(fs_job_q_id, type, 0) != osOK)
 		return -1;
 	return 0;
@@ -69,7 +104,9 @@ static void handle_fs_job(FS_JOB_TYPE_E type)
 static void save_log()
 {
 	FRESULT ret = FR_OK;
-	bool logfile_existed = false;
+	bool new_file_created = false;
+
+	/* bool logfile_existed = false; */
 
 	/* DBG_LOG("%s %u\n", __func__, osKernelSysTick()); */
 
@@ -83,20 +120,28 @@ static void save_log()
 	/* open log file */
 	char *fullpath = current_log_fullpath();
 	ret = f_open(&logfp, fullpath, FA_OPEN_APPEND | FA_WRITE);
-	if (f_size(&logfp) == 0) {
-		write_log_file_header(&logfp);
-	}
-	ret = write_data(&logfp);
-	f_sync(&logfp);
-	f_close(&logfp);
-
-	/* Check '.metafile' */
-	ret = f_open(&metafp, "0://.metafile", FA_OPEN_EXISTING | FA_READ | FA_WRITE);
 	if (ret != FR_OK) {
+		DBG_LOG("error (%d): f_open during %s\n", ret, __func__);
 		return;
 	}
 
-	f_close(&metafp);
+	if (f_size(&logfp) == 0) {
+		new_file_created = true;
+		write_log_file_header(&logfp);
+	}
+	ret = write_data(&logfp);
+	if (ret != FR_OK) {
+		DBG_LOG("error (%d): write_data during %s\n", ret, __func__);
+		f_close(&logfp);
+		return;
+	}
+
+	f_sync(&logfp);
+	f_close(&logfp);
+
+	if (new_file_created) {
+		update_metafile(&metafp);
+	}
 }
 
 static void answer_log_filelist()
@@ -114,7 +159,8 @@ static void answer_log_filelist()
 	char buffer[64] = { 0 };
 	uint16_t sequence_index = 0;
 	uint8_t time_index = 0;
-	char *n = NULL;
+	/* char *n = NULL; */
+	struct ymd ymd = { 0 };
 
 	f_lseek(&metafp, 0);
 
@@ -130,27 +176,33 @@ static void answer_log_filelist()
 			time_index = 0;
 			*((uint16_t *)&_time_data[0]) = sequence_index++;
 
-			/* year */
-			n = strndup(&buffer[0], 2);
-			_time_data[2] = (uint8_t)strtol(n, NULL, 16);
-			free(n);
+			translate_ymd(&ymd, buffer);
+			_time_data[2] = ymd.y;
+			_time_data[3] = ymd.m;
+			_time_data[4] = ymd.d;
 
-			/* month */
-			n = strndup(&buffer[2], 2);
-			_time_data[3] = (uint8_t)strtol(n, NULL, 16);
-			free(n);
+			/* /\* year *\/ */
+			/* n = strndup(&buffer[0], 2); */
+			/* _time_data[2] = (uint8_t)strtol(n, NULL, 16); */
+			/* free(n); */
 
-			/* day */
-			n = strndup(&buffer[4], 2);
-			_time_data[4] = (uint8_t)strtol(n, NULL, 16);
-			free(n);
+			/* /\* month *\/ */
+			/* n = strndup(&buffer[2], 2); */
+			/* _time_data[3] = (uint8_t)strtol(n, NULL, 16); */
+			/* free(n); */
+
+			/* /\* day *\/ */
+			/* n = strndup(&buffer[4], 2); */
+			/* _time_data[4] = (uint8_t)strtol(n, NULL, 16); */
+			/* free(n); */
 
 			DBG_LOG("header: ");
 			DBG_DUMP(_time_data, 5);
 		} else {
+			char *n;
 
 			/* hour */
-			n = strndup(&buffer[1], 2);
+			n = strndup(&buffer[8], 2);
 			_time_data[5 + time_index++] = (uint8_t)strtol(n, NULL, 16);
 			free(n);
 		}
@@ -542,4 +594,41 @@ static FRESULT write_data(FIL *fil)
     /*     sdValue.sdState = SCS_OK; */
     /* } */
     return res;
+}
+
+static FRESULT update_metafile(FIL *fil)
+{
+	/* char buffer[64] = { 0 }; */
+	FRESULT ret = FR_OK;
+
+	ret = f_open(fil, "0://.metafile", FA_OPEN_EXISTING | FA_READ | FA_WRITE);
+	if (ret != FR_OK) {
+		DBG_LOG("error (%d): f_open metafile during %s\n", ret, __func__);
+		return ret;
+	}
+
+	/* /\* move pointer to last line & read the line *\/ */
+	/* f_lseek(fil, f_size(fil) - 20); */
+	/* f_gets(buffer, 19, fil); */
+
+
+	/* if (buffer[0] != '\t') { */
+	/* 	DBG_LOG("error: can not find last line of metafile\n"); */
+	/* 	f_close(fil); */
+	/* 	return 100; */
+	/* } */
+
+	/* struct ymd last_ymd = { 0 }; */
+	/* translate_ymd(&last_ymd, &buffer[1]); */
+	/* if (last_ymd.d != SysTime.Date.Date) { */
+
+	/* } */
+
+	f_lseek(fil, f_size(fil));
+	f_printf(fil, "\t%s\n", current_log_filename());
+
+	f_sync(fil);
+	f_close(fil);
+
+	return ret;
 }

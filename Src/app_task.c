@@ -149,28 +149,28 @@ void app_task(void const *argument)
 				/* DBG_LOG("slot->id: %d, type: %d, inserted: %d\n", */
 				/*    slot->id, slot->type, slot->inserted); */
 				DoReqTemperatureState(slot);
-				osDelay(20);
+				/* osDelay(20); */
 				DoReqTemperature(slot);
 				osDelay(20);
 			}
 			/* next_wait += SysProperties.interval_ms * 1000; */
-			/* osDelay(100); */
+			osDelay(200);
 
-			/* if (SysProperties.start_flag) { */
-			/* 	DoMCUboardInfo(); // transmit board info */
-			/* 	osDelay(10); */
+			if (SysProperties.start_flag) {
+				DoMCUboardInfo(); // transmit board info
+				/* osDelay(10); */
 
-			/* 	for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-			/* 		struct slot_properties_s *slot = &SysProperties.slots[i]; */
-			/* 		DoSlotInfo(slot->id); */
-			/* 		osDelay(10); */
-			/* 		DoChannelInfo(slot->id); */
-			/* 		osDelay(10); */
-			/* 		DoChannelValue(slot->id); */
-			/* 		osDelay(10); */
-			/* 	} */
-			/* } */
-			/* DoSmpsCheck(); */
+				for (int i = 0; i < MAX_SLOT_NUM; i++) {
+					struct slot_properties_s *slot = &SysProperties.slots[i];
+					DoSlotInfo(slot->id);
+					/* osDelay(10); */
+					DoChannelInfo(slot->id);
+					/* osDelay(10); */
+					DoChannelValue(slot->id);
+					osDelay(30);
+				}
+			}
+			DoSmpsCheck();
 			osDelayUntil(&next_wait, SysProperties.interval_ms);
 			break;
 		}

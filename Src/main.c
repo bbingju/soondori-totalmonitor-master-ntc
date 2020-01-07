@@ -98,8 +98,8 @@ osStaticThreadDef_t FSTaskControlBlock;
 uint32_t DisplayTaskBuffer[128];
 osStaticThreadDef_t DisplayTaskControlBlock;
 
-uint32_t RateTaskBuffer[256];
-osStaticThreadDef_t RateTaskControlBlock;
+/* uint32_t RateTaskBuffer[256]; */
+/* osStaticThreadDef_t RateTaskControlBlock; */
 
 uint32_t InternalRxTaskBuffer[256];
 osStaticThreadDef_t InternalRxTaskControlBlock;
@@ -991,9 +991,9 @@ void init_task(void const *argument)
 			DisplayTaskBuffer, &DisplayTaskControlBlock);
 	osThreadCreate(osThread(myDisplayTask), NULL);
 
-	osThreadStaticDef(myRateTask, StartRateTask, osPriorityBelowNormal, 0, 128,
-			RateTaskBuffer, &RateTaskControlBlock);
-	osThreadCreate(osThread(myRateTask), NULL);
+	/* osThreadStaticDef(myRateTask, StartRateTask, osPriorityBelowNormal, 0, 128, */
+	/* 		RateTaskBuffer, &RateTaskControlBlock); */
+	/* osThreadCreate(osThread(myRateTask), NULL); */
 
 	osThreadStaticDef(IntRxTask, internal_rx_task, osPriorityNormal, 0, 256,
 			InternalRxTaskBuffer, &InternalRxTaskControlBlock);

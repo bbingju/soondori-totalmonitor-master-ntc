@@ -266,7 +266,6 @@ void USART1_IRQHandler(void)
     /* USER CODE BEGIN USART1_IRQn 0 */
     if (LL_USART_IsEnabledIT_IDLE(USART1) && LL_USART_IsActiveFlag_IDLE(USART1)) {
         LL_USART_ClearFlag_IDLE(USART1);
-        /* DBG_LOG("%s\n", __func__); */
         ext_rx_notify();
     }
     /* USER CODE END USART1_IRQn 0 */
@@ -284,7 +283,6 @@ void USART2_IRQHandler(void)
     /* USER CODE BEGIN USART2_IRQn 0 */
     if (LL_USART_IsEnabledIT_IDLE(USART2) && LL_USART_IsActiveFlag_IDLE(USART2)) {
         LL_USART_ClearFlag_IDLE(USART2);
-        /* DBG_LOG("%s\n", __func__); */
         internal_rx_notify();
     }
     /* USER CODE END USART2_IRQn 0 */

@@ -1,4 +1,5 @@
 #include "app_ctx.h"
+#include "bsp_driver_sd.h"
 #include "debug.h"
 
 #include <stdio.h>
@@ -48,7 +49,7 @@ FRESULT ff_create_metafile(FIL *mf, char *path)
 		} else {
 			DBG_LOG("\t%s/%s\n", path, fno.fname);
 			if (fno.fname[0] != '.') {
-				f_printf(mf, "\t%s\n", &fno.fname[7]);
+				f_printf(mf, "\t%s\n", &fno.fname[0]);
 			}
 		}
 	}
@@ -113,24 +114,27 @@ void app_ctx_init(app_ctx_t *ctx)
 		DBG_LOG("error: MX_FATFS_Init()\n");
 	}
 
+	ctx->sd_inserted = BSP_SD_IsDetected();
 	ctx->sd_ff = &SDFatFS;
 	ctx->sd_root = SDPath;
 
-	DBG_LOG("Now mount drive %s\n", ctx->sd_root);
-	FRESULT ret = f_mount(ctx->sd_ff, (const TCHAR *)ctx->sd_root, 0);
-	if (ret != FR_OK) {
-		DBG_LOG("error (%): Can't not mount to %s\n", ret, ctx->sd_root);
-	}
+	if (ctx->sd_inserted) {
+		DBG_LOG("Now mount drive %s\n", ctx->sd_root);
+		FRESULT ret = f_mount(ctx->sd_ff, (const TCHAR *)ctx->sd_root, 0);
+		if (ret != FR_OK) {
+			DBG_LOG("error (%): Can't not mount to %s\n", ret, ctx->sd_root);
+		}
 
-	uint32_t start = osKernelSysTick();
+		uint32_t start = osKernelSysTick();
 
-	FIL mfile;
-	ret = f_open(&mfile, "0://.metafile", FA_CREATE_ALWAYS | FA_WRITE);
-	if (ret) {
-		DBG_LOG("error (%d): f_open()\n", ret);
+		FIL mfile;
+		ret = f_open(&mfile, "0://.metafile", FA_CREATE_ALWAYS | FA_WRITE);
+		if (ret) {
+			DBG_LOG("error (%d): f_open()\n", ret);
+		}
+		ff_create_metafile(&mfile, ctx->sd_root);
+		/* ff_enumerate_dir(ctx->sd_root); */
+		f_close(&mfile);
+		DBG_LOG("elapsed ticks: %u\n", osKernelSysTick() - start);
 	}
-	ff_create_metafile(&mfile, ctx->sd_root);
-	/* ff_enumerate_dir(ctx->sd_root); */
-	f_close(&mfile);
-	DBG_LOG("elapsed ticks: %u\n", osKernelSysTick() - start);
 }

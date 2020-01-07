@@ -25,8 +25,8 @@ static osMessageQId(internal_rx_q_id);
 
 void internal_rx_notify() { osMessagePut(internal_rx_q_id, 1, 0); }
 
-int int_tx_completed;
-int int_rx_completed;
+int int_tx_completed = 1;
+int int_rx_completed = 1;
 
 static uint8_t internal_rx_buffer[384];
 static struct internal_frame int_frm_tx;
@@ -597,15 +597,6 @@ void DoCalibrationNTCTableCal(uint8_t slotNumber)
         };
 	memcpy(data.data, &TestData.mainBoard[MBS_RTD].UI8[0], 4);
         post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-	/* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-	/* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30),
-	 * CMD_CALIBRATION_NTC_CON_TABLE_CAL, &TestData.mainBoard[MBS_RTD].UI8[0],
-	 * 4, SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);	// 응답은 134로 들어온다.
-	 */
-	/* osDelay(100); */
 }
 
 void DoCalibrationNTCConstantSet(uint8_t slotNumber)
@@ -618,14 +609,6 @@ void DoCalibrationNTCConstantSet(uint8_t slotNumber)
         };
 	memcpy(data.data, &TestData.ntcCalibrationConst.UI8[0], 4);
         post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-	/* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-	/* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30),
-	 * CMD_CALIBRATION_NTC_CONSTANT_SET, &TestData.ntcCalibrationConst.UI8[0],
-	 * 4, SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
-	/* osDelay(100); */
 }
 
 void DoCalibrationNTCTableReq(uint8_t slotNumber)
@@ -637,14 +620,6 @@ void DoCalibrationNTCTableReq(uint8_t slotNumber)
 		.data = { 0 },
         };
         post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-	/* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-	/* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30),
-	 * CMD_CALIBRATION_NTC_CON_TABLE_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);      // 응답은 134로
-	 * 들어온다. */
-	/* osDelay(100); */
 }
 
 void DoCalibrationNTCConstantReq(uint8_t slotNumber)
@@ -656,27 +631,11 @@ void DoCalibrationNTCConstantReq(uint8_t slotNumber)
 		.data = { 0 },
         };
         post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-	/* memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer)); */
-	/* doMakeSendSlotData(TxDataBuffer, (slotNumber + 0x30),
-	 * CMD_CALIBRATION_NTC_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
-	/* osDelay(100); */
 }
 
 void DoThresholdSet(struct slot_properties_s *slot, uint8_t channel, float threshold)
 {
 	if (slot && slot->inserted) {
-		/* static uint8_t u[5] = {0}; */
-
-		/* u[0] = channel; */
-		/* *((float *) &u[1]) = threshold; */
-		/* u[1] = thresholdTemp.UI8[0]; */
-		/* u[2] = thresholdTemp.UI8[1]; */
-		/* u[3] = thresholdTemp.UI8[2]; */
-		/* u[4] = thresholdTemp.UI8[3]; */
-
 		int_frm_tx.slot_id = slot->id;
 		int_frm_tx.cmd = INTERNAL_CMD_THRESHOLD_SET;
 		int_frm_tx.datalen = 5;
@@ -685,16 +644,6 @@ void DoThresholdSet(struct slot_properties_s *slot, uint8_t channel, float thres
 
 		post_job(JOB_TYPE_TO_INTERNAL, &int_frm_tx, sizeof(int_frm_tx));
 	}
-
-	/* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-	/* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30),
-	 * CMD_THRESHOLD_SET, u, 5, SEND_DATA_LENGTH); */
-	/* /\* DBG_LOG("%s: ", __func__); *\/ */
-	/* /\* print_bytes(TxDataBuffer, SEND_DATA_LENGTH); *\/ */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);  // 응답은 134로 들어온다.
-	 */
-	/* osDelay(100); */
 }
 
 void DoThresholdReq(struct slot_properties_s *slot)
@@ -708,13 +657,6 @@ void DoThresholdReq(struct slot_properties_s *slot)
 		};
 		post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
 	}
-
-	/* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30),
-	 * CMD_THRESHOLD_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 134);  // 응답은 134로 들어온다.
-	 */
-	/* osDelay(100); */
 }
 
 /*********************************************************************
@@ -735,17 +677,6 @@ void DoReqSlotID(uint8_t slotNumber)
 		.data = { 0 },
 	};
 	post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-	/* uint8_t id = slotNumber + 0x30; */
-	/* request_internal(slotNumber, CMD_SLOT_ID_REQ, &id, sizeof(id)); */
-
-	/* uint8_t u[1] = {0}; */
-	/* u[0] = slotNumber + 0x30; */
-	/* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-	/* doMakeSendSlotData(TxDataBuffer, u[0], CMD_SLOT_ID_REQ, u, 1,
-	 * SEND_DATA_LENGTH); */
-	/* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-	/* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
 }
 
 /*********************************************************************
@@ -788,10 +719,6 @@ void DoRevisionApplySet(uint8_t slotNumber, uint8_t const mode)
 {
     HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    /* static uint8_t _mode[1] = { 0 }; */
-
-    /* _mode [0] = mode; */
-
     struct internal_frame data = {
 	    .slot_id = slotNumber,
 	    .cmd = INTERNAL_CMD_REVISION_APPLY_SET,
@@ -800,13 +727,6 @@ void DoRevisionApplySet(uint8_t slotNumber, uint8_t const mode)
     data.data[0] = mode;
 
     post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-
-    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30),
-     * CMD_REVISION_APPLY_SET, &mode, 1, SEND_DATA_LENGTH); */
-    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
 }
 
 void DoRevisionConstantSet(uint8_t slotNumber)

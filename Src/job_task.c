@@ -79,6 +79,7 @@ void job_task(void const *arg)
 		if (is_transaction &&
 			osKernelSysTick() - transaction_timeout > JOB_TANSACTION_TIMEOUT) {
 			/* Cancel the internal transction */
+			DBG_LOG("Cancel a job\n");
 			is_transaction = 0;
 		}
 
@@ -90,6 +91,7 @@ void job_task(void const *arg)
 				transaction_timeout = osKernelSysTick();
 				is_transaction = 1;
 			} else {
+				DBG_LOG("Push the internal job again. slot_id(%d)\n", job->internal.slot_id);
 				osMailPut(job_q_id, job);
 				continue;
 			}
@@ -128,7 +130,6 @@ static void send_to_external(struct external_frame_tx *ftx)
 	/* DBG_LOG("ext tx [%s::%s] (%d): ", ext_cmd_str(ftx->cmd), */
 	/* 	ext_option_str(ftx->cmd, ftx->option), ftx->len); */
 
-	memset(tx_buffer, 0, sizeof(uint8_t) * 512);
 	doMakeSend485Data(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len, ftx->len - 20, ftx->len);
 	/* int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, */
 	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
@@ -138,7 +139,6 @@ static void send_to_external(struct external_frame_tx *ftx)
 		ext_tx_completed = 0;
 		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
 		HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftx->len);
-
 		while (ext_tx_completed == 0)
 			__NOP();
 	}
@@ -160,15 +160,12 @@ static void request_to_internal(struct internal_frame *frm)
 	/* DBG_LOG("JOB_TYPE_TO_INTERNAL:"); */
 	/* DBG_DUMP(buffer, frame_size); */
 
-	/* if (int_tx_completed) { */
+	if (int_tx_completed) {
 		int_tx_completed = 0;
 		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 		/* HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_SET); */
-
 		HAL_UART_Transmit_DMA(&huart2, buffer, frame_size);
-
-		osDelay(1);
-		/* while (int_tx_completed == 0) */
-		/* 	__NOP(); */
-	/* } */
+		while (int_tx_completed == 0)
+			__NOP();
+	}
 }

@@ -20,6 +20,23 @@ int ext_tx_completed = 1;
 
 static void parse_rx(const void *data, size_t len);
 
+static void CmdWarningTempSet(struct external_frame_rx *);
+static void CmdWarningTempReq(struct external_frame_rx *);
+static void CmdRevisionApplySet(struct external_frame_rx *msg);
+static void CmdRevisionApplyReq(struct external_frame_rx *msg);
+static void CmdRevisionConstantSet(struct external_frame_rx *msg);
+static void CmdRevisionConstantReq(struct external_frame_rx *msg);
+static void CmdRevisionTRConstantSet(struct external_frame_rx *msg);
+static void CmdRevisionTRConstantReq(struct external_frame_rx *msg);
+static void CmdCalibrationRTDConstSet(struct external_frame_rx *);
+static void CmdCalibrationNTCTableCal(struct external_frame_rx *);
+static void CmdCalibrationNTCConstantSet(struct external_frame_rx *);
+static void CmdCalibrationRTDConstReq(struct external_frame_rx *);
+static void CmdCalibrationNTCTableReq(struct external_frame_rx *);
+static void CmdCalibrationNTCConstantReq(struct external_frame_rx *);
+static void doSetTime(struct external_frame_rx *);
+static void doGetTime(struct external_frame_rx *);
+
 /*********************************************************************
 *	Private variables
 **********************************************************************/
@@ -124,6 +141,12 @@ void handle_rx_msg(struct external_frame_rx *received)
 		case OP_REVISION_CONSTANT_REQ:
 			CmdRevisionConstantReq(received);
 			break;
+		case OP_REVISION_TR_CONST_SET:
+			CmdRevisionTRConstantSet(received);
+			break;
+		case OP_REVISION_TR_CONST_REQ:
+			CmdRevisionTRConstantReq(received);
+			break;
 		}
 		break;
 	case CMD_CALIBRATION:
@@ -157,7 +180,8 @@ void handle_rx_msg(struct external_frame_rx *received)
 			/* FindFilelistFlag = 0; */
 			break;
 		case OP_SDCARD_DOWNLOAD:
-			DoSendFile(received);
+			post_fs_job(FS_JOB_TYPE_DOWNLOAD_FILE);
+			/* DoSendFile(received); */
 			break;
 		case OP_SDCARD_DELETE:
 			break;
@@ -202,11 +226,11 @@ void external_rx_task(void const * argument)
 	}
 }
 
-static struct external_frame_tx ext_frm_tx = { 0 };
-
 int send_external_response(uint8_t cmd, uint8_t option, void *data,
 			uint16_t data_len, uint16_t data_padding_len, uint16_t buffer_len)
 {
+	static struct external_frame_tx ext_frm_tx = { 0 };
+
 	memset(&ext_frm_tx, 0, sizeof(struct external_frame_tx));
 	ext_frm_tx.cmd = cmd;
 	ext_frm_tx.option = option;
@@ -425,7 +449,7 @@ void doSaveIntervalTime(struct external_frame_rx *msg) //샘플레이트
 			&SysProperties.interval_ms, sizeof(uint32_t), 12, 32);
 }
 
-void CmdWarningTempSet(struct external_frame_rx *msg)
+static void CmdWarningTempSet(struct external_frame_rx *msg)
 {
 	uint8_t id = msg->warning_temp_set.slot_id;
 	uint8_t channel = msg->warning_temp_set.channel;
@@ -433,7 +457,7 @@ void CmdWarningTempSet(struct external_frame_rx *msg)
 	DoThresholdSet(&SysProperties.slots[id], channel, value);
 }
 
-void CmdWarningTempReq(struct external_frame_rx *msg)
+static void CmdWarningTempReq(struct external_frame_rx *msg)
 {
 	if (msg) {
 		int id = msg->data[0];
@@ -453,13 +477,13 @@ void CmdWarningTempReq(struct external_frame_rx *msg)
 	}
 }
 
-void CmdRevisionApplySet(struct external_frame_rx *msg)
+static void CmdRevisionApplySet(struct external_frame_rx *msg)
 {
 	/* slot 번호 전달 , 0: 측정온도 모드, 1: 보정온도 모드 */
 	DoRevisionApplySet(msg->data[0] /* Rx485Data[7] */, msg->data[1]/* Rx485Data[8] */);
 }
 
-void CmdRevisionConstantSet(struct external_frame_rx *msg)
+static void CmdRevisionConstantSet(struct external_frame_rx *msg)
 {
 	uint8_t id = msg->data[0];
 
@@ -471,17 +495,25 @@ void CmdRevisionConstantSet(struct external_frame_rx *msg)
 	DoRevisionConstantSet(id/* Rx485Data[7] */);
 }
 
-void CmdRevisionApplyReq(struct external_frame_rx *msg)
+static void CmdRevisionApplyReq(struct external_frame_rx *msg)
 {
 	DoRevisionApplyReq(msg->data[0]/* Rx485Data[7] */);
 }
 
-void CmdRevisionConstantReq(struct external_frame_rx *msg)
+static void CmdRevisionConstantReq(struct external_frame_rx *msg)
 {
 	DoRevisionConstantReq(msg->data[0]/* Rx485Data[7] */);
 }
 
-void CmdCalibrationRTDConstSet(struct external_frame_rx *msg)
+static void CmdRevisionTRConstantSet(struct external_frame_rx *msg)
+{
+}
+
+static void CmdRevisionTRConstantReq(struct external_frame_rx *msg)
+{
+}
+
+static void CmdCalibrationRTDConstSet(struct external_frame_rx *msg)
 {
 	uni4Byte readConst;
 	uint8_t i = 0;
@@ -526,12 +558,12 @@ void CmdCalibrationRTDConstSet(struct external_frame_rx *msg)
 	/* SendUart485String(tx485DataDMA, 32); */
 }
 
-void CmdCalibrationNTCTableCal(struct external_frame_rx *msg)
+static void CmdCalibrationNTCTableCal(struct external_frame_rx *msg)
 {
 	DoCalibrationNTCTableCal(msg->data[0]/* Rx485Data[7] */);	//slot 번호 전달
 }
 
-void CmdCalibrationNTCConstantSet(struct external_frame_rx *msg)
+static void CmdCalibrationNTCConstantSet(struct external_frame_rx *msg)
 {
 	TestData.ntcCalibrationConst.UI8[0] = msg->data[1]; //Rx485Data[ 8];
 	TestData.ntcCalibrationConst.UI8[1] = msg->data[2]; //Rx485Data[ 9];
@@ -541,7 +573,7 @@ void CmdCalibrationNTCConstantSet(struct external_frame_rx *msg)
 	DoCalibrationNTCConstantSet(msg->data[0]/* Rx485Data[ 7] */);
 }
 
-void CmdCalibrationRTDConstReq(struct external_frame_rx *msg)
+static void CmdCalibrationRTDConstReq(struct external_frame_rx *msg)
 {
 	send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
 			&TestData.rtdCalibrationConst.UI8[0], 4, 12, 32);
@@ -549,7 +581,7 @@ void CmdCalibrationRTDConstReq(struct external_frame_rx *msg)
 	/* SendUart485String(tx485DataDMA, 32); */
 }
 
-void CmdCalibrationNTCTableReq(struct external_frame_rx *msg)
+static void CmdCalibrationNTCTableReq(struct external_frame_rx *msg)
 {
 	uint8_t id = msg->data[0];
 	if (id >= 0 && id < 4) {
@@ -560,13 +592,13 @@ void CmdCalibrationNTCTableReq(struct external_frame_rx *msg)
 	}
 }
 
-void CmdCalibrationNTCConstantReq(struct external_frame_rx *msg)
+static void CmdCalibrationNTCConstantReq(struct external_frame_rx *msg)
 {
 	uint8_t id = msg->data[0];
 	DoCalibrationNTCConstantReq(id); //slot 번호 전달
 }
 
-void doSetTime(struct external_frame_rx *msg)
+static void doSetTime(struct external_frame_rx *msg)
 {
 	//    uint8_t i = 0;
 	uint8_t res = TRUE;
@@ -615,7 +647,7 @@ void doSetTime(struct external_frame_rx *msg)
 	send_external_response(CMD_TIME, OP_TIME_SET, &res, 1, 12, 32);
 }
 
-void doGetTime(struct external_frame_rx *msg)
+static void doGetTime(struct external_frame_rx *msg)
 {
 	/* uint8_t res = 0; */
 	/* send_external_response(CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32); */
