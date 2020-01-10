@@ -46,17 +46,17 @@ static int translate_ymd(struct ymd *pymd, const char *str_ymd)
 		return -1;
 
 	n = strndup(str_ymd, 2);
-	pymd->y = (uint8_t)strtol(n, NULL, 16);
+	pymd->y = (uint8_t)strtol(n, NULL, 10);
 	free(n);
 
 	/* month */
 	n = strndup(str_ymd + 2, 2);
-	pymd->m = (uint8_t)strtol(n, NULL, 16);
+	pymd->m = (uint8_t)strtol(n, NULL, 10);
 	free(n);
 
 	/* day */
 	n = strndup(str_ymd + 4, 2);
-	pymd->d = (uint8_t)strtol(n, NULL, 16);
+	pymd->d = (uint8_t)strtol(n, NULL, 10);
 	free(n);
 
 	return 0;
@@ -181,21 +181,6 @@ static void answer_log_filelist()
 			_time_data[3] = ymd.m;
 			_time_data[4] = ymd.d;
 
-			/* /\* year *\/ */
-			/* n = strndup(&buffer[0], 2); */
-			/* _time_data[2] = (uint8_t)strtol(n, NULL, 16); */
-			/* free(n); */
-
-			/* /\* month *\/ */
-			/* n = strndup(&buffer[2], 2); */
-			/* _time_data[3] = (uint8_t)strtol(n, NULL, 16); */
-			/* free(n); */
-
-			/* /\* day *\/ */
-			/* n = strndup(&buffer[4], 2); */
-			/* _time_data[4] = (uint8_t)strtol(n, NULL, 16); */
-			/* free(n); */
-
 			DBG_LOG("header: ");
 			DBG_DUMP(_time_data, 5);
 		} else {
@@ -203,7 +188,7 @@ static void answer_log_filelist()
 
 			/* hour */
 			n = strndup(&buffer[8], 2);
-			_time_data[5 + time_index++] = (uint8_t)strtol(n, NULL, 16);
+			_time_data[5 + time_index++] = (uint8_t)strtol(n, NULL, 10);
 			free(n);
 		}
 		/* DBG_LOG("%s", buffer); */
@@ -236,17 +221,17 @@ static int start_logfile_listing(FIL *fil)
 
 			/* year */
 			n = strndup(&buffer[0], 2);
-			fs_buffer[date_count * 4 + 0] = (uint8_t)strtol(n, NULL, 16);
+			fs_buffer[date_count * 4 + 0] = (uint8_t)strtol(n, NULL, 10);
 			free(n);
 
 			/* month */
 			n = strndup(&buffer[2], 2);
-			fs_buffer[date_count * 4 + 1] = (uint8_t)strtol(n, NULL, 16);
+			fs_buffer[date_count * 4 + 1] = (uint8_t)strtol(n, NULL, 10);
 			free(n);
 
 			/* day */
 			n = strndup(&buffer[4], 2);
-			fs_buffer[date_count * 4 + 2] = (uint8_t)strtol(n, NULL, 16);
+			fs_buffer[date_count * 4 + 2] = (uint8_t)strtol(n, NULL, 10);
 			free(n);
 
 			fs_buffer[date_count * 4 + 3] = 0x10;
@@ -542,7 +527,7 @@ static FRESULT write_data(FIL *fil)
                 wData[35 + (sensorCount * 6)] =
                     TestData.sensorState[j][i]; // 센서 상태
                 memcpy(&wData[36 + (sensorCount * 6)],
-                       &TestData.temperature[j][i].UI8[0], 4); // 센서값 저장
+                       &TestData.temperatures[j][i], 4); // 센서값 저장
                 sensorCount++; // 사용 채널수 확인
             }
         }

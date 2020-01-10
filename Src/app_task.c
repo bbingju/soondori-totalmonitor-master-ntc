@@ -17,60 +17,9 @@ uint16_t SLAVE_CS_PIN[4] = {
     SLAVE_CS0_Pin, SLAVE_CS1_Pin, SLAVE_CS2_Pin,
     SLAVE_CS3_Pin}; // back plate 의 컨넥터가 잘못 되어 있음
 
-uint8_t noReturnSendCt = 0;
-uint8_t crcErrorCount = 0;
-
 extern int int_tx_completed;
 extern int int_rx_completed;
 extern IWDG_HandleTypeDef hiwdg;
-
-#if 0
-void check_slots_inserted(struct slot_properties_s *slots, int num_of_slots)
-{
-	static uint8_t buf[164] = {0};
-
-	for (int i = 0; i < num_of_slots; i++) {
-		for (int j = 0; j < 11; j++) {
-			HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin,
-					GPIO_PIN_RESET);
-
-			doMakeSendSlotData(buf, slots[i].id + 0x30, CMD_TEMP_REQ, buf, 0,
-					SEND_DATA_LENGTH);
-			noReturnSendCt++;
-			int_tx_completed = 0;
-			HAL_UART_Transmit_DMA(&huart2, buf, SEND_DATA_LENGTH);
-			while (int_tx_completed == 0) {
-				__NOP();
-			};
-
-			int_rx_completed = 0;
-			HAL_UART_Receive_DMA(&huart2, buf, 134);
-
-			/* DBG_LOG("slot %d, %d times\n", i, j); */
-
-			uint32_t old_tick = osKernelSysTick();
-			while (int_rx_completed == 0) {
-				__NOP();
-				if (osKernelSysTick() - old_tick > 100)
-					break;
-			};
-
-			if (int_rx_completed)
-				noReturnSendCt = 0;
-		}
-
-		osDelay(100);
-
-		slots[i].inserted = noReturnSendCt > 9 ? false : true;
-		noReturnSendCt = 0;
-	}
-
-	for (int i = 0; i < num_of_slots; i++) {
-		DBG_LOG("slot %d inserted %s\n", slots[i].id,
-			slots[i].inserted ? "TRUE" : "FALSE");
-	}
-}
-#endif	/* 0 */
 
 void app_task(void const *argument)
 {
@@ -107,10 +56,10 @@ void app_task(void const *argument)
 
 				for (int i = 0; i < MAX_SLOT_NUM; i++) {
 					send_slot_id_req(i);
-					osDelay(500);
+					osDelay(1);
 				}
 
-				osDelay(1000);
+				osDelay(500);
 
 				for (int i = 0; i < MAX_SLOT_NUM; i++) {
 					struct slot_properties_s *slot = &SysProperties.slots[i];
@@ -137,7 +86,7 @@ void app_task(void const *argument)
 			for (int i = 0; i < MAX_SLOT_NUM; i++) {
 				struct slot_properties_s *slot = &SysProperties.slots[i];
 				DoThresholdReq(slot);
-				osDelay(10);
+				/* osDelay(10); */
 			}
 			osDelay(50);
 			SysProperties.InterfaceStep = STEP_TEMP_READ;
@@ -160,13 +109,14 @@ void app_task(void const *argument)
 				DoMCUboardInfo(); // transmit board info
 				/* osDelay(10); */
 
+				struct slot_properties_s *s;
 				for (int i = 0; i < MAX_SLOT_NUM; i++) {
-					struct slot_properties_s *slot = &SysProperties.slots[i];
-					DoSlotInfo(slot->id);
+					s = &SysProperties.slots[i];
+					DoSlotInfo(s->id);
 					/* osDelay(10); */
-					DoChannelInfo(slot->id);
+					DoChannelInfo(s->id);
 					/* osDelay(10); */
-					DoChannelValue(slot->id);
+					DoChannelValue(s->id);
 					osDelay(30);
 				}
 			}

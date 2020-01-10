@@ -41,22 +41,74 @@ __PACKED_STRUCT internal_temp_state_data {
 	uint8_t states[TEMP_STATE_DATA_LENGTH];
 };
 
-struct internal_frame {
+__PACKED_STRUCT internal_frame {
 	uint8_t slot_id;
 	uint8_t cmd;
 	uint8_t datalen;
-	union {
+	__PACKED_UNION {
+		uint8_t  data[128];
+
 		struct internal_temp_data temp_data;
 		struct internal_temp_state_data state_data;
-		uint8_t data[130];
+
+		__PACKED_STRUCT {
+			uint8_t v;
+		} board_type;
+
+		__PACKED_STRUCT {
+			uint8_t id;
+		} slot;
+
+		__PACKED_STRUCT {
+			float v[32];
+		} temperatures;
+
+		__PACKED_STRUCT {
+			float v[32];
+		} thresholds;
+
+		__PACKED_STRUCT {
+			uint8_t channel;
+			float   value;
+		} threshold_set;
+
+		__PACKED_STRUCT {
+			uint8_t enabled;
+		} revision_apply;
+
+		__PACKED_STRUCT {
+			float v;
+		} revision_constant;
+
+		__PACKED_STRUCT {
+			uint8_t flag[16];
+		} channel_status;
+
+		__PACKED_STRUCT {
+			float m[32];
+		} ntc_correction_tbl;
+
+		__PACKED_STRUCT {
+			float v;
+		} ntc_correction_const;
 	};
+	/* union { */
+	/* 	struct internal_temp_data temp_data; */
+	/* 	struct internal_temp_state_data state_data; */
+
+	/* 	__PACKED_STRUCT { */
+	/* 		uint8_t enabled; */
+	/* 	} revision_apply_set; */
+
+	/* 	uint8_t data[130]; */
+	/* }; */
 };
 
 __PACKED_STRUCT external_frame_rx {
 	uint8_t cmd;
 	uint8_t option;
 	uint8_t ipaddr[4];
-	union {
+	__PACKED_UNION {
 		__PACKED_STRUCT {
 			uint8_t slot_id;
 			uint8_t channel;
@@ -66,6 +118,11 @@ __PACKED_STRUCT external_frame_rx {
 		__PACKED_STRUCT {
 			uint32_t sec;
 		} interval_set;
+
+		__PACKED_STRUCT {
+			uint8_t slot_id;
+			uint8_t enabled;
+		} revision_apply_set;
 
 		uint8_t data[22];
 	};
@@ -104,12 +161,12 @@ struct external_frame_tx {
 	uint8_t ipaddr[4];
 	uint8_t datetime[6];
 	uint8_t data_padding_len;
-	union {
+	__PACKED_UNION {
 		struct external_temp_data temp_data;
 		struct external_temp_state_data temp_state_data;
 		struct external_slot_info slot_info;
 		struct external_sd_filelist sd_filelist;
-		uint8_t data[256];
+		uint8_t data[132];
 	};
 };
 
@@ -123,6 +180,58 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte);
 int fill_external_tx_frame(uint8_t *buffer, uint8_t cmd, uint8_t option,
 			uint8_t *ipaddr, uint8_t *datetime, uint8_t* data, uint32_t datalen);
 int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte);
+
+__STATIC_INLINE const char *int_cmd_str(uint8_t cmd)
+{
+    switch (cmd) {
+    case INTERNAL_CMD_BOARD_TYPE_REQ:
+        return "INTERNAL_CMD_BOARD_TYPE_REQ";
+    /* case INTERNAL_CMD_BOARD_EN_REQ: */
+    /*     return "INTERNAL_CMD_BOARD_EN_REQ"; */
+    /* case INTERNAL_CMD_BOARD_EN_SET: */
+    /*     return "INTERNAL_CMD_BOARD_EN_SET"; */
+    case INTERNAL_CMD_SLOT_ID_REQ:
+        return "INTERNAL_CMD_SLOT_ID_REQ";
+    /* case INTERNAL_CMD_HW_VER: */
+    /*     return "INTERNAL_CMD_HW_VER"; */
+    /* case INTERNAL_CMD_FW_VER: */
+    /*     return "INTERNAL_CMD_FW_VER"; */
+    /* case INTERNAL_CMD_UUID_REQ: */
+    /*     return "INTERNAL_CMD_UUID_REQ"; */
+    case INTERNAL_CMD_ADC_REQ:
+        return "INTERNAL_CMD_ADC_REQ";
+    case INTERNAL_CMD_RELAY_REQ:
+        return "INTERNAL_CMD_RELAY_REQ";
+    case INTERNAL_CMD_RELAY_SET:
+        return "INTERNAL_CMD_RELAY_SET";
+    case INTERNAL_CMD_REVISION_APPLY_SET:
+        return "INTERNAL_CMD_REVISION_APPLY_SET";
+    case INTERNAL_CMD_REVISION_CONSTANT_SET:
+        return "INTERNAL_CMD_REVISION_CONSTANT_SET";
+    case INTERNAL_CMD_REVISION_APPLY_REQ:
+        return "INTERNAL_CMD_REVISION_APPLY_REQ";
+    case INTERNAL_CMD_REVISION_CONSTANT_REQ:
+        return "INTERNAL_CMD_REVISION_CONSTANT_REQ";
+    case INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET:
+        return "INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET";
+    case INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ:
+        return "INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ";
+    case INTERNAL_CMD_TEMPERATURE_STATE_REQ:
+        return "INTERNAL_CMD_TEMPERATURE_STATE_REQ";
+    case INTERNAL_CMD_TEMPERATURE_REQ:
+        return "INTERNAL_CMD_TEMPERATURE_REQ";
+    case INTERNAL_CMD_THRESHOLD_REQ:
+        return "INTERNAL_CMD_THRESHOLD_REQ";
+    case INTERNAL_CMD_THRESHOLD_SET:
+        return "INTERNAL_CMD_THRESHOLD_SET";
+    case INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_CAL:
+        return "INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_CAL";
+    case INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_REQ:
+        return "INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_REQ";
+    default:
+        return "";
+    }
+}
 
 #ifdef __cplusplus
 }

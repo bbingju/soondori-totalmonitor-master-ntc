@@ -22,12 +22,12 @@ static void parse_rx(const void *data, size_t len);
 
 static void CmdWarningTempSet(struct external_frame_rx *);
 static void CmdWarningTempReq(struct external_frame_rx *);
-static void CmdRevisionApplySet(struct external_frame_rx *msg);
-static void CmdRevisionApplyReq(struct external_frame_rx *msg);
-static void CmdRevisionConstantSet(struct external_frame_rx *msg);
-static void CmdRevisionConstantReq(struct external_frame_rx *msg);
-static void CmdRevisionTRConstantSet(struct external_frame_rx *msg);
-static void CmdRevisionTRConstantReq(struct external_frame_rx *msg);
+static void CmdRevisionApplySet(struct external_frame_rx *);
+static void CmdRevisionApplyReq(struct external_frame_rx *);
+static void CmdRevisionConstantSet(struct external_frame_rx *);
+static void CmdRevisionConstantReq(struct external_frame_rx *);
+static void CmdRevisionTRConstantSet(struct external_frame_rx *);
+static void CmdRevisionTRConstantReq(struct external_frame_rx *);
 static void CmdCalibrationRTDConstSet(struct external_frame_rx *);
 static void CmdCalibrationNTCTableCal(struct external_frame_rx *);
 static void CmdCalibrationNTCConstantSet(struct external_frame_rx *);
@@ -43,7 +43,7 @@ static void doGetTime(struct external_frame_rx *);
 static osMessageQDef(ext_rx_q, 24, uint32_t);
 static osMessageQId(ext_rx_q_id);
 
-static uint8_t ext_rx_buffer[64];
+uint8_t ext_rx_buffer[128];
 
 void ext_rx_notify() { osMessagePut(ext_rx_q_id, 1, 0); }
 
@@ -451,36 +451,58 @@ void doSaveIntervalTime(struct external_frame_rx *msg) //샘플레이트
 
 static void CmdWarningTempSet(struct external_frame_rx *msg)
 {
-	uint8_t id = msg->warning_temp_set.slot_id;
-	uint8_t channel = msg->warning_temp_set.channel;
-	float value = msg->warning_temp_set.value;
-	DoThresholdSet(&SysProperties.slots[id], channel, value);
+	if (msg) {
+		uint8_t id = msg->warning_temp_set.slot_id;
+		uint8_t channel = msg->warning_temp_set.channel;
+		float value = msg->warning_temp_set.value;
+
+		if (id == 0xFF) {
+			struct slot_properties_s *s;
+			for (int i = 0; i < MAX_SLOT_NUM; i++) {
+				s = &SysProperties.slots[i];
+				DoThresholdSet(s, channel, value);
+				osDelay(1);
+			}
+		} else {
+			DoThresholdSet(&SysProperties.slots[id], channel, value);
+		}
+	}
 }
 
 static void CmdWarningTempReq(struct external_frame_rx *msg)
 {
 	if (msg) {
-		int id = msg->data[0];
-		bool found = false;
+		uint8_t id = msg->data[0];
 
-		struct slot_properties_s *s;
-		for (int i = 0; i < MAX_SLOT_NUM; i++) {
-			s = &SysProperties.slots[i];
-			if (s->id == id) {
-				found = true;
-				break;
+		if (id == 0xFF) {
+			struct slot_properties_s *s;
+			for (int i = 0; i < MAX_SLOT_NUM; i++) {
+				s = &SysProperties.slots[i];
+				DoThresholdReq(s);
+				osDelay(1);
 			}
+		} else {
+			DoThresholdReq(&SysProperties.slots[id]);
 		}
-
-		if (found)
-			DoThresholdReq(s);
 	}
 }
 
 static void CmdRevisionApplySet(struct external_frame_rx *msg)
 {
-	/* slot 번호 전달 , 0: 측정온도 모드, 1: 보정온도 모드 */
-	DoRevisionApplySet(msg->data[0] /* Rx485Data[7] */, msg->data[1]/* Rx485Data[8] */);
+	if (msg) {
+		uint8_t slot_id = msg->revision_apply_set.slot_id;
+		uint8_t enabled = msg->revision_apply_set.enabled;
+
+		DoRevisionApplySet(slot_id, enabled);;
+		/* if (slot_id == 0xFF) { */
+		/* 	for (int i = 0; i < MAX_SLOT_NUM; i++) { */
+		/* 		DoRevisionApplySet(i, enabled); */
+		/* 		osDelay(1); */
+		/* 	} */
+		/* } else { */
+		/* 	DoRevisionApplySet(slot_id, enabled); */
+		/* } */
+	}
 }
 
 static void CmdRevisionConstantSet(struct external_frame_rx *msg)

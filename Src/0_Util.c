@@ -86,26 +86,26 @@ void doMakeSendData(	uint8_t* SendData,
 }
 #endif
 
-void doMakeSendSlotData(uint8_t* SendData, uint8_t SlotNumber,
-                        uint8_t Command, uint8_t* Data,
-                        uint8_t  DataLength, uint8_t BufferLength)
-{
-    uni2Byte crc;
+/* void doMakeSendSlotData(uint8_t* SendData, uint8_t SlotNumber, */
+/*                         uint8_t Command, uint8_t* Data, */
+/*                         uint8_t  DataLength, uint8_t BufferLength) */
+/* { */
+/*     uni2Byte crc; */
 
-    *SendData++ = CMD_STX;
-    *SendData++ = SlotNumber;
-    *SendData++ = Command;
-    CopyToArray(SendData, Data, DataLength, DATA_FULL_LENGTH);
-    SendData -= 2;
+/*     *SendData++ = CMD_STX; */
+/*     *SendData++ = SlotNumber; */
+/*     *SendData++ = Command; */
+/*     CopyToArray(SendData, Data, DataLength, DATA_FULL_LENGTH); */
+/*     SendData -= 2; */
 
-    crc.UI16 = CRC16_Make(&SendData[0], BufferLength - 4);
-    SendData += BufferLength - 4;
+/*     crc.UI16 = CRC16_Make(&SendData[0], BufferLength - 4); */
+/*     SendData += BufferLength - 4; */
 
-    *SendData++ = crc.UI8[0];
-    *SendData++ = crc.UI8[1];
+/*     *SendData++ = crc.UI8[0]; */
+/*     *SendData++ = crc.UI8[1]; */
 
-    *SendData = CMD_ETX;
-}
+/*     *SendData = CMD_ETX; */
+/* } */
 
 
 void doMakeSend485Data(uint8_t* outbuffer, uint8_t  Command, uint8_t  Option,

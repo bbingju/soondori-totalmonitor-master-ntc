@@ -381,7 +381,7 @@ void DoDataWrite(void)
                 wData[35 + (sensorCount * 6)] =
                     TestData.sensorState[j][i]; // 센서 상태
                 memcpy(&wData[36 + (sensorCount * 6)],
-                       &TestData.temperature[j][i].UI8[0], 4); // 센서값 저장
+                       &TestData.temperatures[j][i], 4); // 센서값 저장
                 sensorCount++; // 사용 채널수 확인
             }
         }

@@ -80,13 +80,14 @@ typedef enum {
 typedef __PACKED_STRUCT {
     uni4Byte mainBoard[4];    // MAINBOARDSENSOR 사용 해서 선택
     uint32_t mainBoardADC[4]; // main board 내부 센서 adc 값
-    /* float   temperature[4][32]; // adc 완료후 온도값으로 */
+    float   temperatures[4][32]; // adc 완료후 온도값으로
     /* 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널 */
-    uni4Byte temperature[4][32]; // adc 완료후 온도값으로 환산된 값, 0 :
+    /* uni4Byte temperature[4][32]; // adc 완료후 온도값으로 환산된 값, 0 : */
                                  // 피대상물 온도, 1 : 환경온도 , 0~15채널
     uni4Byte adcMidValue[4][32]; // 컨버팅 완료된 ADC 값중 중간 값,  0 :
                                  // 피대상물 온도, 1 : 환경온도, 0~15채널
-    uni4Byte threshold[4][32];          // 경고 온도 저장
+    /* uni4Byte threshold[4][32];          // 경고 온도 저장 */
+    float thresholds[4][32];
     LED_DIPLAY_MODE sensorState[4][32]; // 센서 상태 저장용
     uni4Byte ntcCalibrationTable[4][32]; // NTC 교정상수 테이블, RTD - NTC 로
                                          // 계산되는 상수

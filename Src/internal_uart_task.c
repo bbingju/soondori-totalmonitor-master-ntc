@@ -1,6 +1,8 @@
 #include "internal_uart_task.h"
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_usart.h"
+#include "frame.h"
+#include "internal_job_task.h"
 #include "job_task.h"
 #include "fs_task.h"
 #include "app_task.h"
@@ -14,21 +16,18 @@
 
 #define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
 
-/* extern uint8_t readSlotNumber; */
 extern uint8_t crcErrorCount;
 extern uint8_t startThreshold;
-/* extern uint8_t SendSlotNumber; */
-/* extern uint8_t noReturnSendCt; */
+extern int transaction_completed;
 
-static osMessageQDef(internal_rx_q, 24, uint32_t);
+static osMessageQDef(internal_rx_q, 48, uint32_t);
 static osMessageQId(internal_rx_q_id);
 
 void internal_rx_notify() { osMessagePut(internal_rx_q_id, 1, 0); }
 
 int int_tx_completed = 1;
-int int_rx_completed = 1;
 
-static uint8_t internal_rx_buffer[384];
+static uint8_t internal_rx_buffer[384 + 128];
 static struct internal_frame int_frm_tx;
 
 static void internal_rx_check(void);
@@ -48,104 +47,12 @@ static void DoAnsCalibrationNTCTableReq(struct internal_frame *);
 static void DoAnsCalibrationNTCConstantSet(struct internal_frame *);
 static void DoAnsCalibrationNTCConstantReq(struct internal_frame *);
 
-static int bytes_to_request(uint8_t cmd)
-{
-    switch (cmd) {
-    case CMD_BOARD_TYPE:
-    case CMD_BOARD_EN_REQ:
-    case CMD_BOARD_EN_SET:
-    case CMD_HW_VER:
-    case CMD_FW_VER:
-    case CMD_UUID_REQ:
-    case CMD_ADC_REQ:
-    case CMD_RELAY_REQ:
-    case CMD_RELAY_SET:
-        return 0;
-
-    case CMD_SLOT_ID_REQ:
-        return 12;
-
-    case CMD_REVISION_APPLY_SET:
-    case CMD_REVISION_CONSTANT_SET:
-    case CMD_REVISION_APPLY_REQ:
-    case CMD_REVISION_CONSTANT_REQ:
-    case CMD_CALIBRATION_NTC_CONSTANT_SET:
-    case CMD_CALIBRATION_NTC_CONSTANT_REQ:
-        return 32;
-
-    case CMD_TEMP_STATE_REQ:
-        return 38;
-
-    case CMD_TEMP_REQ:
-    case CMD_THRESHOLD_REQ:
-    case CMD_THRESHOLD_SET:
-        return 134;
-
-    case CMD_CALIBRATION_NTC_CON_TABLE_CAL:
-    case CMD_CALIBRATION_NTC_CON_TABLE_REQ:
-        return 152;
-    }
-    return 0;
-}
-
-static const char *cmd_str(uint8_t cmd)
-{
-    switch (cmd) {
-    case CMD_BOARD_TYPE:
-        return "CMD_BOARD_TYPE";
-    case CMD_BOARD_EN_REQ:
-        return "CMD_BOARD_EN_REQ";
-    case CMD_BOARD_EN_SET:
-        return "CMD_BOARD_EN_SET";
-    case CMD_SLOT_ID_REQ:
-        return "CMD_SLOT_ID_REQ";
-    case CMD_HW_VER:
-        return "CMD_HW_VER";
-    case CMD_FW_VER:
-        return "CMD_FW_VER";
-    case CMD_UUID_REQ:
-        return "CMD_UUID_REQ";
-    case CMD_ADC_REQ:
-        return "CMD_ADC_REQ";
-    case CMD_RELAY_REQ:
-        return "CMD_RELAY_REQ";
-    case CMD_RELAY_SET:
-        return "CMD_RELAY_SET";
-    case CMD_REVISION_APPLY_SET:
-        return "CMD_REVISION_APPLY_SET";
-    case CMD_REVISION_CONSTANT_SET:
-        return "CMD_REVISION_CONSTANT_SET";
-    case CMD_REVISION_APPLY_REQ:
-        return "CMD_REVISION_APPLY_REQ";
-    case CMD_REVISION_CONSTANT_REQ:
-        return "CMD_REVISION_CONSTANT_REQ";
-    case CMD_CALIBRATION_NTC_CONSTANT_SET:
-        return "CMD_CALIBRATION_NTC_CONSTANT_SET";
-    case CMD_CALIBRATION_NTC_CONSTANT_REQ:
-        return "CMD_CALIBRATION_NTC_CONSTANT_REQ";
-    case CMD_TEMP_STATE_REQ:
-        return "CMD_TEMP_STATE_REQ";
-    case CMD_TEMP_REQ:
-        return "CMD_TEMP_REQ";
-    case CMD_THRESHOLD_REQ:
-        return "CMD_THRESHOLD_REQ";
-    case CMD_THRESHOLD_SET:
-        return "CMD_THRESHOLD_SET";
-    case CMD_CALIBRATION_NTC_CON_TABLE_CAL:
-        return "CMD_CALIBRATION_NTC_CON_TABLE_CAL";
-    case CMD_CALIBRATION_NTC_CON_TABLE_REQ:
-        return "CMD_CALIBRATION_NTC_CON_TABLE_REQ";
-    default:
-        return "";
-    }
-}
-
 void response_from_internal(struct internal_frame *received)
 {
-	/* if (received->cmd == CMD_THRESHOLD_SET || received->cmd ==
-	 * CMD_THRESHOLD_REQ) { */
-	/* DBG_LOG("int rx [%d] %s - (data length: %d) ", */
-	/* 	received->slot_id, cmd_str(received->cmd), received->datalen); */
+	/* if (received->cmd == INTERNAL_CMD_THRESHOLD_SET || received->cmd ==
+	 * INTERNAL_CMD_THRESHOLD_REQ) { */
+	DBG_LOG("int RX slot %d: %s - (datalen: %d) \n",
+		received->slot_id, int_cmd_str(received->cmd), received->datalen);
 	/* DBG_DUMP(received->data, received->datalen); */
 	/* } */
 
@@ -273,6 +180,7 @@ static void parse_rx(const void *data, size_t len)
 
 	for (int i = 0; i < len; i++) {
 		if (parse_internal_frame(&frm, data + i)) {
+			transaction_completed = 1;
 			post_job(JOB_TYPE_FROM_INTERNAL, &frm, sizeof(frm));
 		}
 	}
@@ -296,7 +204,7 @@ void send_slot_id_req(uint8_t id)
 		.datalen = 0,
 		.data = { 0 },
         };
-        post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 
 	/* uint8_t internal_id = id + 0x30; */
 	/* request_internal(id, CMD_SLOT_ID_REQ, &internal_id, 1); */
@@ -305,9 +213,10 @@ void send_slot_id_req(uint8_t id)
 static void handle_temperature(struct internal_frame *msg)
 {
 	if (msg) {
-		uni4Byte *temp = &TestData.temperature[msg->slot_id];
-		for (int i = 0; i < 32; i++)
-			(temp + i)->Float = *((float *)&msg->data[i * 4]);
+		memcpy(&TestData.temperatures[msg->slot_id], msg->temperatures.v, sizeof(float) * 32);
+		/* uni4Byte *temp = &TestData.temperatures[msg->slot_id]; */
+		/* for (int i = 0; i < 32; i++) */
+		/* 	(temp + i)->Float = *((float *)&msg->data[i * 4]); */
 
 		/* write log */
 		if (SysProperties.last_slot_id == msg->slot_id)
@@ -327,17 +236,6 @@ static void handle_temerature_state(struct internal_frame *msg)
 		memcpy(&TestData.sensorState[msg->slot_id][0], sd, TEMP_STATE_DATA_LENGTH);
 		memcpy(&TestData.sensorState[msg->slot_id][16], sd, TEMP_STATE_DATA_LENGTH);
 	}
-
-	/* send slot info to the external */
-	/* struct external_slot_info info = { */
-	/* 	.parent_id = 0, */
-	/* 	.slot_id = msg->slot_id, */
-	/* 	.slot_type = SBT_NTC, */
-	/* 	.revision_apply = TestData.revisionApply[msg->slot_id], */
-	/* }; */
-	/* send_external_response(CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &info, sizeof(info), 32, 52); */
-	/* DoSlotInfo(msg->slot_id); */
-	/* DoChannelInfo(msg->slot_id); */
 }
 
 static void handle_threshold_req(struct internal_frame *msg)
@@ -345,24 +243,13 @@ static void handle_threshold_req(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-        uni4Byte *threshold = &TestData.threshold[msg->slot_id];
-        for (int i = 0; i < 32; i++) {
-		(threshold + i)->Float = *((float *)&msg->data[i * 4]);
-        }
+	memcpy(&TestData.thresholds[msg->slot_id], &msg->thresholds, sizeof(float) * 32);
 
-	// 초기화 하는 동안은 486 전송 하지 않는다, 초기화 중일때
-	// startThreshold == TRUE 임.
-	/* if (startThreshold != TRUE) { */
 	uint8_t thresholdData[130] = {0};
 	thresholdData[0] = msg->slot_id;
-	memcpy(&thresholdData[1], &TestData.threshold[msg->slot_id][0].UI8[0], 128);
+	memcpy(&thresholdData[1], &TestData.thresholds, sizeof(float) * 32);
 	send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ,
 			thresholdData, 129, 132, 152);
-	/* } */
-
-	/* if (startThreshold == TRUE) { */
-	/* 	DoIncSlotIdStep(msg->slot_id); */
-	/* } */
 }
 
 static void handle_threshold_set(struct internal_frame *msg)
@@ -370,15 +257,16 @@ static void handle_threshold_set(struct internal_frame *msg)
 	if (!msg)
 		return;
 
-        uni4Byte *threshold = &TestData.threshold[msg->slot_id];
-        for (int i = 0; i < 32; i++) {
-		(threshold + i)->Float = *((float *)&msg->data[i * 4]);
-        }
+	memcpy(&TestData.thresholds[msg->slot_id], &msg->thresholds, sizeof(float) * 32);
+        /* float *thresholds = &TestData.thresholds[msg->slot_id]; */
+        /* for (int i = 0; i < 32; i++) { */
+	/* 	*(thresholds + i) = msg->thresholds.v[i]; */
+        /* } */
 
 	uint8_t data[130] = {0};
 	data[0] = msg->slot_id;
-	memcpy(&data[1], &TestData.threshold[msg->slot_id][0].UI8[0], 128);
-	send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, &data[0], 129,
+	memcpy(&data[1], &TestData.thresholds, sizeof(float) * 32);
+	send_external_response(CMD_WARNING_TEMP, OP_WARNING_TEMP_SET, data, 129,
 			132, 152);
 }
 
@@ -389,10 +277,10 @@ static void DoAnsRevisionApplySet(struct internal_frame *msg)
 
 	TestData.revisionApply[msg->slot_id] = msg->data[0];
 
-	uint8_t data[2] = {0};
-	data[0] = msg->slot_id;
-	data[1] = TestData.revisionApply[msg->slot_id];
-	send_external_response(CMD_REVISION, OP_REVISION_APPLY_SET, data, 2, 12, 32);
+	static uint8_t revision_apply[2] = {0};
+	revision_apply[0] = msg->slot_id;
+	revision_apply[1] = TestData.revisionApply[msg->slot_id];
+	send_external_response(CMD_REVISION, OP_REVISION_APPLY_SET, revision_apply, 2, 12, 32);
 }
 
 static void DoAnsRevisionApplyReq(struct internal_frame *msg)
@@ -437,7 +325,6 @@ static void DoAnsRevisionConstantReq(struct internal_frame *msg)
         TestData.revisionConstant[msg->slot_id].UI8[1] = msg->data[1];
         TestData.revisionConstant[msg->slot_id].UI8[2] = msg->data[2];
         TestData.revisionConstant[msg->slot_id].UI8[3] = msg->data[3];
-        crcErrorCount = 0;
 
 	uint8_t data[5];
 	data[0] = msg->slot_id;
@@ -596,7 +483,7 @@ void DoCalibrationNTCTableCal(uint8_t slotNumber)
 		/* .data = &TestData.mainBoard[MBS_RTD].UI8[0], */
         };
 	memcpy(data.data, &TestData.mainBoard[MBS_RTD].UI8[0], 4);
-        post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 }
 
 void DoCalibrationNTCConstantSet(uint8_t slotNumber)
@@ -608,7 +495,7 @@ void DoCalibrationNTCConstantSet(uint8_t slotNumber)
 		/* .data = &TestData.ntcCalibrationConst.UI8[0], */
         };
 	memcpy(data.data, &TestData.ntcCalibrationConst.UI8[0], 4);
-        post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 }
 
 void DoCalibrationNTCTableReq(uint8_t slotNumber)
@@ -619,7 +506,7 @@ void DoCalibrationNTCTableReq(uint8_t slotNumber)
 		.datalen = 0,
 		.data = { 0 },
         };
-        post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 }
 
 void DoCalibrationNTCConstantReq(uint8_t slotNumber)
@@ -630,7 +517,7 @@ void DoCalibrationNTCConstantReq(uint8_t slotNumber)
 		.datalen = 0,
 		.data = { 0 },
         };
-        post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 }
 
 void DoThresholdSet(struct slot_properties_s *slot, uint8_t channel, float threshold)
@@ -642,7 +529,7 @@ void DoThresholdSet(struct slot_properties_s *slot, uint8_t channel, float thres
 		int_frm_tx.data[0] = channel;
 		*((float *) &int_frm_tx.data[1]) = threshold;
 
-		post_job(JOB_TYPE_TO_INTERNAL, &int_frm_tx, sizeof(int_frm_tx));
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &int_frm_tx, sizeof(int_frm_tx));
 	}
 }
 
@@ -655,7 +542,7 @@ void DoThresholdReq(struct slot_properties_s *slot)
 			.datalen = 0,
 			.data = { 0 },
 		};
-		post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 	}
 }
 
@@ -676,7 +563,7 @@ void DoReqSlotID(uint8_t slotNumber)
 		.datalen = 0,
 		.data = { 0 },
 	};
-	post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+	post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 }
 
 /*********************************************************************
@@ -695,7 +582,7 @@ void DoReqTemperature(struct slot_properties_s *slot)
 			.datalen = 0,
 			.data = { 0 },
 		};
-		post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 	}
 }
 
@@ -710,84 +597,89 @@ void DoReqTemperatureState(struct slot_properties_s *slot)
 			.datalen = 0,
 			.data = { 0 },
 		};
-		post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 	}
 }
 
  // slot 번호 전달 , 0: 측정온도 모드, 1: 보정온도 모드
 void DoRevisionApplySet(uint8_t slotNumber, uint8_t const mode)
 {
-    HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    struct internal_frame data = {
-	    .slot_id = slotNumber,
-	    .cmd = INTERNAL_CMD_REVISION_APPLY_SET,
-	    .datalen = 1,
-    };
-    data.data[0] = mode;
+	struct internal_frame frame = {
+		.cmd = INTERNAL_CMD_REVISION_APPLY_SET,
+		.datalen = 1,
+	};
 
-    post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+	if (slotNumber != 0xFF) {
+		frame.slot_id = slotNumber;
+		frame.revision_apply.enabled = mode;
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frame, 3 + frame.datalen);
+	} else {
+		frame.revision_apply.enabled = mode;
+
+		struct slot_properties_s *slot;
+		for (int i = 0; i < MAX_SLOT_NUM; i++) {
+			slot = &SysProperties.slots[i];
+			if (slot->inserted) {
+				frame.slot_id = slot->id;
+				post_internal_job(INTERNAL_JOB_TYPE_TO, &frame, 3 + frame.datalen);
+				osDelay(1);
+			}
+		}
+	}
 }
 
 void DoRevisionConstantSet(uint8_t slotNumber)
 {
-    HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    struct internal_frame data = {
-	    .slot_id = slotNumber,
-	    .cmd = INTERNAL_CMD_REVISION_CONSTANT_SET,
-	    .datalen = 4,
-    };
-    memcpy(data.data, &TestData.revisionConstant[slotNumber].UI8, 4);
-    post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-    /* memset((void*)&TxDataBuffer[0], 0x00, sizeof(TxDataBuffer)); */
-
-    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30),
-     * CMD_REVISION_CONSTANT_SET, &TestData.revisionConstant[slotNumber].UI8[0],
-     * 4, SEND_DATA_LENGTH); */
-    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
+	struct internal_frame data = {
+		.slot_id = slotNumber,
+		.cmd = INTERNAL_CMD_REVISION_CONSTANT_SET,
+		.datalen = 4,
+	};
+	memcpy(data.data, &TestData.revisionConstant[slotNumber].UI8, 4);
+	post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 }
 
 void DoRevisionApplyReq(uint8_t slotNumber)
 {
-    HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    struct internal_frame data = {
-	    .slot_id = slotNumber,
-	    .cmd = INTERNAL_CMD_REVISION_APPLY_REQ,
-	    .datalen = 0,
-	    .data = { 0 },
-    };
-    post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
+	struct internal_frame frame = {
+		.cmd = INTERNAL_CMD_REVISION_APPLY_REQ,
+		.datalen = 0,
+		.data = { 0 },
+	};
 
-    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-
-    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30),
-     * CMD_REVISION_APPLY_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
-    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
+	if (slotNumber != 0xFF) {
+		frame.slot_id = slotNumber;
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frame, 3 + frame.datalen);
+	} else {
+		struct slot_properties_s *slot;
+		for (int i = 0; i < MAX_SLOT_NUM; i++) {
+			slot = &SysProperties.slots[i];
+			if (slot->inserted) {
+				frame.slot_id = slot->id;
+				post_internal_job(INTERNAL_JOB_TYPE_TO, &frame, 3 + frame.datalen);
+				osDelay(1);
+			}
+		}
+	}
 }
 
 void DoRevisionConstantReq(uint8_t slotNumber)
 {
-    HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-    struct internal_frame data = {
-	    .slot_id = slotNumber,
-	    .cmd = INTERNAL_CMD_REVISION_CONSTANT_REQ,
-	    .datalen = 0,
-	    .data = { 0 },
-    };
-    post_job(JOB_TYPE_TO_INTERNAL, &data, sizeof(data));
-
-    /* memset(TxDataBuffer, 0x00, sizeof(TxDataBuffer)); */
-
-    /* doMakeSendSlotData(TxDataBuffer, (uint8_t)(slotNumber + 0x30),
-     * CMD_REVISION_CONSTANT_REQ, &slotNumber, 0, SEND_DATA_LENGTH); */
-    /* UartInternalTxFunction(TxDataBuffer, SEND_DATA_LENGTH); */
-    /* HAL_UART_Receive_DMA(&huart2, RxDataDMA, 12); */
+	struct internal_frame data = {
+		.slot_id = slotNumber,
+		.cmd = INTERNAL_CMD_REVISION_CONSTANT_REQ,
+		.datalen = 0,
+		.data = { 0 },
+	};
+	post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
 }
 
 /*********************************************************************

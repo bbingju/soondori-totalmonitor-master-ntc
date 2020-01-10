@@ -1,4 +1,5 @@
 #include "frame.h"
+#include "stm32f4xx_hal.h"
 #include "0_Util.h"
 #include "debug.h"
 #include <string.h>
@@ -230,6 +231,9 @@ int fill_external_tx_frame(uint8_t *buffer, uint8_t cmd, uint8_t option,
 	return datalen + 20;
 }
 
+#define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
+extern uint8_t ext_rx_buffer[128];
+
 int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 {
 	static uint8_t state = 0;
@@ -303,6 +307,7 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 	}
 
 	case 7: { /* ending preamble */
+		HAL_UART_Receive_DMA(&huart1, ext_rx_buffer, ARRAY_LEN(ext_rx_buffer));
 		state = 0;
 		return (*byte == EXT_ETX) ? 1 : 0;
 	}

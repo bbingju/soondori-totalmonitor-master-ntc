@@ -9,60 +9,39 @@
 
 #define JOB_TANSACTION_TIMEOUT 300
 
-struct _job {
+struct job {
 	JOB_TYPE_E type;
 	union {
 		struct external_frame_rx external_rx;
 		struct external_frame_tx external_tx;
 		struct internal_frame internal;
-	};
+	} d;
 };
 
-static osMailQDef(job_q, 21, struct _job);
+static osMailQDef(job_q, 24, struct job);
 static osMailQId (job_q_id);
 
-static int is_transaction;
-static uint32_t transaction_timeout;
-
-static void do_job(struct _job *job);
+static void do_job(struct job *job);
 static void send_to_external(struct external_frame_tx *obj);
 static void handle_from_external(struct external_frame_rx *obj);
-static void request_to_internal(struct internal_frame *);
 
 extern void handle_rx_msg(struct external_frame_rx *received);
-extern int int_tx_completed;
 extern int ext_tx_completed;
 extern UART_HandleTypeDef huart1;
-extern UART_HandleTypeDef huart2;
 
 int post_job(JOB_TYPE_E type, void *data, size_t datalen)
 {
+	struct job *obj;
+
 	if (!data)
 		return -1;
 
-	struct _job *obj;
-	obj = (struct _job *)osMailCAlloc(job_q_id, osWaitForever);
-	if (!obj) {
-		DBG_LOG("error: mail alloc in %s\n", __func__);
-		return -1;
-	}
-	obj->type = type;
+	do {
+		obj = (struct job *)osMailCAlloc(job_q_id, osWaitForever);
+	} while (obj == NULL);
 
-	switch (type) {
-	case JOB_TYPE_TO_INTERNAL:
-	case JOB_TYPE_FROM_INTERNAL:
-		memcpy(&obj->internal, data, datalen);
-		break;
-	case JOB_TYPE_FROM_EXTERNAL:
-		memcpy(&obj->external_rx, data, datalen);
-		break;
-	case JOB_TYPE_TO_EXTERNAL:
-		memcpy(&obj->external_tx, data, datalen);
-		break;
-	default:
-		memcpy(&obj->internal, data, datalen);
-		break;
-	}
+	obj->type = type;
+	memcpy(&obj->d, data, datalen);
 
 	osMailPut(job_q_id, obj);
 
@@ -72,53 +51,27 @@ int post_job(JOB_TYPE_E type, void *data, size_t datalen)
 void job_task(void const *arg)
 {
 	job_q_id = osMailCreate(osMailQ(job_q), NULL);
-	is_transaction = 0;
-	transaction_timeout = osKernelSysTick();
 
 	while (1) {
-		if (is_transaction &&
-			osKernelSysTick() - transaction_timeout > JOB_TANSACTION_TIMEOUT) {
-			/* Cancel the internal transction */
-			DBG_LOG("Cancel a job\n");
-			is_transaction = 0;
-		}
-
 		osEvent event = osMailGet(job_q_id, osWaitForever);
-		struct _job *job = (struct _job *)event.value.p;
-
-		if (job->type == JOB_TYPE_TO_INTERNAL) {
-			if (!is_transaction) {
-				transaction_timeout = osKernelSysTick();
-				is_transaction = 1;
-			} else {
-				DBG_LOG("Push the internal job again. slot_id(%d)\n", job->internal.slot_id);
-				osMailPut(job_q_id, job);
-				continue;
-			}
-		} else if (job->type == JOB_TYPE_FROM_INTERNAL) {
-			is_transaction = 0;
-		}
+		struct job *job = (struct job *)event.value.p;
 		do_job(job);
 		osMailFree(job_q_id, job);
 	}
 }
 
-static void do_job(struct _job *job)
+static void do_job(struct job *job)
 {
 	switch (job->type) {
 	case JOB_TYPE_TO_EXTERNAL:
-		send_to_external(&job->external_tx);
+		send_to_external(&job->d.external_tx);
 		break;
 	case JOB_TYPE_FROM_EXTERNAL:
-		handle_from_external(&job->external_rx);
-		break;
-	case JOB_TYPE_TO_INTERNAL:
-		request_to_internal(&job->internal);
+		handle_from_external(&job->d.external_rx);
 		break;
 	case JOB_TYPE_FROM_INTERNAL:
-		response_from_internal(&job->internal);
+		response_from_internal(&job->d.internal);
 		break;
-
 	default:
 		return;
 	}
@@ -147,25 +100,4 @@ static void send_to_external(struct external_frame_tx *ftx)
 static void handle_from_external(struct external_frame_rx *obj)
 {
 	handle_rx_msg(obj);
-}
-
-static void request_to_internal(struct internal_frame *frm)
-{
-	size_t frame_size = 0;
-	static uint8_t buffer[255 + 7] = {0};
-
-	frame_size = fill_internal_frame(buffer, frm->slot_id, frm->cmd,
-					frm->datalen, frm->data);
-
-	/* DBG_LOG("JOB_TYPE_TO_INTERNAL:"); */
-	/* DBG_DUMP(buffer, frame_size); */
-
-	if (int_tx_completed) {
-		int_tx_completed = 0;
-		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
-		/* HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_SET); */
-		HAL_UART_Transmit_DMA(&huart2, buffer, frame_size);
-		while (int_tx_completed == 0)
-			__NOP();
-	}
 }

@@ -10,13 +10,11 @@
 
 extern int ext_tx_completed;
 extern int int_tx_completed;
-extern int int_rx_completed;
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
-	if (huart->Instance == USART2)       //Slot Interface & Bluetooth
+	if (huart->Instance == USART2) //Slot Interface & Bluetooth
 	{
-		/* int_rx_completed = 1; */
 	}
 	else if(huart->Instance == USART1)
 	{

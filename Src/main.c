@@ -29,6 +29,7 @@
 #include "0_GlobalValue.h"
 #include "0_StartDisplayTask.h"
 #include "job_task.h"
+#include "internal_job_task.h"
 #include "fs_task.h"
 #include "internal_uart_task.h"
 #include "external_uart_task.h"
@@ -91,6 +92,9 @@ osThreadId init_task_id;
 /* osThreadId JobTaskHandle; */
 uint32_t JobTaskBuffer[256];
 osStaticThreadDef_t JobTaskControlBlock;
+
+uint32_t InternalJobTaskBuffer[256];
+osStaticThreadDef_t InternalJobTaskControlBlock;
 
 uint32_t FSTaskBuffer[512];
 osStaticThreadDef_t FSTaskControlBlock;
@@ -194,7 +198,7 @@ int main(void)
   {
       for (int i = 0; i < 32; i++)
       {
-          TestData.temperature[j][i].Float = (float)0.0;
+          TestData.temperatures[j][i] = 0.f;
           TestData.sensorState[j][i] = LDM_DONOT_CONNECT;
       }
   }
@@ -982,6 +986,10 @@ void init_task(void const *argument)
 	osThreadStaticDef(JobTask, job_task, osPriorityNormal, 0, 256,
 			JobTaskBuffer, &JobTaskControlBlock);
 	osThreadCreate(osThread(JobTask), NULL);
+
+	osThreadStaticDef(IntJobTask, internal_job_task, osPriorityNormal, 0, 256,
+			InternalJobTaskBuffer, &InternalJobTaskControlBlock);
+	osThreadCreate(osThread(IntJobTask), NULL);
 
 	osThreadStaticDef(FSTask, fs_task, osPriorityBelowNormal, 0, 512,
 			FSTaskBuffer, &FSTaskControlBlock);

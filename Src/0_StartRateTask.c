@@ -195,13 +195,13 @@ void DoChannelInfo(uint8_t slot)
 	RealTimeSendData[0] = slot;
 	memcpy(&RealTimeSendData[1], &TestData.sensorState[slot][0], 32);
 
-	send_external_response(CMD_TEMP_TEST, OP_TEMP_CHANNEL_INFO, &RealTimeSendData[0], 33, 36, 56);
+	send_external_response(CMD_TEMP_TEST, OP_TEMP_CHANNEL_INFO, RealTimeSendData, 33, 36, 56);
 }
 
 void DoChannelValue(uint8_t slot)
 {
 	RealTimeSendData[0] = slot;
-	memcpy(&RealTimeSendData[1], &TestData.temperature[slot][0].UI8[0], sizeof(float) * 32);
+	memcpy(&RealTimeSendData[1], &TestData.temperatures[slot], sizeof(float) * 32);
 
-	send_external_response(CMD_TEMP_TEST, OP_TEMP_CHANNEL_VALUE, &RealTimeSendData[0], 129, 132, 152);
+	send_external_response(CMD_TEMP_TEST, OP_TEMP_CHANNEL_VALUE, RealTimeSendData, 129, 132, 152);
 }
