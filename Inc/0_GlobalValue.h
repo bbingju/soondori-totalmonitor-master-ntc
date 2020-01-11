@@ -70,25 +70,24 @@ typedef enum {
     RSPI_ERROR
 } RETURNSPI;
 
-typedef enum {
-    LDM_NORMAL_TEMP = 0,    //정상
-    LDM_OVER_TEMP,                  //경고온도 초과
-    LDM_SENSOR_CLOSE,               //센서 쇼트
-    LDM_DONOT_CONNECT               //센서 없음
-} LED_DIPLAY_MODE;
+/* typedef enum { */
+/*     LDM_NORMAL_TEMP = 0,    //정상 */
+/*     LDM_OVER_TEMP,	    //경고온도 초과 */
+/*     LDM_SENSOR_CLOSE,	    //센서 쇼트 */
+/*     LDM_DONOT_CONNECT	    //센서 없음 */
+/* } LED_DIPLAY_MODE; */
 
 typedef __PACKED_STRUCT {
     uni4Byte mainBoard[4];    // MAINBOARDSENSOR 사용 해서 선택
     uint32_t mainBoardADC[4]; // main board 내부 센서 adc 값
-    float   temperatures[4][32]; // adc 완료후 온도값으로
+    // float   temperatures[4][32]; // adc 완료후 온도값으로
     /* 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널 */
     /* uni4Byte temperature[4][32]; // adc 완료후 온도값으로 환산된 값, 0 : */
                                  // 피대상물 온도, 1 : 환경온도 , 0~15채널
     uni4Byte adcMidValue[4][32]; // 컨버팅 완료된 ADC 값중 중간 값,  0 :
                                  // 피대상물 온도, 1 : 환경온도, 0~15채널
-    /* uni4Byte threshold[4][32];          // 경고 온도 저장 */
-    float thresholds[4][32];
-    LED_DIPLAY_MODE sensorState[4][32]; // 센서 상태 저장용
+    /* float thresholds[4][32];		/\* 경고 온도 저장 *\/ */
+    /* LED_DIPLAY_MODE sensorState[4][32]; // 센서 상태 저장용 */
     uni4Byte ntcCalibrationTable[4][32]; // NTC 교정상수 테이블, RTD - NTC 로
                                          // 계산되는 상수
     uni4Byte rtdCalibrationConst; // RTD 교정상수
@@ -119,28 +118,6 @@ typedef enum {
     DPM_SETTING
 } DISPLAYMODE;
 
-struct slot_properties_s {
-    uint8_t id;
-    SENSORBOARDTYPE type;
-    bool inserted;
-};
-
-#define INIT_SLOT_PROPERTIES(s, n) do {                 \
-        for (int i = 0; i < n; i++) {                   \
-            struct slot_properties_s *p = s + i;        \
-            p->id = i; p->type = SBT_NTC;               \
-            p->inserted = false; }                      \
-    } while (0)
-
-#define FOREACH(item, array)                            \
-  for (int keep = 1,                                    \
-          count = 0,                                    \
-           size = sizeof (array) / sizeof *(array);     \
-       keep && count != size;                           \
-       keep = !keep, count++)                           \
-    for (item = (array) + count; keep; keep = !keep)
-
-
 typedef struct {
 	/* DISPLAYMODE 사용해서 선택,
 	   NORMAL MODE 에서는 -, \, |, / 을 순차적으로 표시 한다.
@@ -163,8 +140,6 @@ typedef struct {
 	FATFS *fatfs;
 	bool sd_writing_available;
 
-	struct slot_properties_s slots[MAX_SLOT_NUM];
-	uint8_t last_slot_id;
 } SYSTEM_STRUCT;
 
 extern SYSTEM_STRUCT SysProperties;

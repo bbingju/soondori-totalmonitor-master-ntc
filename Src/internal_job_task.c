@@ -7,14 +7,14 @@
 #include <string.h>
 #include "debug.h"
 
-#define JOB_TANSACTION_TIMEOUT (25)
+#define JOB_TANSACTION_TIMEOUT (50)
 
 struct internal_job {
 	INTERNAL_JOB_TYPE_E type;
 	struct internal_frame int_frm;
 };
 
-static osMailQDef(internal_job_q, 4, struct internal_job);
+static osMailQDef(internal_job_q, 6, struct internal_job);
 static osMailQId (internal_job_q_id);
 
 volatile int transaction_completed = 1;
@@ -35,6 +35,7 @@ int post_internal_job(INTERNAL_JOB_TYPE_E type, void *data, size_t datalen)
 
 	do {
 		obj = (struct internal_job *)osMailCAlloc(internal_job_q_id, osWaitForever);
+		osDelay(1);
 	} while (obj == NULL);
 
 	obj->type = type;
@@ -100,7 +101,7 @@ static void request_to_internal(struct internal_frame *frm)
 			}
 			count++;
 		}
-		/* DBG_LOG("transaction_completed count: %d tick: %d\r\n",
-		 * count++, osKernelSysTick() - transaction_timeout); */
+		/* DBG_LOG("transaction_completed count: %d tick: %d\r\n", */
+		/* count++, osKernelSysTick() - transaction_timeout); */
 	}
 }

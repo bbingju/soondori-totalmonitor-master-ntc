@@ -1,18 +1,21 @@
-#include <stdint.h>
-#include <string.h>
-
+#include "external_uart_task.h"
 #include "cmsis_os.h"
 #include "stm32f4xx_ll_dma.h"
-#include "external_uart_task.h"
 #include "internal_uart_task.h"
 #include "app_task.h"
+#include "app_ctx.h"
 #include "0_soonFlashMemory.h"
 #include "0_SdCard.h"
 #include "protocol.h"
 #include "job_task.h"
 #include "fs_task.h"
 
+#include <stdint.h>
+#include <string.h>
+
 #define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
+
+extern app_ctx_t ctx;
 
 uint8_t ReadFileBuf[MAX_485_BUF_LEN];
 uint8_t FindFilelistFlag = 0; //0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
@@ -36,6 +39,7 @@ static void CmdCalibrationNTCTableReq(struct external_frame_rx *);
 static void CmdCalibrationNTCConstantReq(struct external_frame_rx *);
 static void doSetTime(struct external_frame_rx *);
 static void doGetTime(struct external_frame_rx *);
+static void handle_firmware_version_req(struct external_frame_rx *);
 
 /*********************************************************************
 *	Private variables
@@ -97,7 +101,7 @@ static void parse_rx(const void *data, size_t len)
 	}
 }
 
-void handle_rx_msg(struct external_frame_rx *received)
+void receive_from_external(struct external_frame_rx *received)
 {
 	/* DBG_LOG("ext rx [%s::%s]: ", ext_cmd_str(received->cmd), */
 	/* 	ext_option_str(received->cmd, received->option)); */
@@ -209,6 +213,13 @@ void handle_rx_msg(struct external_frame_rx *received)
 			break;
 		}
 		break;
+	case CMD_FW:
+		switch (received->option) {
+		case OP_FIRMWARE_VERSION_REQ:
+			handle_firmware_version_req(received);
+			break;
+		}
+		break;
 	}
 }
 
@@ -226,7 +237,7 @@ void external_rx_task(void const * argument)
 	}
 }
 
-int send_external_response(uint8_t cmd, uint8_t option, void *data,
+int send_to_external(uint8_t cmd, uint8_t option, void *data,
 			uint16_t data_len, uint16_t data_padding_len, uint16_t buffer_len)
 {
 	static struct external_frame_tx ext_frm_tx = { 0 };
@@ -289,12 +300,12 @@ void DoSendFileOpen(struct external_frame_rx *msg)
 			FA_OPEN_EXISTING | FA_READ);
 		if (res == FR_OK) { //파일 정상 오픈
 			sdValue.sdState = SCS_OK;
-			send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_HEADER,
+			send_to_external(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_HEADER,
 					sdValue.sendFileName, fileNameLen, 36, 56);
 		} else {	//파일 오픈 에러
 			sdValue.sdState = SCS_OPEN_ERROR;
 			t[0] = SCS_OPEN_ERROR;
-			send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
+			send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
 		}
 	}
 #endif	/* 0 */
@@ -326,7 +337,7 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 		// util_mem_cpy(&ReadFileBuf[4], &temp.UI8[0], 4);
 
 		ReadSize = DoSendFileRead(Offset + (packetSize * i), packetSize);
-		send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY,
+		send_to_external(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY,
 				&ReadFileBuf[0], ReadSize + 8, packetSize + 8,
 				packetSize + 8 + 20);
 		/* doMakeSend485DataDownLoad(tx485DataDMA, CMD_SD_CARD,
@@ -366,14 +377,14 @@ void DoSendFileClose(void)
 	if (res == FR_OK) //파일 정상으로 닫힘
 	{
 		sdValue.sdState = SCS_OK;
-		send_external_response(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER,
+		send_to_external(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_FOOTER,
 				sdValue.sendFileName, sdValue.sendFileNameLen,
 				36, 56);
 	} else //파일 닫기 에러
 	{
 		sdValue.sdState = SCS_CLOSE_ERROR;
 		t[0] = SCS_CLOSE_ERROR;
-		send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
+		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
 	}
 #endif /* 0 */
 }
@@ -389,14 +400,14 @@ int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
 	if (res != FR_OK) {
 		sdValue.sdState = SCS_OK;
 		t[0] = SCS_SEEK_ERROR;
-		send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
+		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
 	}
 
 	res = f_read(&sdValue.sendFileObject, &ReadFileBuf[8], ReadSize, &br);
 	if (res != FR_OK) {
 		sdValue.sdState = SCS_READ_ERROR;
 		t[0] = SCS_READ_ERROR;
-		send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
+		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, t, 1, 12, 32);
 	}
 
 	return (int32_t)br;
@@ -409,7 +420,7 @@ int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
 /* 	uint8_t t[1] = {0}; */
 /* 	TCHAR root_directory[3] = "0:"; */
 
-/* 	send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0, 12, 32); */
+/* 	send_to_external(CMD_SD_CARD, OP_SDCARD_LIST_START, t, 0, 12, 32); */
 
 /* 	memset(&sdValue.scanDir[0], 0x00, sizeof(sdValue.scanDir)); */
 /* 	sdValue.scanDirDeep = 0; */
@@ -436,7 +447,7 @@ int32_t DoSendFileRead(FSIZE_t Offset, UINT ReadSize)
 /* 		} */
 /* 	} */
 
-/* 	send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_END, t, 0, 12, 32); */
+/* 	send_to_external(CMD_SD_CARD, OP_SDCARD_LIST_END, t, 0, 12, 32); */
 /* } */
 
 void doSaveIntervalTime(struct external_frame_rx *msg) //샘플레이트
@@ -445,7 +456,7 @@ void doSaveIntervalTime(struct external_frame_rx *msg) //샘플레이트
 
 	SysProperties.interval_ms = msg->interval_set.sec * 1000;
 
-	send_external_response(CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE,
+	send_to_external(CMD_TEMP_TEST, OP_TEMP_SAMPLE_RATE,
 			&SysProperties.interval_ms, sizeof(uint32_t), 12, 32);
 }
 
@@ -457,14 +468,15 @@ static void CmdWarningTempSet(struct external_frame_rx *msg)
 		float value = msg->warning_temp_set.value;
 
 		if (id == 0xFF) {
-			struct slot_properties_s *s;
+			/* ctx.hard_job_processing = true; */
+			struct slot_s *s;
 			for (int i = 0; i < MAX_SLOT_NUM; i++) {
-				s = &SysProperties.slots[i];
-				DoThresholdSet(s, channel, value);
+				s = &ctx.slots[i];
+				request_to_internal__THRESHOLD_SET(s, channel, value);
 				osDelay(1);
 			}
 		} else {
-			DoThresholdSet(&SysProperties.slots[id], channel, value);
+			request_to_internal__THRESHOLD_SET(&ctx.slots[id], channel, value);
 		}
 	}
 }
@@ -472,17 +484,17 @@ static void CmdWarningTempSet(struct external_frame_rx *msg)
 static void CmdWarningTempReq(struct external_frame_rx *msg)
 {
 	if (msg) {
-		uint8_t id = msg->data[0];
+		uint8_t slot_id = msg->data[0];
 
-		if (id == 0xFF) {
-			struct slot_properties_s *s;
+		if (slot_id == 0xFF) {
+			struct slot_s *s;
 			for (int i = 0; i < MAX_SLOT_NUM; i++) {
-				s = &SysProperties.slots[i];
-				DoThresholdReq(s);
+				s = &ctx.slots[i];
+				request_to_internal__THRESHOLD_REQ(s);
 				osDelay(1);
 			}
 		} else {
-			DoThresholdReq(&SysProperties.slots[id]);
+			request_to_internal__THRESHOLD_REQ(&ctx.slots[slot_id]);
 		}
 	}
 }
@@ -493,17 +505,47 @@ static void CmdRevisionApplySet(struct external_frame_rx *msg)
 		uint8_t slot_id = msg->revision_apply_set.slot_id;
 		uint8_t enabled = msg->revision_apply_set.enabled;
 
-		DoRevisionApplySet(slot_id, enabled);;
-		/* if (slot_id == 0xFF) { */
-		/* 	for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-		/* 		DoRevisionApplySet(i, enabled); */
-		/* 		osDelay(1); */
-		/* 	} */
-		/* } else { */
-		/* 	DoRevisionApplySet(slot_id, enabled); */
-		/* } */
+		if (slot_id == 0xFF) {
+			FOREACH(struct slot_s *s, ctx.slots) {
+				request_to_internal__REVISION_APPLY_SET(s, enabled);
+				osDelay(1);
+			}
+			/* struct slot_s *s; */
+			/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
+			/* 	s = &ctx.slots[i]; */
+			/* 	request_to_internal__REVISION_APPLY_SET(s->id, enabled); */
+			/* 	osDelay(1); */
+			/* } */
+		} else {
+			struct slot_s *s = &ctx.slots[slot_id];
+			request_to_internal__REVISION_APPLY_SET(s, enabled);
+		}
 	}
 }
+
+static void CmdRevisionApplyReq(struct external_frame_rx *msg)
+{
+	if (msg) {
+		uint8_t slot_id = msg->data[0];
+
+		if (slot_id == 0xFF) {
+			FOREACH(struct slot_s *s, ctx.slots) {
+				request_to_internal__REVISION_APPLY_REQ(s);
+				osDelay(1);
+			}
+			/* struct slot_s *s; */
+			/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
+			/* 	s = &ctx.slots[i]; */
+			/* 	request_to_internal__REVISION_APPLY_REQ(s->id); */
+			/* 	osDelay(1); */
+			/* } */
+		} else {
+			struct slot_s *s = &ctx.slots[slot_id];
+			request_to_internal__REVISION_APPLY_REQ(s);
+		}
+	}
+}
+
 
 static void CmdRevisionConstantSet(struct external_frame_rx *msg)
 {
@@ -515,11 +557,6 @@ static void CmdRevisionConstantSet(struct external_frame_rx *msg)
 	TestData.revisionConstant[id].UI8[3] = msg->data[4]; //Rx485Data[11];
 
 	DoRevisionConstantSet(id/* Rx485Data[7] */);
-}
-
-static void CmdRevisionApplyReq(struct external_frame_rx *msg)
-{
-	DoRevisionApplyReq(msg->data[0]/* Rx485Data[7] */);
 }
 
 static void CmdRevisionConstantReq(struct external_frame_rx *msg)
@@ -559,10 +596,10 @@ static void CmdCalibrationRTDConstSet(struct external_frame_rx *msg)
 
 	if (1 > 10) {
 		i = 0xFF;
-		send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
+		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
 				&i, 1, 12, 32);
 	} else {
-		send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
+		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
 				&readConst.UI8[0], 4, 12, 32);
 	}
 
@@ -597,17 +634,15 @@ static void CmdCalibrationNTCConstantSet(struct external_frame_rx *msg)
 
 static void CmdCalibrationRTDConstReq(struct external_frame_rx *msg)
 {
-	send_external_response(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
+	send_to_external(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
 			&TestData.rtdCalibrationConst.UI8[0], 4, 12, 32);
-	/* doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET, &TestData.rtdCalibrationConst.UI8[0], 4, 12, 32); */
-	/* SendUart485String(tx485DataDMA, 32); */
 }
 
 static void CmdCalibrationNTCTableReq(struct external_frame_rx *msg)
 {
 	uint8_t id = msg->data[0];
 	if (id >= 0 && id < 4) {
-		struct slot_properties_s *slot = &SysProperties.slots[id];
+		struct slot_s *slot = &ctx.slots[id];
 		if (slot->inserted)
 			DoCalibrationNTCTableReq(id); //slot 번호 전달
 		/* DoCalibrationNTCTableReq(Rx485Data[7]); //slot 번호 전달 */
@@ -622,7 +657,6 @@ static void CmdCalibrationNTCConstantReq(struct external_frame_rx *msg)
 
 static void doSetTime(struct external_frame_rx *msg)
 {
-	//    uint8_t i = 0;
 	uint8_t res = TRUE;
 	HAL_StatusTypeDef resHal;
 	RTC_DateTypeDef setDate, getDate;
@@ -666,12 +700,17 @@ static void doSetTime(struct external_frame_rx *msg)
 	} while (1);
 
 	SysProperties.time_synced = true;
-	send_external_response(CMD_TIME, OP_TIME_SET, &res, 1, 12, 32);
+	send_to_external(msg->cmd, msg->option, &res, 1, 12, 32);
 }
 
-static void doGetTime(struct external_frame_rx *msg)
+static void doGetTime(struct external_frame_rx *req)
 {
 	/* uint8_t res = 0; */
-	/* send_external_response(CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32); */
-	send_external_response(CMD_TIME, OP_TIME_REQ, NULL, 0, 12, 32);
+	/* send_to_external(CMD_TIME, OP_TIME_REQ, &res, 0, 12, 32); */
+	send_to_external(req->cmd, req->option, NULL, 0, 12, 32);
+}
+
+static void handle_firmware_version_req(struct external_frame_rx *req)
+{
+	send_to_external(req->cmd, req->option, (void *) firmware_version(), strlen(firmware_version()), 12, 32);
 }

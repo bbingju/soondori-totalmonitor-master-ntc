@@ -3,6 +3,7 @@
 #include "cmsis_os.h"
 #include "protocol.h"
 #include "internal_uart_task.h"
+#include "external_uart_task.h"
 #include "0_Util.h"
 #include <string.h>
 #include "debug.h"
@@ -22,10 +23,8 @@ static osMailQDef(job_q, 24, struct job);
 static osMailQId (job_q_id);
 
 static void do_job(struct job *job);
-static void send_to_external(struct external_frame_tx *obj);
-static void handle_from_external(struct external_frame_rx *obj);
+static void _send_to_external(struct external_frame_tx *obj);
 
-extern void handle_rx_msg(struct external_frame_rx *received);
 extern int ext_tx_completed;
 extern UART_HandleTypeDef huart1;
 
@@ -38,6 +37,7 @@ int post_job(JOB_TYPE_E type, void *data, size_t datalen)
 
 	do {
 		obj = (struct job *)osMailCAlloc(job_q_id, osWaitForever);
+		__NOP();
 	} while (obj == NULL);
 
 	obj->type = type;
@@ -64,10 +64,10 @@ static void do_job(struct job *job)
 {
 	switch (job->type) {
 	case JOB_TYPE_TO_EXTERNAL:
-		send_to_external(&job->d.external_tx);
+		_send_to_external(&job->d.external_tx);
 		break;
 	case JOB_TYPE_FROM_EXTERNAL:
-		handle_from_external(&job->d.external_rx);
+		receive_from_external(&job->d.external_rx);
 		break;
 	case JOB_TYPE_FROM_INTERNAL:
 		response_from_internal(&job->d.internal);
@@ -77,7 +77,7 @@ static void do_job(struct job *job)
 	}
 }
 
-static void send_to_external(struct external_frame_tx *ftx)
+static void _send_to_external(struct external_frame_tx *ftx)
 {
 	static uint8_t tx_buffer[512] = {0};
 	/* DBG_LOG("ext tx [%s::%s] (%d): ", ext_cmd_str(ftx->cmd), */
@@ -95,9 +95,4 @@ static void send_to_external(struct external_frame_tx *ftx)
 		while (ext_tx_completed == 0)
 			__NOP();
 	}
-}
-
-static void handle_from_external(struct external_frame_rx *obj)
-{
-	handle_rx_msg(obj);
 }

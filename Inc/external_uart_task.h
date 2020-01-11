@@ -28,6 +28,7 @@
 #define CMD_SD_CARD 5
 #define CMD_SLOT 6
 #define CMD_TIME 7
+#define CMD_FW 0xF
 
 #define OP_TEMP_START_RX 1
 #define OP_TEMP_MAIN_INFO 1
@@ -73,6 +74,8 @@
 #define OP_TIME_SET 1
 #define OP_TIME_REQ 2
 
+#define OP_FIRMWARE_VERSION_REQ 1
+
 struct ext_rx_msg_s;
 
 #ifdef __cplusplus
@@ -80,8 +83,10 @@ extern "C" {
 #endif
 
 void ext_rx_notify();
-int send_external_response(uint8_t cmd, uint8_t option, void *data,
-                           uint16_t data_writhe_len, uint16_t data_len, uint16_t buffer_len);
+void receive_from_external(struct external_frame_rx *);
+int send_to_external(uint8_t cmd, uint8_t option, void *data,
+		uint16_t data_writhe_len, uint16_t data_len, uint16_t buffer_len);
+
 
 void DoReadFileList(struct external_frame_rx *);
 

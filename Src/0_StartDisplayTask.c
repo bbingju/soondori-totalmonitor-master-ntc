@@ -1,4 +1,5 @@
 #include "0_StartDisplayTask.h"
+#include "app_ctx.h"
 #include "0_16Segment.h"
 #include "0_GlobalValue.h"
 #include "0_SensorCal.h"
@@ -23,14 +24,14 @@ uint8_t		modeButtonDelay;
 SEGMENT_SPECIAL_FONT	digit_L = SSP_HYPHEN;
 SEGMENT_SPECIAL_FONT	digit_R = SSP_HYPHEN;
 
-uint8_t		tempErrorChennal = 0;
+uint8_t		tempErrorChannel = 0;
 
 uint32_t	revid;
 uint32_t	devid;
 uint32_t	uid[3];
 
-//uint8_t iiii;
 
+extern app_ctx_t ctx;
 extern IWDG_HandleTypeDef hiwdg;
 
 /*********************************************************************
@@ -95,14 +96,12 @@ void DoDisplayModeChange(void)
 	uint8_t errorCount = 0;
 
 	//온도 경고가 있는지 확인
-	for(int j = 0; j < 4; j++)
-	{
-		for(int i = 0; i < 16; i++)
-		{
-			if(TestData.sensorState[j][i] == LDM_OVER_TEMP)
-			{
+	FOREACH(struct slot_s *s, ctx.slots) {
+		if (!s->inserted) continue;
+		for (int i = 0; i < 16; i++) {
+			if (s->ntc.channel_states[i] == CHANNEL_STATE_OVER_TEMP) {
 				SysProperties.displayMode = DPM_TEMP_ERROR;
-				tempErrorChennal = ((j * 16) + i) + 1;
+				tempErrorChannel = ((s->id * 16) + i) + 1;
 				errorCount++;
 				return;
 			}
@@ -153,8 +152,8 @@ void doSegmentDisplay(uint8_t quarterSec)
 			}
 			else
 			{
-				SegmentDisplay(1, doTextToDigitdata((tempErrorChennal / 10) + '0'));
-				SegmentDisplay(2, doTextToDigitdata((tempErrorChennal % 10) + '0'));
+				SegmentDisplay(1, doTextToDigitdata((tempErrorChannel / 10) + '0'));
+				SegmentDisplay(2, doTextToDigitdata((tempErrorChannel % 10) + '0'));
 			}
 			break;
 		case DPM_SDCARD_ERROR:

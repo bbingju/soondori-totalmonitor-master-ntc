@@ -8,25 +8,6 @@ uint8_t *bytes;
 uint8_t BuzzerEnable;
 
 /*********************************************************************
-*	 ByteArrayToFloat
-*  String 를 배열로 복사 한다. 복사한 뒤 남은 배열은 0으로 초기화 한다.
-*  byteArray			: 원본 배열을 받는다. 4바이트 float
-*	 return	                : float 로 변환하여 반환 한다.
-**********************************************************************/
-float ByteArrayToFloat(uint8_t *byteArray)
-{
-    bytes = byteArray;
-    uint32_t res = 0.0;
-
-    res  =  ((uint32_t)*byteArray
-             | ((uint32_t)*(byteArray + 1) << 8)
-             | ((uint32_t)*(byteArray + 2) << 16)
-             | ((uint32_t)*(byteArray + 3) << 24));
-
-    return *((float*)&res);
-}
-
-/*********************************************************************
 *  StringCopyToArray
 *  String 를 배열로 복사 한다. 복사한 뒤 남은 배열은 0으로 초기화 한다.
 *  TagetArray			: 이곳으로 복사한다.

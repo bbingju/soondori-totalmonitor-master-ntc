@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
+static const char fw_ver[] = "200111.01";
+
 FRESULT ff_create_metafile(FIL *mf, char *path)
 {
 	DIR dir;
@@ -114,6 +116,8 @@ void app_ctx_init(app_ctx_t *ctx)
 		DBG_LOG("error: MX_FATFS_Init()\n");
 	}
 
+	ctx->hard_job_processing = false;
+
 	ctx->sd_inserted = BSP_SD_IsDetected();
 	ctx->sd_ff = &SDFatFS;
 	ctx->sd_root = SDPath;
@@ -137,4 +141,11 @@ void app_ctx_init(app_ctx_t *ctx)
 		f_close(&mfile);
 		DBG_LOG("elapsed ticks: %u\n", osKernelSysTick() - start);
 	}
+
+	INIT_SLOTS(ctx->slots, MAX_SLOT_NUM);
+}
+
+const char *firmware_version()
+{
+	return fw_ver;
 }

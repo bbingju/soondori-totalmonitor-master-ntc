@@ -48,8 +48,8 @@ __PACKED_STRUCT internal_frame {
 	__PACKED_UNION {
 		uint8_t  data[128];
 
-		struct internal_temp_data temp_data;
-		struct internal_temp_state_data state_data;
+		/* struct internal_temp_data temp_data; */
+		/* struct internal_temp_state_data state_data; */
 
 		__PACKED_STRUCT {
 			uint8_t v;
@@ -82,7 +82,7 @@ __PACKED_STRUCT internal_frame {
 
 		__PACKED_STRUCT {
 			uint8_t flag[16];
-		} channel_status;
+		} channel_states;
 
 		__PACKED_STRUCT {
 			float m[32];
@@ -128,8 +128,14 @@ __PACKED_STRUCT external_frame_rx {
 	};
 };
 
+__PACKED_STRUCT external_board_info {
+	uint8_t self_id;
+	float values[4];
+	uint8_t sd_state;
+};
+
 __PACKED_STRUCT external_temp_data {
-	uint32_t slot_id;
+	uint8_t slot_id;
 	float values[32];
 	uint8_t padding[3];
 };
@@ -141,10 +147,10 @@ __PACKED_STRUCT external_temp_state_data {
 };
 
 __PACKED_STRUCT external_slot_info {
-	uint8_t parent_id;
+	uint8_t self_id;
 	uint8_t slot_id;
 	uint8_t slot_type;
-	uint8_t revision_apply;
+	uint8_t revision_applied;
 };
 
 __PACKED_STRUCT external_sd_filelist {
@@ -162,6 +168,7 @@ struct external_frame_tx {
 	uint8_t datetime[6];
 	uint8_t data_padding_len;
 	__PACKED_UNION {
+		struct external_board_info board_info;
 		struct external_temp_data temp_data;
 		struct external_temp_state_data temp_state_data;
 		struct external_slot_info slot_info;

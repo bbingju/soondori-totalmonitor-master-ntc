@@ -87,6 +87,8 @@ osSemaphoreId myBinarySemDownHandle;
 /* Private variables ---------------------------------------------------------*/
 SYSTEM_STRUCT SysProperties;
 app_ctx_t ctx;
+SYSTEM_TIME SysTime;
+SD_CARD_VALUE	sdValue;
 osThreadId init_task_id;
 
 /* osThreadId JobTaskHandle; */
@@ -194,16 +196,16 @@ int main(void)
   }
 
   SysProperties.displayMode = DPM_NORMAL;
-  for (int j = 0; j < 4; j++)
-  {
-      for (int i = 0; i < 32; i++)
-      {
-          TestData.temperatures[j][i] = 0.f;
-          TestData.sensorState[j][i] = LDM_DONOT_CONNECT;
-      }
-  }
+  /* for (int j = 0; j < 4; j++) */
+  /* { */
+  /*     for (int i = 0; i < 32; i++) */
+  /*     { */
+  /*         TestData.temperatures[j][i] = 0.f; */
+  /*         TestData.sensorState[j][i] = LDM_DONOT_CONNECT; */
+  /*     } */
+  /* } */
 
-  INIT_SLOT_PROPERTIES(SysProperties.slots, MAX_SLOT_NUM);
+  /* INIT_SLOT_PROPERTIES(SysProperties.slots, MAX_SLOT_NUM); */
 
   SysProperties.interval_ms = 1000;
   SysProperties.start_flag = FALSE;

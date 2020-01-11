@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "app_ctx.h"
 #include "0_SdCard.h"
 #include "0_GlobalValue.h"
 #include "external_uart_task.h"
 #include "debug.h"
 
+extern app_ctx_t ctx;
 uint8_t 	wData[420];
 
 /*********************************************************************
@@ -311,7 +313,7 @@ void DoWriteFileHeader(void)
         sdValue.sdState = SCS_OK;
     }
     for (int i = 0; i < 4; i++)
-        f_putc(SysProperties.slots[i].inserted, &sdValue.fileObject);
+        f_putc(ctx.slots[i].inserted, &sdValue.fileObject);
 
     res = f_lseek(&sdValue.fileObject, FILE_ADD_SLOT_TYPE); // slot type
     if (res != FR_OK) {
@@ -323,7 +325,7 @@ void DoWriteFileHeader(void)
         sdValue.sdState = SCS_OK;
     }
     for (int i = 0; i < 4; i++)
-        f_putc(SysProperties.slots[i].type, &sdValue.fileObject);
+        f_putc(ctx.slots[i].type, &sdValue.fileObject);
 
     res =
         f_lseek(&sdValue.fileObject, FILE_ADD_TEST_DATA); // file write position
@@ -374,18 +376,28 @@ void DoDataWrite(void)
     wData[7] = (uint8_t)(SysTime.Time.SubSeconds & 0x000000FF);
 
     //채널
-    for (int j = 0; j < 4; j++) {
-        for (int i = 0; i < 16; i++) {
-            if (TestData.sensorState[j][i] != LDM_DONOT_CONNECT) {
-                wData[34 + (sensorCount * 6)] = j * 16 + i; // 채널 번호
-                wData[35 + (sensorCount * 6)] =
-                    TestData.sensorState[j][i]; // 센서 상태
-                memcpy(&wData[36 + (sensorCount * 6)],
-                       &TestData.temperatures[j][i], 4); // 센서값 저장
-                sensorCount++; // 사용 채널수 확인
-            }
-        }
+    FOREACH(struct slot_s *s, ctx.slots) {
+	    for (int i = 0; i < 16; i++) {
+		    if (s->ntc.channel_states[i] != CHANNEL_STATE_DISCONNECTED) {
+			    wData[34 + (sensorCount * 6)] = s->id * 16 + i; // 채널 번호
+			    wData[35 + (sensorCount * 6)] = s->ntc.channel_states[i]; // 센서 상태
+			    *((float *)&wData[36 + (sensorCount * 6)]) = s->ntc.temperatures[i]; // 센서값 저장
+			    sensorCount++; // 사용 채널수 확인
+		    }
+	    }
     }
+    /* for (int j = 0; j < 4; j++) { */
+    /*     for (int i = 0; i < 16; i++) { */
+    /*         if (TestData.sensorState[j][i] != LDM_DONOT_CONNECT) { */
+    /*             wData[34 + (sensorCount * 6)] = j * 16 + i; // 채널 번호 */
+    /*             wData[35 + (sensorCount * 6)] = */
+    /*                 TestData.sensorState[j][i]; // 센서 상태 */
+    /*             memcpy(&wData[36 + (sensorCount * 6)], */
+    /*                    &TestData.temperatures[j][i], 4); // 센서값 저장 */
+    /*             sensorCount++; // 사용 채널수 확인 */
+    /*         } */
+    /*     } */
+    /* } */
 
     if (sensorCount == 0) //센서가 모두 연결 안되있을때는 통과
     {

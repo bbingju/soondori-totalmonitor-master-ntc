@@ -34,14 +34,14 @@ void MX_FATFS_Init(void)
 
   /* USER CODE BEGIN Init */
 	/* additional user code for init */
-	if (retSD != 0)	// 0이면 정상
-	{
-		sdValue.sdState = SCS_LINK_ERROR;
-	}
-	else
-	{
-		sdValue.sdState = SCS_OK;
-	}
+	/* if (retSD != 0)	// 0이면 정상 */
+	/* { */
+	/* 	sdValue.sdState = SCS_LINK_ERROR; */
+	/* } */
+	/* else */
+	/* { */
+	/* 	sdValue.sdState = SCS_OK; */
+	/* } */
   /* USER CODE END Init */
 }
 
