@@ -1,5 +1,7 @@
 #include "0_soonFlashMemory.h"
+#include "app_ctx.h"
 
+extern app_ctx_t ctx;
 
 /**************************************************************************************************************
 *	Write 동작의 흐름은 아래와 같다.
@@ -80,13 +82,13 @@ HAL_StatusTypeDef EraseFlash(uint32_t startAdd, uint32_t endAdd)
 *	doFlashWriteRevision
 *	플레시 메로지 내용 수정 체크 함수 
 **********************************************************************/
-uint32_t doFlashWriteRevision(void)
+uint32_t doFlashWriteRevision(float value)
 {
-	uint32_t	flashError = 0;
+	uint32_t flashError = 0;
 
 	EraseFlash(FLASH_SAVE_CHK, 1U);
 	WriteFlash(FLASH_SAVE_CHK, FLASH_SAVE_FLAG, &flashError);
-	WriteFlash(FLASH_RTD_CALIBRATION_CONSTAN, TestData.rtdCalibrationConst.UI32, &flashError);
+	WriteFlash(FLASH_RTD_CALIBRATION_CONSTAN, ctx.rtd.calibration_const, &flashError);
 
 	return flashError;
 }

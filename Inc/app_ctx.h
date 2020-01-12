@@ -29,6 +29,13 @@ struct slot_ntc_s {
 	float           temperatures[CHANNEL_NBR];
 	CHANNEL_STATE_E channel_states[CHANNEL_NBR];
 	float           thresholds[CHANNEL_NBR];
+
+	uint8_t         revision_applied;
+	float           revision_const;
+	float           revision_tr1;
+	float           revision_tr2;
+	float           calibration_tbl[CHANNEL_NBR];
+	float           calibration_const;
 };
 
 struct slot_s {
@@ -59,6 +66,12 @@ struct slot_s {
 	     keep = !keep, count++)					\
 		for (item = (array) + count; keep; keep = !keep)
 
+struct rtd_s {
+	uint32_t adc_val;
+	float    temperature;
+	float    calibration_const;
+};
+
 typedef struct app_ctx {
 	bool time_synced;
 
@@ -67,6 +80,11 @@ typedef struct app_ctx {
 	bool sd_inserted;
 
 	bool hard_job_processing;
+
+	float battery;
+	struct rtd_s rtd;
+	float temperature;
+	float humidity;
 
 	struct slot_s slots[MAX_SLOT_NUM];
 	uint8_t last_slot_id;

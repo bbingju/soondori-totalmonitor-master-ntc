@@ -9,14 +9,10 @@
 **********************************************************************/
 TEST_DATA TestData;
 
-#define BATTERY_SAMPLE_NBR 100
+#define SAMPLE_NBR 100
 
-static uint32_t adc_battery[BATTERY_SAMPLE_NBR + 10];
-uint32_t	adc_mainBoardSensor[310];
-uint32_t	adc_battert_add = 0;
-uint32_t	adc_mainBoardRTD_add = 0;
-float		adc_mainBoardTEMP_add = 0;
-float		adc_mainBoardHUMI_add = 0;
+static uint32_t adc_battery[SAMPLE_NBR + 10];
+uint32_t	adc_mainBoardSensor[SAMPLE_NBR * 3];
 
 BUTTONMODE	modeButtonEnter = BTN_NORMAL;
 uint8_t		modeButtonDelay;
@@ -109,8 +105,7 @@ void DoDisplayModeChange(void)
 	}
 
 	//sd 카드 에러 확인
-	if(sdValue.sdState != SCS_OK)
-	{
+	if (sdValue.sdState != SCS_OK) {
 		SysProperties.displayMode = DPM_SDCARD_ERROR;
 		return;
 	}
@@ -126,55 +121,55 @@ void DoDisplayModeChange(void)
 void doSegmentDisplay(uint8_t quarterSec)
 {
 	switch (SysProperties.displayMode) {
-		case DPM_NORMAL:
-			HAL_GPIO_WritePin(RELAY_SEL_GPIO_Port, RELAY_SEL_Pin, GPIO_PIN_SET);
+	case DPM_NORMAL:
+		HAL_GPIO_WritePin(RELAY_SEL_GPIO_Port, RELAY_SEL_Pin, GPIO_PIN_SET);
 
-			SegmentDisplay(1, doNumberToDigitdata(digit_L));
-			SegmentDisplay(2, doNumberToDigitdata(digit_R));
+		SegmentDisplay(1, doNumberToDigitdata(digit_L));
+		SegmentDisplay(2, doNumberToDigitdata(digit_R));
 
-			digit_L++;
-			digit_R++;
+		digit_L++;
+		digit_R++;
 
-			if (digit_L > SSP_SLASH)
-			{
-				digit_L = SSP_HYPHEN;
-				digit_R = SSP_HYPHEN;
-			}
-			break;
-		case DPM_TEMP_ERROR:
-			HAL_GPIO_WritePin(RELAY_SEL_GPIO_Port, RELAY_SEL_Pin, GPIO_PIN_RESET);
-			doBuzzerPlay(200);
+		if (digit_L > SSP_SLASH)
+		{
+			digit_L = SSP_HYPHEN;
+			digit_R = SSP_HYPHEN;
+		}
+		break;
+	case DPM_TEMP_ERROR:
+		HAL_GPIO_WritePin(RELAY_SEL_GPIO_Port, RELAY_SEL_Pin, GPIO_PIN_RESET);
+		doBuzzerPlay(200);
 
-			if ((quarterSec % 4) < 2)
-			{
-				SegmentDisplay(1, doTextToDigitdata('E'));
-				SegmentDisplay(2, doTextToDigitdata('T'));
-			}
-			else
-			{
-				SegmentDisplay(1, doTextToDigitdata((tempErrorChannel / 10) + '0'));
-				SegmentDisplay(2, doTextToDigitdata((tempErrorChannel % 10) + '0'));
-			}
-			break;
-		case DPM_SDCARD_ERROR:
+		if ((quarterSec % 4) < 2)
+		{
+			SegmentDisplay(1, doTextToDigitdata('E'));
+			SegmentDisplay(2, doTextToDigitdata('T'));
+		}
+		else
+		{
+			SegmentDisplay(1, doTextToDigitdata((tempErrorChannel / 10) + '0'));
+			SegmentDisplay(2, doTextToDigitdata((tempErrorChannel % 10) + '0'));
+		}
+		break;
+	case DPM_SDCARD_ERROR:
 /*
-			if((quarterSec % 4) < 2)
-			{
-				//doBuzzerPlay(100);
-				SegmentDisplay(1, doTextToDigitdata('E'));
-				SegmentDisplay(2, doTextToDigitdata('S'));
-			}
-			else
-			{
-				//iiii = (uint8_t)sdValue.sdState;
-				SegmentDisplay(1, doTextToDigitdata((uint8_t)(sdValue.sdState) / (uint8_t)10 + '0'));
-				SegmentDisplay(2, doTextToDigitdata((uint8_t)(sdValue.sdState) % (uint8_t)10 + '0'));
-			}*/
-			break;
-		case DPM_SETTING:
-			SegmentDisplay(1, doTextToDigitdata('S'));
-			SegmentDisplay(2, doTextToDigitdata('E'));
-			break;
+  if((quarterSec % 4) < 2)
+  {
+  //doBuzzerPlay(100);
+  SegmentDisplay(1, doTextToDigitdata('E'));
+  SegmentDisplay(2, doTextToDigitdata('S'));
+  }
+  else
+  {
+  //iiii = (uint8_t)sdValue.sdState;
+  SegmentDisplay(1, doTextToDigitdata((uint8_t)(sdValue.sdState) / (uint8_t)10 + '0'));
+  SegmentDisplay(2, doTextToDigitdata((uint8_t)(sdValue.sdState) % (uint8_t)10 + '0'));
+  }*/
+		break;
+	case DPM_SETTING:
+		SegmentDisplay(1, doTextToDigitdata('S'));
+		SegmentDisplay(2, doTextToDigitdata('E'));
+		break;
 	}
 }
 
@@ -230,19 +225,29 @@ void doModeButton(void)
 **********************************************************************/
 void doBatteryVoltageCheck(void)
 {
-	adc_battert_add = 0;
-	for (int i = 10; i < BATTERY_SAMPLE_NBR; i++){	//dma 로 일ㄱ어낸 데이터중 처음 몇개의 값이 오차가 생겨서 10개는 건너ㄷ뒤어서 게산 함.
-		adc_battert_add += adc_battery[i];
-	}
-	TestData.mainBoard[MBS_BATTERY].Float = (float)(((double)( ( (double) ((double)adc_battert_add
-										/ 90) /* 90 : 합게된 수량 */
-										* 2) /* 2 : 내부에서 1/2로 배율됨 */
-										* 3300 /* 3.3V * 1000 */
-										/ 0xfff) /* 4095 resolution */
-										/ 1000) /* 3.3V 로 환산 */
-										+ 0.1);	/* diode drop voltage 보상 */
+	uint32_t adc_battery_add = 0;
 
-	HAL_ADC_Start_DMA(&hadc1, adc_battery, 100);
+	/* dma 로 일ㄱ어낸 데이터중 처음 몇개의 값이 오차가 생겨서
+	 * 10개는 건너ㄷ뒤어서 게산 함. */
+	for (int i = 10; i < SAMPLE_NBR; i++){
+		adc_battery_add += adc_battery[i];
+	}
+
+	ctx.battery = (float)(((double)( ( (double) ((double)adc_battery_add/ 90) /* 90 : 합게된 수량 */
+					* 2) /* 2 : 내부에서 1/2로 배율됨 */
+					* 3300 /* 3.3V * 1000 */
+					/ 0xfff) /* 4095 resolution */
+					/ 1000) /* 3.3V 로 환산 */
+					+ 0.1);	/* diode drop voltage 보상 */
+	/* TestData.mainBoard[MBS_BATTERY].Float = (float)(((double)( ( (double) ((double)adc_battery_add */
+	/* 									/ 90) /\* 90 : 합게된 수량 *\/ */
+	/* 									* 2) /\* 2 : 내부에서 1/2로 배율됨 *\/ */
+	/* 									* 3300 /\* 3.3V * 1000 *\/ */
+	/* 									/ 0xfff) /\* 4095 resolution *\/ */
+	/* 									/ 1000) /\* 3.3V 로 환산 *\/ */
+	/* 									+ 0.1);	/\* diode drop voltage 보상 *\/ */
+
+	HAL_ADC_Start_DMA(&hadc1, adc_battery, SAMPLE_NBR);
 }
 
 /*********************************************************************
@@ -251,29 +256,31 @@ void doBatteryVoltageCheck(void)
 **********************************************************************/
 void doMainBoardSensorCheck(void)
 {
-	adc_mainBoardRTD_add = 0;
-	adc_mainBoardTEMP_add = 0;
-	adc_mainBoardHUMI_add = 0;
+	uint32_t adc_mainBoardRTD_add = 0;
+	float adc_mainBoardTEMP_add = 0;
+	float adc_mainBoardHUMI_add = 0;
 
 	// RTD DATA
-	for (int i = 0; i < BATTERY_SAMPLE_NBR; i++)
+	for (int i = 0; i < SAMPLE_NBR; i++)
 	{
-	    adc_mainBoardRTD_add += adc_mainBoardSensor[i * 3];
+		adc_mainBoardRTD_add += adc_mainBoardSensor[i * 3];
 	}
-	TestData.mainBoardADC[MBS_RTD] = adc_mainBoardRTD_add / BATTERY_SAMPLE_NBR;
-	TestData.mainBoard[MBS_RTD].Float = Calc_Temp_RTD(TestData.mainBoardADC[MBS_RTD]) + TestData.rtdCalibrationConst.Float;	//교정 상수 추
+	struct rtd_s *r = &ctx.rtd;
+	r->adc_val = adc_mainBoardRTD_add / SAMPLE_NBR;
+	r->temperature = Calc_Temp_RTD(r->adc_val) + r->calibration_const;
 
 	// BOARD TEMP
-	for (int i = 0; i < BATTERY_SAMPLE_NBR; i++) {
+	for (int i = 0; i < SAMPLE_NBR; i++) {
 		adc_mainBoardTEMP_add += Calc_BD_Temp(adc_mainBoardSensor[i * 3 + 1]);
 	}
-	TestData.mainBoard[MBS_TEMP].Float = adc_mainBoardTEMP_add / 100;
+	ctx.temperature = adc_mainBoardTEMP_add / SAMPLE_NBR;
 
 	// BOARD HUMIDITY
-	for (int i = 0; i < BATTERY_SAMPLE_NBR; i++) {
+	for (int i = 0; i < SAMPLE_NBR; i++) {
 		adc_mainBoardHUMI_add += Calc_BD_Humi(adc_mainBoardSensor[i * 3 + 2]);
 	}
-	TestData.mainBoard[MBS_HUMI].Float = adc_mainBoardHUMI_add / BATTERY_SAMPLE_NBR;
+	ctx.humidity = adc_mainBoardHUMI_add / SAMPLE_NBR;
 
-	HAL_ADC_Start_DMA(&hadc2, adc_mainBoardSensor, 300);
+	HAL_ADC_Start_DMA(&hadc2, adc_mainBoardSensor, SAMPLE_NBR * 3);
 }
+

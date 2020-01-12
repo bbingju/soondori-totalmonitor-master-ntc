@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char fw_ver[] = "200111.01";
+static const char fw_ver[] = "200112.01";
 
 FRESULT ff_create_metafile(FIL *mf, char *path)
 {

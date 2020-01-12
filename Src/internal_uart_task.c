@@ -36,10 +36,11 @@ static void DoAnsBoardType(struct internal_frame *);
 static void handle_threshold(struct internal_frame *);
 static void handle_temperature(struct internal_frame *);
 static void handle_temerature_state(struct internal_frame *);
-static void DoAnsRevisionApplySet(struct internal_frame *);
-static void DoAnsRevisionApplyReq(struct internal_frame *);
+static void handle_revision_applied(struct internal_frame *);
 static void DoAnsRevisionConstantSet(struct internal_frame *);
 static void DoAnsRevisionConstantReq(struct internal_frame *);
+static void DoAnsRevisionTRConstantSet(struct internal_frame *);
+static void DoAnsRevisionTRConstantReq(struct internal_frame *);
 static void DoAnsCalibrationNTCTableCal(struct internal_frame *);
 static void DoAnsCalibrationNTCTableReq(struct internal_frame *);
 static void DoAnsCalibrationNTCConstantSet(struct internal_frame *);
@@ -82,16 +83,20 @@ void response_from_internal(struct internal_frame *received)
 	case INTERNAL_CMD_RELAY_SET:
 		break;
 	case INTERNAL_CMD_REVISION_APPLY_SET:
-		DoAnsRevisionApplySet(received);
+	case INTERNAL_CMD_REVISION_APPLY_REQ:
+		handle_revision_applied(received);
 		break;
 	case INTERNAL_CMD_REVISION_CONSTANT_SET:
 		DoAnsRevisionConstantSet(received);
 		break;
-	case INTERNAL_CMD_REVISION_APPLY_REQ:
-		DoAnsRevisionApplyReq(received);
-		break;
 	case INTERNAL_CMD_REVISION_CONSTANT_REQ:
 		DoAnsRevisionConstantReq(received);
+		break;
+	case INTERNAL_CMD_REVISION_TR_CONST_SET:
+		DoAnsRevisionTRConstantSet(received);
+		break;
+	case INTERNAL_CMD_REVISION_TR_CONST_REQ:
+		DoAnsRevisionTRConstantReq(received);
 		break;
 	case INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET:
 		DoAnsCalibrationNTCConstantSet(received);
@@ -109,10 +114,10 @@ void response_from_internal(struct internal_frame *received)
 	case INTERNAL_CMD_THRESHOLD_SET:
 		handle_threshold(received);
 		break;
-	case INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_CAL:
+	case INTERNAL_CMD_CALIBRATION_NTC_TABLE_CAL:
 		DoAnsCalibrationNTCTableCal(received);
 		break;
-	case INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_REQ:
+	case INTERNAL_CMD_CALIBRATION_NTC_TABLE_REQ:
 		DoAnsCalibrationNTCTableReq(received);
 		break;
 	}
@@ -231,144 +236,144 @@ static void handle_threshold(struct internal_frame *msg)
 
 		memcpy(s->ntc.thresholds, &msg->thresholds, sizeof(float) * 32);
 
-		uint8_t thresholdData[130] = {0};
-		thresholdData[0] = msg->slot_id;
-		memcpy(&thresholdData[1], s->ntc.thresholds, sizeof(float) * 32);
-		send_to_external(CMD_WARNING_TEMP, OP_WARNING_TEMP_REQ,
-				thresholdData, 129, 132, 152);
+		struct external_thresholds data = {
+			.slot_id = msg->slot_id,
+		};
+		memcpy(data.values, s->ntc.thresholds, sizeof(float) * 32);
+
+		uint8_t option = (msg->cmd == INTERNAL_CMD_THRESHOLD_SET) ?
+			OP_WARNING_TEMP_SET : OP_WARNING_TEMP_REQ;
+		send_to_external(CMD_WARNING_TEMP, option, &data, 129, 132, 152);
 	}
 }
 
-static void DoAnsRevisionApplySet(struct internal_frame *msg)
+static void handle_revision_applied(struct internal_frame *msg)
 {
-	if (!msg)
-		return;
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		s->ntc.revision_applied = msg->revision_applied.v;
 
-	TestData.revisionApply[msg->slot_id] = msg->data[0];
+		struct external_revision_applied data = {
+			.slot_id = s->id,
+			.v = s->ntc.revision_applied,
+		};
 
-	static uint8_t revision_apply[2] = {0};
-	revision_apply[0] = msg->slot_id;
-	revision_apply[1] = TestData.revisionApply[msg->slot_id];
-	send_to_external(CMD_REVISION, OP_REVISION_APPLY_SET, revision_apply, 2, 12, 32);
-}
-
-static void DoAnsRevisionApplyReq(struct internal_frame *msg)
-{
-	if (!msg)
-		return;
-
-        TestData.revisionApply[msg->slot_id] = msg->data[0];
-
-	uint8_t data[2];
-	data[0] = msg->slot_id;
-	data[1] = TestData.revisionApply[msg->slot_id];
-
-	send_to_external(CMD_REVISION, OP_REVISION_APPLY_REQ, data, 2, 12, 32);
+		uint8_t option = (msg->cmd == INTERNAL_CMD_REVISION_APPLY_SET) ?
+			OP_REVISION_APPLY_SET : OP_REVISION_APPLY_REQ;
+		send_to_external(CMD_REVISION, option, &data, 2, 12, 32);
+	}
 }
 
 static void DoAnsRevisionConstantSet(struct internal_frame *msg)
 {
-	if (!msg)
-		return;
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		s->ntc.revision_const = msg->revision_const.v;
 
-        TestData.revisionConstant[msg->slot_id].UI8[0] = msg->data[0];
-        TestData.revisionConstant[msg->slot_id].UI8[1] = msg->data[1];
-        TestData.revisionConstant[msg->slot_id].UI8[2] = msg->data[2];
-        TestData.revisionConstant[msg->slot_id].UI8[3] = msg->data[3];
+		struct external_revision_const data = {
+			.slot_id = s->id,
+			.v = s->ntc.revision_const,
+		};
 
-	uint8_t data[5] = {0};
-	data[0] = msg->slot_id;
-	data[1] = TestData.revisionConstant[msg->slot_id].UI8[0];
-	data[2] = TestData.revisionConstant[msg->slot_id].UI8[1];
-	data[3] = TestData.revisionConstant[msg->slot_id].UI8[2];
-	data[4] = TestData.revisionConstant[msg->slot_id].UI8[3];
-	send_to_external(CMD_REVISION, OP_REVISION_CONSTANT_SET, data, 6, 12, 32);
+		send_to_external(CMD_REVISION, OP_REVISION_CONSTANT_SET, &data, 6, 12, 32);
+	}
 }
 
 static void DoAnsRevisionConstantReq(struct internal_frame *msg)
 {
-	if (!msg)
-		return;
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		s->ntc.revision_const = msg->revision_const.v;
 
-        TestData.revisionConstant[msg->slot_id].UI8[0] = msg->data[0];
-        TestData.revisionConstant[msg->slot_id].UI8[1] = msg->data[1];
-        TestData.revisionConstant[msg->slot_id].UI8[2] = msg->data[2];
-        TestData.revisionConstant[msg->slot_id].UI8[3] = msg->data[3];
+		struct external_revision_const data = {
+			.slot_id = s->id,
+			.v = s->ntc.revision_const,
+		};
 
-	uint8_t data[5];
-	data[0] = msg->slot_id;
-	data[1] = TestData.revisionConstant[msg->slot_id].UI8[0];
-	data[2] = TestData.revisionConstant[msg->slot_id].UI8[1];
-	data[3] = TestData.revisionConstant[msg->slot_id].UI8[2];
-	data[4] = TestData.revisionConstant[msg->slot_id].UI8[3];
-	send_to_external(CMD_REVISION, OP_REVISION_CONSTANT_REQ, data, 6, 12, 32);
+		send_to_external(CMD_REVISION, OP_REVISION_CONSTANT_REQ, &data, 6, 12, 32);
+	}
+}
+
+static void DoAnsRevisionTRConstantSet(struct internal_frame *msg)
+{
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		s->ntc.revision_tr1 = msg->revision_tr_const.r1;
+		s->ntc.revision_tr2 = msg->revision_tr_const.r2;
+
+		struct external_revision_tr_const data = {
+			.slot_id = s->id,
+			.r1 = s->ntc.revision_tr1,
+			.r2 = s->ntc.revision_tr2,
+		};
+
+		send_to_external(CMD_REVISION, OP_REVISION_TR_CONST_SET, &data, 9, 12, 32);
+	}
+}
+
+static void DoAnsRevisionTRConstantReq(struct internal_frame *msg)
+{
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		s->ntc.revision_tr1 = msg->revision_tr_const.r1;
+		s->ntc.revision_tr2 = msg->revision_tr_const.r2;
+
+		struct external_revision_tr_const data = {
+			.slot_id = s->id,
+			.r1 = s->ntc.revision_tr1,
+			.r2 = s->ntc.revision_tr2,
+		};
+
+		send_to_external(CMD_REVISION, OP_REVISION_TR_CONST_REQ, &data, 9, 12, 32);
+	}
 }
 
 static void DoAnsCalibrationNTCTableCal(struct internal_frame *msg)
 {
-	if (!msg)
-		return;
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		memcpy(s->ntc.calibration_tbl, msg->data, sizeof(float) * 32);
 
-        for (int i = 0; i < 32; i++) {
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[0] = msg->data[i * 4 + 0];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[1] = msg->data[i * 4 + 1];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[2] = msg->data[i * 4 + 2];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[3] = msg->data[i * 4 + 3];
-        }
-
-	uint8_t calData[130] = { 0 };
-	calData[0] = msg->slot_id;
-	memcpy((void *)&calData[1],
-		(void *)&TestData.ntcCalibrationTable[msg->slot_id][0].UI8[0], 128);
-	send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_CAL,
-			calData, 129, 132, 152);
-}
-
-static void DoAnsCalibrationNTCConstantSet(struct internal_frame *msg)
-{
-	if (!msg)
-		return;
-
-	TestData.ntcCalibrationConst.UI8[0] = msg->data[0];
-	TestData.ntcCalibrationConst.UI8[1] = msg->data[1];
-	TestData.ntcCalibrationConst.UI8[2] = msg->data[2];
-	TestData.ntcCalibrationConst.UI8[3] = msg->data[3];
-
-	send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_SET,
-			&TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
+		uint8_t calData[130] = { 0 };
+		calData[0] = s->id;
+		memcpy(&calData[1], s->ntc.calibration_tbl, 128);
+		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_CAL, calData, 129, 132, 152);
+	}
 }
 
 static void DoAnsCalibrationNTCTableReq(struct internal_frame *msg)
 {
-	if (!msg)
-		return;
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		memcpy(s->ntc.calibration_tbl, msg->data, sizeof(float) * 32);
 
-        for (int i = 0; i < 32; i++) {
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[0] = msg->data[i * 4 + 0];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[1] = msg->data[i * 4 + 1];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[2] = msg->data[i * 4 + 2];
-		TestData.ntcCalibrationTable[msg->slot_id][i].UI8[3] = msg->data[i * 4 + 3];
-        }
+		uint8_t calData[130] = { 0 };
+		calData[0] = s->id;
+		memcpy(&calData[1], s->ntc.calibration_tbl, 128);
+		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ, calData, 129, 132, 152);
+	}
+}
 
-	uint8_t data[130] = {0};
-	data[0] = msg->slot_id;
-	memcpy(&data[1], &TestData.ntcCalibrationTable[msg->slot_id][0].UI8[0], 128);
-	send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CON_TABLE_REQ,
-			data, 129, 132, 152);
+static void DoAnsCalibrationNTCConstantSet(struct internal_frame *msg)
+{
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		s->ntc.calibration_const = *((float *)&msg->data[0]);
+
+		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_SET,
+				&s->ntc.calibration_const, 4, 12, 32);
+	}
 }
 
 static void DoAnsCalibrationNTCConstantReq(struct internal_frame *msg)
 {
-	if (!msg)
-		return;
+	if (msg && msg->slot_id < MAX_SLOT_NUM) {
+		struct slot_s *s = &ctx.slots[msg->slot_id];
+		s->ntc.calibration_const = *((float *)&msg->data[0]);
 
-        TestData.ntcCalibrationConst.UI8[0] = msg->data[0];
-        TestData.ntcCalibrationConst.UI8[1] = msg->data[1];
-        TestData.ntcCalibrationConst.UI8[2] = msg->data[2];
-        TestData.ntcCalibrationConst.UI8[3] = msg->data[3];
-
-	send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ,
-			&TestData.ntcCalibrationConst.UI8[0], 4, 12, 32);
+		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_NTC_CONSTANT_REQ,
+				&s->ntc.calibration_const, 4, 12, 32);
+	}
 }
 
 
@@ -443,50 +448,57 @@ void DoRejectSlot(void)
 **********************************************************************
 **********************************************************************/
 
-void DoCalibrationNTCTableCal(uint8_t slotNumber)
+void request_to_internal__CALIBRATION_NTC_TABLE_CAL(struct slot_s *s)
 {
-	struct internal_frame data = {
-		.slot_id = slotNumber,
-		.cmd = INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_CAL,
-		.datalen = 4,
-		/* .data = &TestData.mainBoard[MBS_RTD].UI8[0], */
-        };
-	memcpy(data.data, &TestData.mainBoard[MBS_RTD].UI8[0], 4);
-        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
+	if (s && s->inserted) {
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_CALIBRATION_NTC_TABLE_CAL,
+			.datalen = sizeof(float),
+		};
+		*((float *)&frm.data[0]) = ctx.rtd.temperature;
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
+	}
 }
 
-void DoCalibrationNTCConstantSet(uint8_t slotNumber)
+void request_to_internal__CALIBRATION_NTC_TABLE_REQ(struct slot_s *s)
 {
-	struct internal_frame data = {
-		.slot_id = slotNumber,
-		.cmd = INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET,
-		.datalen = 4,
-		/* .data = &TestData.ntcCalibrationConst.UI8[0], */
-        };
-	memcpy(data.data, &TestData.ntcCalibrationConst.UI8[0], 4);
-        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
+	if (s && s->inserted) {
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_CALIBRATION_NTC_TABLE_REQ,
+			.datalen = 0,
+			.data = { 0 },
+		};
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
+	}
 }
 
-void DoCalibrationNTCTableReq(uint8_t slotNumber)
+void request_to_internal__CALIBRATION_NTC_CONST_SET(struct slot_s *s)
 {
-	struct internal_frame data = {
-		.slot_id = slotNumber,
-		.cmd = INTERNAL_CMD_CALIBRATION_NTC_CON_TABLE_REQ,
-		.datalen = 0,
-		.data = { 0 },
-        };
-        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
+	if (s && s->inserted) {
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET,
+			.datalen = 4,
+		};
+		*((float *)&frm.data[0]) = s->ntc.calibration_const;
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
+	}
 }
 
-void DoCalibrationNTCConstantReq(uint8_t slotNumber)
+
+void request_to_internal__CALIBRATION_NTC_CONST_REQ(struct slot_s *s)
 {
-	struct internal_frame data = {
-		.slot_id = slotNumber,
-		.cmd = INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ,
-		.datalen = 0,
-		.data = { 0 },
-        };
-        post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
+	if (s && s->inserted) {
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ,
+			.datalen = 0,
+			.data = { 0 },
+		};
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
+	}
 }
 
 void request_to_internal__THRESHOLD_SET(struct slot_s *slot,
@@ -559,49 +571,85 @@ void request_to_internal__TEMPERATURE_STATE_REQ(struct slot_s *slot)
 		.slot_id = s->id,
 		.cmd = INTERNAL_CMD_REVISION_APPLY_SET,
 		.datalen = 1,
-		.revision_apply.enabled = mode,
+		.revision_applied.v = mode,
 	};
 	post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
 }
 
 void request_to_internal__REVISION_APPLY_REQ(struct slot_s *s)
 {
-	if (!s) return;
+	if (s && s->inserted) {
+		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
-
-	struct internal_frame frm = {
-		.slot_id = s->id,
-		.cmd = INTERNAL_CMD_REVISION_APPLY_REQ,
-		.datalen = 0,
-		.data = { 0 },
-	};
-	post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_REVISION_APPLY_REQ,
+			.datalen = 0,
+			.data = { 0 },
+		};
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
+	}
 }
 
-void DoRevisionConstantSet(uint8_t slot_id)
+void request_to_internal__REVISION_CONST_SET(struct slot_s *s)
 {
-	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+	if (s && s->inserted) {
+		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-	struct internal_frame data = {
-		.slot_id = slot_id,
-		.cmd = INTERNAL_CMD_REVISION_CONSTANT_SET,
-		.datalen = 4,
-	};
-	memcpy(data.data, &TestData.revisionConstant[slot_id].UI8, 4);
-	post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_REVISION_CONSTANT_SET,
+			.datalen = 4,
+		};
+		*((float *) &frm.data[0]) = s->ntc.revision_const;
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, frm.datalen + 3);
+	}
 }
 
 
-void DoRevisionConstantReq(uint8_t slot_id)
+void request_to_internal__REVISION_CONST_REQ(struct slot_s *s)
 {
-	HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+	if (s && s->inserted) {
+		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 
-	struct internal_frame data = {
-		.slot_id = slot_id,
-		.cmd = INTERNAL_CMD_REVISION_CONSTANT_REQ,
-		.datalen = 0,
-		.data = { 0 },
-	};
-	post_internal_job(INTERNAL_JOB_TYPE_TO, &data, sizeof(data));
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_REVISION_CONSTANT_REQ,
+			.datalen = 0,
+			.data = { 0 },
+		};
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, frm.datalen + 3);
+	}
+}
+
+void request_to_internal__REVISION_TR_CONST_SET(struct slot_s *s, float r1, float r2)
+{
+	if (s && s->inserted) {
+		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_REVISION_TR_CONST_SET,
+			.datalen = 8,
+		};
+		frm.revision_tr_const.r1 = r1;
+		frm.revision_tr_const.r2 = r2;
+
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, 3 + frm.datalen);
+	}
+}
+
+void request_to_internal__REVISION_TR_CONST_REQ(struct slot_s *s)
+{
+	if (s && s->inserted) {
+		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
+
+		struct internal_frame frm = {
+			.slot_id = s->id,
+			.cmd = INTERNAL_CMD_REVISION_TR_CONST_REQ,
+			.datalen = 0,
+			.data = { 0 },
+		};
+		post_internal_job(INTERNAL_JOB_TYPE_TO, &frm, frm.datalen + 3);
+	}
 }

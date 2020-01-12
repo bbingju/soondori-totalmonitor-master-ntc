@@ -42,12 +42,12 @@ typedef __PACKED_UNION {
 *       Test Data
 * Main board 와 Sensor board 에서 읽어낸 데이터 저장 공간
 **********************************************************************/
-typedef enum {
-    MBS_BATTERY = 0,
-    MBS_RTD,
-    MBS_TEMP,
-    MBS_HUMI
-} MAINBOARDSENSOR;
+/* typedef enum { */
+/*     MBS_BATTERY = 0, */
+/*     MBS_RTD, */
+/*     MBS_TEMP, */
+/*     MBS_HUMI */
+/* } MAINBOARDSENSOR; */
 
 typedef enum {
     DT_FLOAT = 0,
@@ -78,34 +78,19 @@ typedef enum {
 /* } LED_DIPLAY_MODE; */
 
 typedef __PACKED_STRUCT {
-    uni4Byte mainBoard[4];    // MAINBOARDSENSOR 사용 해서 선택
-    uint32_t mainBoardADC[4]; // main board 내부 센서 adc 값
-    // float   temperatures[4][32]; // adc 완료후 온도값으로
-    /* 환산된 값, 0 : 피대상물 온도, 1 : 환경온도 , 0~15채널 */
-    /* uni4Byte temperature[4][32]; // adc 완료후 온도값으로 환산된 값, 0 : */
-                                 // 피대상물 온도, 1 : 환경온도 , 0~15채널
-    uni4Byte adcMidValue[4][32]; // 컨버팅 완료된 ADC 값중 중간 값,  0 :
+    /* uni4Byte mainBoard[4];    // MAINBOARDSENSOR 사용 해서 선택 */
+    /* uint32_t mainBoardADC[4]; // main board 내부 센서 adc 값 */
+    //uni4Byte adcMidValue[4][32]; // 컨버팅 완료된 ADC 값중 중간 값,  0 :
                                  // 피대상물 온도, 1 : 환경온도, 0~15채널
-    /* float thresholds[4][32];		/\* 경고 온도 저장 *\/ */
-    /* LED_DIPLAY_MODE sensorState[4][32]; // 센서 상태 저장용 */
-    uni4Byte ntcCalibrationTable[4][32]; // NTC 교정상수 테이블, RTD - NTC 로
+	//uni4Byte ntcCalibrationTable[4][32]; // NTC 교정상수 테이블, RTD - NTC 로
                                          // 계산되는 상수
-    uni4Byte rtdCalibrationConst; // RTD 교정상수
-    uni4Byte ntcCalibrationConst; // NTC 증감 상수, NTC board 에서 NTC +
+    /* uni4Byte rtdCalibrationConst; // RTD 교정상수 */
+    //uni4Byte ntcCalibrationConst; // NTC 증감 상수, NTC board 에서 NTC +
                                   // ntcCalibration + ntcCalibrationConst 해서
                                   // NTC 값이 생성됨
-    uint8_t revisionApply[4]; // 보정 적용 상태, 1: 표면온도모드(보정 적용) 0 :
-                              // 측정온도 모드(보정 미적용)
-    uni4Byte revisionConstant[4]; // 보정용 접촉상수 저장
 } TEST_DATA;
 
 extern TEST_DATA TestData;
-
-typedef struct {
-    uint8_t readTemp; //응답이 왔는지 확인 하는 플래그
-} UPDATA_FLAG;
-
-extern UPDATA_FLAG Updata_Flag;
 
 /*********************************************************************
 *       System Properties

@@ -77,7 +77,7 @@
 HAL_StatusTypeDef WriteFlash(uint32_t Address, uint32_t data, uint32_t* errorcode);
 __IO uint32_t ReadFlash(uint32_t Address);
 HAL_StatusTypeDef EraseFlash(uint32_t startAdd, uint32_t endAdd);
-uint32_t doFlashWriteRevision(void);
+uint32_t doFlashWriteRevision(float value);
 uint32_t GetSector(uint32_t Address);
 
 #endif

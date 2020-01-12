@@ -196,30 +196,18 @@ int main(void)
   }
 
   SysProperties.displayMode = DPM_NORMAL;
-  /* for (int j = 0; j < 4; j++) */
-  /* { */
-  /*     for (int i = 0; i < 32; i++) */
-  /*     { */
-  /*         TestData.temperatures[j][i] = 0.f; */
-  /*         TestData.sensorState[j][i] = LDM_DONOT_CONNECT; */
-  /*     } */
-  /* } */
-
-  /* INIT_SLOT_PROPERTIES(SysProperties.slots, MAX_SLOT_NUM); */
 
   SysProperties.interval_ms = 1000;
   SysProperties.start_flag = FALSE;
 
   read = ReadFlash(FLASH_SAVE_CHK);
 
-  if(read != FLASH_SAVE_FLAG)		//플래시에 기록이 없을경우
-  {
-      TestData.rtdCalibrationConst.Float = (float)0;
-      doFlashWriteRevision();
+  if (read != FLASH_SAVE_FLAG) { // 플래시에 기록이 없을경우
+	  ctx.rtd.calibration_const = 0.f;
+	  doFlashWriteRevision(ctx.rtd.calibration_const);
   }
-  else		//Flash 에 저장된 값이 揚獵? 경우
-  {
-      TestData.rtdCalibrationConst.UI32= ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
+  else {			// Flash 에 저장된 값이 揚獵? 경우
+	  ctx.rtd.calibration_const = ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
   }
 
   HAL_GPIO_WritePin(SLAVE_CS0_GPIO_Port, SLAVE_CS0_Pin, GPIO_PIN_RESET);

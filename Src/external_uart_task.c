@@ -32,10 +32,10 @@ static void CmdRevisionConstantReq(struct external_frame_rx *);
 static void CmdRevisionTRConstantSet(struct external_frame_rx *);
 static void CmdRevisionTRConstantReq(struct external_frame_rx *);
 static void CmdCalibrationRTDConstSet(struct external_frame_rx *);
-static void CmdCalibrationNTCTableCal(struct external_frame_rx *);
-static void CmdCalibrationNTCConstantSet(struct external_frame_rx *);
 static void CmdCalibrationRTDConstReq(struct external_frame_rx *);
+static void CmdCalibrationNTCTableCal(struct external_frame_rx *);
 static void CmdCalibrationNTCTableReq(struct external_frame_rx *);
+static void CmdCalibrationNTCConstantSet(struct external_frame_rx *);
 static void CmdCalibrationNTCConstantReq(struct external_frame_rx *);
 static void doSetTime(struct external_frame_rx *);
 static void doGetTime(struct external_frame_rx *);
@@ -136,11 +136,11 @@ void receive_from_external(struct external_frame_rx *received)
 		case OP_REVISION_APPLY_SET:
 			CmdRevisionApplySet(received);
 			break;
-		case OP_REVISION_CONSTANT_SET:
-			CmdRevisionConstantSet(received);
-			break;
 		case OP_REVISION_APPLY_REQ:
 			CmdRevisionApplyReq(received);
+			break;
+		case OP_REVISION_CONSTANT_SET:
+			CmdRevisionConstantSet(received);
 			break;
 		case OP_REVISION_CONSTANT_REQ:
 			CmdRevisionConstantReq(received);
@@ -238,7 +238,7 @@ void external_rx_task(void const * argument)
 }
 
 int send_to_external(uint8_t cmd, uint8_t option, void *data,
-			uint16_t data_len, uint16_t data_padding_len, uint16_t buffer_len)
+		uint16_t data_len, uint16_t data_padding_len, uint16_t buffer_len)
 {
 	static struct external_frame_tx ext_frm_tx = { 0 };
 
@@ -462,40 +462,38 @@ void doSaveIntervalTime(struct external_frame_rx *msg) //샘플레이트
 
 static void CmdWarningTempSet(struct external_frame_rx *msg)
 {
-	if (msg) {
-		uint8_t id = msg->warning_temp_set.slot_id;
-		uint8_t channel = msg->warning_temp_set.channel;
-		float value = msg->warning_temp_set.value;
+	if (!msg) return;
 
-		if (id == 0xFF) {
-			/* ctx.hard_job_processing = true; */
-			struct slot_s *s;
-			for (int i = 0; i < MAX_SLOT_NUM; i++) {
-				s = &ctx.slots[i];
-				request_to_internal__THRESHOLD_SET(s, channel, value);
-				osDelay(1);
-			}
-		} else {
-			request_to_internal__THRESHOLD_SET(&ctx.slots[id], channel, value);
+	uint8_t slot_id = msg->warning_temp_set.slot_id;
+	uint8_t channel = msg->warning_temp_set.channel;
+	float value = msg->warning_temp_set.value;
+
+	if (slot_id == 0xFF) {
+		/* ctx.hard_job_processing = true; */
+		FOREACH(struct slot_s *s, ctx.slots) {
+			request_to_internal__THRESHOLD_SET(s, channel, value);
+			osDelay(1);
 		}
+	} else {
+		struct slot_s *s = &ctx.slots[slot_id];
+		request_to_internal__THRESHOLD_SET(s, channel, value);
 	}
 }
 
 static void CmdWarningTempReq(struct external_frame_rx *msg)
 {
-	if (msg) {
-		uint8_t slot_id = msg->data[0];
+	if (!msg) return;
 
-		if (slot_id == 0xFF) {
-			struct slot_s *s;
-			for (int i = 0; i < MAX_SLOT_NUM; i++) {
-				s = &ctx.slots[i];
-				request_to_internal__THRESHOLD_REQ(s);
-				osDelay(1);
-			}
-		} else {
-			request_to_internal__THRESHOLD_REQ(&ctx.slots[slot_id]);
+	uint8_t slot_id = msg->data[0];
+
+	if (slot_id == 0xFF) {
+		FOREACH(struct slot_s *s, ctx.slots) {
+			request_to_internal__THRESHOLD_REQ(s);
+			osDelay(1);
 		}
+	} else {
+		struct slot_s *s = &ctx.slots[slot_id];
+		request_to_internal__THRESHOLD_REQ(s);
 	}
 }
 
@@ -510,15 +508,11 @@ static void CmdRevisionApplySet(struct external_frame_rx *msg)
 				request_to_internal__REVISION_APPLY_SET(s, enabled);
 				osDelay(1);
 			}
-			/* struct slot_s *s; */
-			/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-			/* 	s = &ctx.slots[i]; */
-			/* 	request_to_internal__REVISION_APPLY_SET(s->id, enabled); */
-			/* 	osDelay(1); */
-			/* } */
 		} else {
-			struct slot_s *s = &ctx.slots[slot_id];
-			request_to_internal__REVISION_APPLY_SET(s, enabled);
+			if (slot_id < MAX_SLOT_NUM) {
+				struct slot_s *s = &ctx.slots[slot_id];
+				request_to_internal__REVISION_APPLY_SET(s, enabled);
+			}
 		}
 	}
 }
@@ -533,15 +527,11 @@ static void CmdRevisionApplyReq(struct external_frame_rx *msg)
 				request_to_internal__REVISION_APPLY_REQ(s);
 				osDelay(1);
 			}
-			/* struct slot_s *s; */
-			/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-			/* 	s = &ctx.slots[i]; */
-			/* 	request_to_internal__REVISION_APPLY_REQ(s->id); */
-			/* 	osDelay(1); */
-			/* } */
 		} else {
-			struct slot_s *s = &ctx.slots[slot_id];
-			request_to_internal__REVISION_APPLY_REQ(s);
+			if (slot_id < MAX_SLOT_NUM) {
+				struct slot_s *s = &ctx.slots[slot_id];
+				request_to_internal__REVISION_APPLY_REQ(s);
+			}
 		}
 	}
 }
@@ -549,110 +539,194 @@ static void CmdRevisionApplyReq(struct external_frame_rx *msg)
 
 static void CmdRevisionConstantSet(struct external_frame_rx *msg)
 {
-	uint8_t id = msg->data[0];
+	if (msg) {
+		uint8_t slot_id = msg->data[0];
 
-	TestData.revisionConstant[id].UI8[0] = msg->data[1]; //Rx485Data[ 8];
-	TestData.revisionConstant[id].UI8[1] = msg->data[2]; //Rx485Data[ 9];
-	TestData.revisionConstant[id].UI8[2] = msg->data[3]; //Rx485Data[10];
-	TestData.revisionConstant[id].UI8[3] = msg->data[4]; //Rx485Data[11];
-
-	DoRevisionConstantSet(id/* Rx485Data[7] */);
+		if (slot_id == 0xFF) {
+			FOREACH(struct slot_s *s, ctx.slots) {
+				s->ntc.revision_const = *((float *) &msg->data[1]);
+				request_to_internal__REVISION_CONST_SET(s);
+				osDelay(1);
+			}
+		} else {
+			if (slot_id < MAX_SLOT_NUM) {
+				struct slot_s *s = &ctx.slots[slot_id];
+				s->ntc.revision_const = *((float *) &msg->data[1]);
+				request_to_internal__REVISION_CONST_SET(s);
+			}
+		}
+	}
 }
 
 static void CmdRevisionConstantReq(struct external_frame_rx *msg)
 {
-	DoRevisionConstantReq(msg->data[0]/* Rx485Data[7] */);
+	if (msg) {
+		uint8_t slot_id = msg->data[0];
+
+		if (slot_id == 0xFF) {
+			FOREACH(struct slot_s *s, ctx.slots) {
+				request_to_internal__REVISION_CONST_REQ(s);
+				osDelay(1);
+			}
+		} else {
+			if (slot_id < MAX_SLOT_NUM) {
+				struct slot_s *s = &ctx.slots[slot_id];
+				request_to_internal__REVISION_CONST_REQ(s);
+			}
+		}
+	}
 }
 
 static void CmdRevisionTRConstantSet(struct external_frame_rx *msg)
 {
+	if (msg) {
+		uint8_t slot_id = msg->data[0];
+		float r1 = *((float *)&msg->data[1]);
+		float r2 = *((float *)&msg->data[5]);
+
+		if (slot_id == 0xFF) {
+			FOREACH(struct slot_s *s, ctx.slots) {
+				request_to_internal__REVISION_TR_CONST_SET(s, r1, r2);
+				osDelay(1);
+			}
+		} else {
+			if (slot_id < MAX_SLOT_NUM) {
+				struct slot_s *s = &ctx.slots[slot_id];
+				request_to_internal__REVISION_TR_CONST_SET(s, r1, r2);
+			}
+		}
+	}
 }
 
 static void CmdRevisionTRConstantReq(struct external_frame_rx *msg)
 {
+	if (msg) {
+		uint8_t slot_id = msg->data[0];
+
+		if (slot_id == 0xFF) {
+			FOREACH(struct slot_s *s, ctx.slots) {
+				request_to_internal__REVISION_TR_CONST_REQ(s);
+				osDelay(1);
+			}
+		} else {
+			if (slot_id < MAX_SLOT_NUM) {
+				struct slot_s *s = &ctx.slots[slot_id];
+				request_to_internal__REVISION_TR_CONST_REQ(s);
+			}
+		}
+	}
 }
 
 static void CmdCalibrationRTDConstSet(struct external_frame_rx *msg)
 {
-	uni4Byte readConst;
-	uint8_t i = 0;
+	if (!msg) return;
 
-	TestData.rtdCalibrationConst.UI8[0] = msg->data[0]; // Rx485Data[ 7];
-	TestData.rtdCalibrationConst.UI8[1] = msg->data[1]; // Rx485Data[ 8];
-	TestData.rtdCalibrationConst.UI8[2] = msg->data[2]; // Rx485Data[ 9];
-	TestData.rtdCalibrationConst.UI8[3] = msg->data[3]; // Rx485Data[10];
+	uint8_t count = 0;
 
-	readConst.UI32 = ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
+	ctx.rtd.calibration_const = msg->rtd_calibration_const.v;
 
-	if (TestData.rtdCalibrationConst.Float != readConst.Float) {
+	float from_flash = ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
+
+	if (ctx.rtd.calibration_const != from_flash) {
 		do {
-			doFlashWriteRevision();
-			readConst.UI32 = ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
-			i++;
-			if (i > 10)
+			doFlashWriteRevision(ctx.rtd.calibration_const);
+			if (++count > 10)
 				break;
-		} while (TestData.rtdCalibrationConst.Float != readConst.Float);
+			from_flash = ReadFlash(FLASH_RTD_CALIBRATION_CONSTAN);
+		} while (ctx.rtd.calibration_const != from_flash);
 	}
 
-	if (1 > 10) {
-		i = 0xFF;
-		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
-				&i, 1, 12, 32);
-	} else {
-		send_to_external(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
-				&readConst.UI8[0], 4, 12, 32);
+	if (count > 10) {
+		count = 0xFF;
+		send_to_external(msg->cmd, msg->option, &count, 1, 12, 32);
+		return;
 	}
 
-	/* if(i > 10)		//기록 실패 */
-	/* { */
-	/*     i = 0xFF; */
-	/*     doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION,
-	 * OP_CALIBRATION_RTD_CONSTANT_SET, &i, 1, 12, 32); */
-	/* } */
-	/* else			//기록 성공 */
-	/* { */
-	/*     doMakeSend485Data(tx485DataDMA, CMD_CALIBRATION,
-	 * OP_CALIBRATION_RTD_CONSTANT_SET, &readConst.UI8[0], 4, 12, 32); */
-	/* } */
-	/* SendUart485String(tx485DataDMA, 32); */
-}
-
-static void CmdCalibrationNTCTableCal(struct external_frame_rx *msg)
-{
-	DoCalibrationNTCTableCal(msg->data[0]/* Rx485Data[7] */);	//slot 번호 전달
-}
-
-static void CmdCalibrationNTCConstantSet(struct external_frame_rx *msg)
-{
-	TestData.ntcCalibrationConst.UI8[0] = msg->data[1]; //Rx485Data[ 8];
-	TestData.ntcCalibrationConst.UI8[1] = msg->data[2]; //Rx485Data[ 9];
-	TestData.ntcCalibrationConst.UI8[2] = msg->data[3]; //Rx485Data[10];
-	TestData.ntcCalibrationConst.UI8[3] = msg->data[4]; //Rx485Data[11];
-
-	DoCalibrationNTCConstantSet(msg->data[0]/* Rx485Data[ 7] */);
+	send_to_external(msg->cmd, msg->option, &ctx.rtd.calibration_const, 4, 12, 32);
 }
 
 static void CmdCalibrationRTDConstReq(struct external_frame_rx *msg)
 {
-	send_to_external(CMD_CALIBRATION, OP_CALIBRATION_RTD_CONSTANT_SET,
-			&TestData.rtdCalibrationConst.UI8[0], 4, 12, 32);
+	if (!msg) return;
+	send_to_external(msg->cmd, msg->option, &ctx.rtd.calibration_const, 4, 12, 32);
+}
+
+
+static void CmdCalibrationNTCTableCal(struct external_frame_rx *msg)
+{
+	if (!msg) return;
+
+	uint8_t slot_id = msg->data[0];
+
+	if (slot_id == 0xFF) {
+		FOREACH(struct slot_s *s, ctx.slots) {
+			request_to_internal__CALIBRATION_NTC_TABLE_CAL(s);
+			osDelay(1);
+		}
+	} else {
+		if (slot_id < MAX_SLOT_NUM) {
+			struct slot_s *s = &ctx.slots[slot_id];
+			request_to_internal__CALIBRATION_NTC_TABLE_CAL(s);
+		}
+	}
 }
 
 static void CmdCalibrationNTCTableReq(struct external_frame_rx *msg)
 {
-	uint8_t id = msg->data[0];
-	if (id >= 0 && id < 4) {
-		struct slot_s *slot = &ctx.slots[id];
-		if (slot->inserted)
-			DoCalibrationNTCTableReq(id); //slot 번호 전달
-		/* DoCalibrationNTCTableReq(Rx485Data[7]); //slot 번호 전달 */
+	if (!msg) return;
+
+	uint8_t slot_id = msg->data[0];
+
+	if (slot_id == 0xFF) {
+		FOREACH(struct slot_s *s, ctx.slots) {
+			request_to_internal__CALIBRATION_NTC_TABLE_REQ(s);
+			osDelay(1);
+		}
+	} else {
+		if (slot_id < MAX_SLOT_NUM) {
+			struct slot_s *s = &ctx.slots[slot_id];
+			request_to_internal__CALIBRATION_NTC_TABLE_REQ(s);
+		}
 	}
 }
 
+static void CmdCalibrationNTCConstantSet(struct external_frame_rx *msg)
+{
+	if (!msg) return;
+
+	uint8_t slot_id = msg->data[0];
+
+	if (slot_id == 0xFF) {
+		FOREACH(struct slot_s *s, ctx.slots) {
+			request_to_internal__CALIBRATION_NTC_CONST_SET(s);
+			osDelay(1);
+		}
+	} else {
+		if (slot_id < MAX_SLOT_NUM) {
+			struct slot_s *s = &ctx.slots[slot_id];
+			request_to_internal__CALIBRATION_NTC_CONST_SET(s);
+		}
+	}
+}
+
+
 static void CmdCalibrationNTCConstantReq(struct external_frame_rx *msg)
 {
-	uint8_t id = msg->data[0];
-	DoCalibrationNTCConstantReq(id); //slot 번호 전달
+	if (!msg) return;
+
+	uint8_t slot_id = msg->data[0];
+
+	if (slot_id == 0xFF) {
+		FOREACH(struct slot_s *s, ctx.slots) {
+			request_to_internal__CALIBRATION_NTC_CONST_REQ(s);
+			osDelay(1);
+		}
+	} else {
+		if (slot_id < MAX_SLOT_NUM) {
+			struct slot_s *s = &ctx.slots[slot_id];
+			request_to_internal__CALIBRATION_NTC_CONST_REQ(s);
+		}
+	}
 }
 
 static void doSetTime(struct external_frame_rx *msg)

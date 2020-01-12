@@ -181,9 +181,13 @@ static void send_to_external__BOARD_INFO()
 {
 	struct external_board_info info = {
 		.self_id = 0, /* 부모 ID (MCU Board ID는 0으로 일단 고정) */
+		.battery = ctx.battery,
+		.rtd = ctx.rtd.temperature,
+		.temperature = ctx.temperature,
+		.humidity = ctx.humidity,
 		.sd_state = sdValue.sdState,
 	};
-	memcpy(info.values, &TestData.mainBoard[MBS_BATTERY].UI8[0], 16);
+	/* memcpy(info.values, &TestData.mainBoard[MBS_BATTERY].UI8[0], 16); */
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_MAIN_INFO, &info, sizeof(info), 32, 52);
 }
 
@@ -197,7 +201,7 @@ static void send_to_external__SLOT_INFO(struct slot_s *s)
 
 	info.slot_id = s->id;
 	info.slot_type = s->type;
-	info.revision_applied = TestData.revisionApply[s->id];
+	info.revision_applied = s->ntc.revision_applied;
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &info, sizeof(info), 32, 52);
 }
 

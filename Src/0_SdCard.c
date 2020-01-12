@@ -353,98 +353,97 @@ void DoWriteFileHeader(void)
 *	DoDataWrite
 *	테스트 정보를 파일에 이어 쓰기 한다.
 **********************************************************************/
-void DoDataWrite(void)
-{
-    uint8_t i = 0;
-    uint8_t sensorCount = 0;
-    uint16_t writeLen = 0;
-    UINT retCount;
-    FRESULT res;
-    // FSIZE_t size;
+/* void DoDataWrite(void) */
+/* { */
+/*     uint8_t i = 0; */
+/*     uint8_t sensorCount = 0; */
+/*     uint16_t writeLen = 0; */
+/*     UINT retCount; */
+/*     FRESULT res; */
+/*     // FSIZE_t size; */
 
-    //메모리 초기화
-    memset(wData, 0x00, sizeof(wData));
+/*     //메모리 초기화 */
+/*     memset(wData, 0x00, sizeof(wData)); */
 
-    //시간
-    wData[0] = SysTime.Date.Year;
-    wData[1] = SysTime.Date.Month;
-    wData[2] = SysTime.Date.Date;
-    wData[3] = SysTime.Time.Hours;
-    wData[4] = SysTime.Time.Minutes;
-    wData[5] = SysTime.Time.Seconds;
-    wData[6] = (uint8_t)((SysTime.Time.SubSeconds & 0x0000FF00) >> 8);
-    wData[7] = (uint8_t)(SysTime.Time.SubSeconds & 0x000000FF);
+/*     //시간 */
+/*     wData[0] = SysTime.Date.Year; */
+/*     wData[1] = SysTime.Date.Month; */
+/*     wData[2] = SysTime.Date.Date; */
+/*     wData[3] = SysTime.Time.Hours; */
+/*     wData[4] = SysTime.Time.Minutes; */
+/*     wData[5] = SysTime.Time.Seconds; */
+/*     wData[6] = (uint8_t)((SysTime.Time.SubSeconds & 0x0000FF00) >> 8); */
+/*     wData[7] = (uint8_t)(SysTime.Time.SubSeconds & 0x000000FF); */
 
-    //채널
-    FOREACH(struct slot_s *s, ctx.slots) {
-	    for (int i = 0; i < 16; i++) {
-		    if (s->ntc.channel_states[i] != CHANNEL_STATE_DISCONNECTED) {
-			    wData[34 + (sensorCount * 6)] = s->id * 16 + i; // 채널 번호
-			    wData[35 + (sensorCount * 6)] = s->ntc.channel_states[i]; // 센서 상태
-			    *((float *)&wData[36 + (sensorCount * 6)]) = s->ntc.temperatures[i]; // 센서값 저장
-			    sensorCount++; // 사용 채널수 확인
-		    }
-	    }
-    }
-    /* for (int j = 0; j < 4; j++) { */
-    /*     for (int i = 0; i < 16; i++) { */
-    /*         if (TestData.sensorState[j][i] != LDM_DONOT_CONNECT) { */
-    /*             wData[34 + (sensorCount * 6)] = j * 16 + i; // 채널 번호 */
-    /*             wData[35 + (sensorCount * 6)] = */
-    /*                 TestData.sensorState[j][i]; // 센서 상태 */
-    /*             memcpy(&wData[36 + (sensorCount * 6)], */
-    /*                    &TestData.temperatures[j][i], 4); // 센서값 저장 */
-    /*             sensorCount++; // 사용 채널수 확인 */
-    /*         } */
-    /*     } */
-    /* } */
+/*     //채널 */
+/*     FOREACH(struct slot_s *s, ctx.slots) { */
+/* 	    for (int i = 0; i < 16; i++) { */
+/* 		    if (s->ntc.channel_states[i] != CHANNEL_STATE_DISCONNECTED) { */
+/* 			    wData[34 + (sensorCount * 6)] = s->id * 16 + i; // 채널 번호 */
+/* 			    wData[35 + (sensorCount * 6)] = s->ntc.channel_states[i]; // 센서 상태 */
+/* 			    *((float *)&wData[36 + (sensorCount * 6)]) = s->ntc.temperatures[i]; // 센서값 저장 */
+/* 			    sensorCount++; // 사용 채널수 확인 */
+/* 		    } */
+/* 	    } */
+/*     } */
+/*     /\* for (int j = 0; j < 4; j++) { *\/ */
+/*     /\*     for (int i = 0; i < 16; i++) { *\/ */
+/*     /\*         if (TestData.sensorState[j][i] != LDM_DONOT_CONNECT) { *\/ */
+/*     /\*             wData[34 + (sensorCount * 6)] = j * 16 + i; // 채널 번호 *\/ */
+/*     /\*             wData[35 + (sensorCount * 6)] = *\/ */
+/*     /\*                 TestData.sensorState[j][i]; // 센서 상태 *\/ */
+/*     /\*             memcpy(&wData[36 + (sensorCount * 6)], *\/ */
+/*     /\*                    &TestData.temperatures[j][i], 4); // 센서값 저장 *\/ */
+/*     /\*             sensorCount++; // 사용 채널수 확인 *\/ */
+/*     /\*         } *\/ */
+/*     /\*     } *\/ */
+/*     /\* } *\/ */
 
-    if (sensorCount == 0) //센서가 모두 연결 안되있을때는 통과
-    {
-        return;
-    }
+/*     if (sensorCount == 0) //센서가 모두 연결 안되있을때는 통과 */
+/*     { */
+/*         return; */
+/*     } */
 
-    wData[8] = sensorCount;
+/*     wData[8] = sensorCount; */
 
-    //보드 센서 복사
-    for (i = 0; i < 4; i++) {
-        wData[10 + (i * 6)] = MCU_BOARD_BATTERY + i; //채널 번호, 0xEB ~ 0xEE
-        wData[11 + (i * 6)] = 0x00; //보드 센서의 상태값은 없음.
-        memcpy(&wData[12 + (i * 6)], &TestData.mainBoard[i].UI8[0],
-               4); //센서값 저장
-    }
+/*     //보드 센서 복사 */
+/*     for (i = 0; i < 4; i++) { */
+/*         wData[10 + (i * 6)] = MCU_BOARD_BATTERY + i; //채널 번호, 0xEB ~ 0xEE */
+/*         wData[11 + (i * 6)] = 0x00; //보드 센서의 상태값은 없음. */
+/*         memcpy(&wData[12 + (i * 6)], &TestData.mainBoard[i].UI8[0], 4); //센서값 저장 */
+/*     } */
 
-    res = f_lseek(&sdValue.fileObject, f_size(&sdValue.fileObject));
-    if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
-        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
-        return;
-    } else {
-        sdValue.sdState = SCS_OK;
-    }
+/*     res = f_lseek(&sdValue.fileObject, f_size(&sdValue.fileObject)); */
+/*     if (res != FR_OK) { */
+/*         sdValue.sdState = SCS_SEEK_ERROR; */
+/*         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, */
+/*                                (uint8_t *)sdValue.sdState, 1, 12, 32); */
+/*         return; */
+/*     } else { */
+/*         sdValue.sdState = SCS_OK; */
+/*     } */
 
-    writeLen = (sensorCount * 6) + 34;
-    res = f_write(&sdValue.fileObject, &wData[0], writeLen, &retCount);
-    if (res != FR_OK) {
-        sdValue.sdState = SCS_WRITE_ERROR;
-        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
-        return;
-    } else {
-        sdValue.sdState = SCS_OK;
-    }
+/*     writeLen = (sensorCount * 6) + 34; */
+/*     res = f_write(&sdValue.fileObject, &wData[0], writeLen, &retCount); */
+/*     if (res != FR_OK) { */
+/*         sdValue.sdState = SCS_WRITE_ERROR; */
+/*         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, */
+/*                                (uint8_t *)sdValue.sdState, 1, 12, 32); */
+/*         return; */
+/*     } else { */
+/*         sdValue.sdState = SCS_OK; */
+/*     } */
 
-    res = f_sync(&sdValue.fileObject);
-    if (res != FR_OK) {
-        sdValue.sdState = SCS_SYNC_ERROR;
-        send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
-        return;
-    } else {
-        sdValue.sdState = SCS_OK;
-    }
-}
+/*     res = f_sync(&sdValue.fileObject); */
+/*     if (res != FR_OK) { */
+/*         sdValue.sdState = SCS_SYNC_ERROR; */
+/*         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, */
+/*                                (uint8_t *)sdValue.sdState, 1, 12, 32); */
+/*         return; */
+/*     } else { */
+/*         sdValue.sdState = SCS_OK; */
+/*     } */
+/* } */
 
 /*********************************************************************
 *	scan_files
