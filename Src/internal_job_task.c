@@ -49,6 +49,9 @@ int post_internal_job(INTERNAL_JOB_TYPE_E type, void *data, size_t datalen)
 void internal_job_task(void const *arg)
 {
 	internal_job_q_id = osMailCreate(osMailQ(internal_job_q), NULL);
+	if (!internal_job_q_id) {
+		DBG_LOG("%s: osMailCreate error\r\n", __func__);
+	}
 	transaction_completed = 1;
 	transaction_timeout = osKernelSysTick();
 
@@ -79,8 +82,8 @@ static void request_to_internal(struct internal_frame *frm)
 	frame_size = fill_internal_frame(buffer, frm->slot_id, frm->cmd,
 					frm->datalen, frm->data);
 
-	DBG_LOG("int TX slot %d: %s - (datalen: %d) \n",
-		frm->slot_id, int_cmd_str(frm->cmd), frm->datalen);
+	/* DBG_LOG("int TX slot %d: %s - (datalen: %d) \n", */
+	/* 	frm->slot_id, int_cmd_str(frm->cmd), frm->datalen); */
 	/* DBG_DUMP(buffer, frame_size); */
 
 	if (int_tx_completed && transaction_completed) {

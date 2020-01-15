@@ -222,7 +222,7 @@ int fill_external_tx_frame(uint8_t *buffer, uint8_t cmd, uint8_t option,
 		offset += datalen;
 	}
 
-	*((uint16_t *)offset) = CRC16_Make(buffer, datalen + 20 - 4);
+	*((uint16_t *)offset) = CRC16_Make(buffer + 1, datalen + 20 - 4);
 	/* *((uint16_t *)offset) = crc16_ccitt(buffer + 1, 3 + datalen); */
 	offset += 2;
 
@@ -301,13 +301,15 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 		if (crc != *((uint16_t*)received_crc)) {
 			DBG_LOG("%s: mismatch with crc, received (0x%04X), calcurated (0x%04X)\n", __func__,
 				*((uint16_t*)received_crc), crc);
+			/* state = 0; */
+			/* break; */
 		}
 		++state;
 		break;
 	}
 
 	case 7: { /* ending preamble */
-		HAL_UART_Receive_DMA(&huart1, ext_rx_buffer, ARRAY_LEN(ext_rx_buffer));
+		/* HAL_UART_Receive_DMA(&huart1, ext_rx_buffer, ARRAY_LEN(ext_rx_buffer)); */
 		state = 0;
 		return (*byte == EXT_ETX) ? 1 : 0;
 	}

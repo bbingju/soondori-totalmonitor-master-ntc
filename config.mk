@@ -1,4 +1,4 @@
-USE_RTT_FOR_DEBUG = 0
+USE_RTT_FOR_DEBUG = 1
 
 RTT_C_SOURCES = \
 Lib/RTT/SEGGER_RTT.c \
@@ -24,6 +24,4 @@ Src/frame.c \
 Src/fs_task.c \
 Src/internal_job_task.c \
 Src/internal_uart_task.c \
-Src/job_task.c \
-Src/protocol.c
-
+Src/job_task.c

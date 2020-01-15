@@ -79,7 +79,7 @@ typedef struct app_ctx {
 	char *sd_root;
 	bool sd_inserted;
 
-	bool hard_job_processing;
+	bool heavy_job_processing;
 
 	float battery;
 	struct rtd_s rtd;

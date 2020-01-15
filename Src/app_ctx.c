@@ -116,7 +116,7 @@ void app_ctx_init(app_ctx_t *ctx)
 		DBG_LOG("error: MX_FATFS_Init()\n");
 	}
 
-	ctx->hard_job_processing = false;
+	ctx->heavy_job_processing = false;
 
 	ctx->sd_inserted = BSP_SD_IsDetected();
 	ctx->sd_ff = &SDFatFS;

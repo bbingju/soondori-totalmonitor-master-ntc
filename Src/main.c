@@ -98,7 +98,7 @@ osStaticThreadDef_t JobTaskControlBlock;
 uint32_t InternalJobTaskBuffer[256];
 osStaticThreadDef_t InternalJobTaskControlBlock;
 
-uint32_t FSTaskBuffer[512];
+uint32_t FSTaskBuffer[1024];
 osStaticThreadDef_t FSTaskControlBlock;
 
 uint32_t DisplayTaskBuffer[128];
@@ -981,7 +981,7 @@ void init_task(void const *argument)
 			InternalJobTaskBuffer, &InternalJobTaskControlBlock);
 	osThreadCreate(osThread(IntJobTask), NULL);
 
-	osThreadStaticDef(FSTask, fs_task, osPriorityBelowNormal, 0, 512,
+	osThreadStaticDef(FSTask, fs_task, osPriorityBelowNormal, 0, 1024,
 			FSTaskBuffer, &FSTaskControlBlock);
 	osThreadCreate(osThread(FSTask), NULL);
 

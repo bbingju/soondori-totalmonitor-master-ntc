@@ -14,54 +14,54 @@
 #define	OPTION		            			(6)
 #define	DATA 			        			(7)
 
-#define CMD_TEMP_TEST           			1
-#define CMD_WARNING_TEMP        			2
-#define CMD_REVISION            			3
-#define CMD_CALIBRATION         			4
-#define CMD_SD_CARD             			5
-#define CMD_SLOT                			6
-#define CMD_TIME                			7
+/* #define CMD_TEMP_TEST           			1 */
+/* #define CMD_WARNING_TEMP        			2 */
+/* #define CMD_REVISION            			3 */
+/* #define CMD_CALIBRATION         			4 */
+/* #define CMD_SD_CARD             			5 */
+/* #define CMD_SLOT                			6 */
+/* #define CMD_TIME                			7 */
 
-#define OP_TEMP_START_RX           			1
-#define OP_TEMP_MAIN_INFO					1
-#define OP_TEMP_SLOT_INFO					2
-#define OP_TEMP_CHANNEL_INFO     			3
-#define OP_TEMP_CHANNEL_VALUE      			4
-#define OP_TEMP_STOP            			5
-#define OP_TEMP_SAMPLE_RATE     			6
+/* #define OP_TEMP_START_RX           			1 */
+/* #define OP_TEMP_MAIN_INFO					1 */
+/* #define OP_TEMP_SLOT_INFO					2 */
+/* #define OP_TEMP_CHANNEL_INFO     			3 */
+/* #define OP_TEMP_CHANNEL_VALUE      			4 */
+/* #define OP_TEMP_STOP            			5 */
+/* #define OP_TEMP_SAMPLE_RATE     			6 */
 
-#define OP_WARNING_TEMP_SET     			1
-#define OP_WARNING_TEMP_REQ     			2
+/* #define OP_WARNING_TEMP_SET     			1 */
+/* #define OP_WARNING_TEMP_REQ     			2 */
 
-#define OP_REVISION_APPLY_SET      			1
-#define OP_REVISION_CONSTANT_SET			2
-#define OP_REVISION_APPLY_REQ      			3
-#define OP_REVISION_CONSTANT_REQ			4
+/* #define OP_REVISION_APPLY_SET      			1 */
+/* #define OP_REVISION_CONSTANT_SET			2 */
+/* #define OP_REVISION_APPLY_REQ      			3 */
+/* #define OP_REVISION_CONSTANT_REQ			4 */
 
-#define OP_CALIBRATION_RTD_CONSTANT_SET		1
-#define OP_CALIBRATION_NTC_CON_TABLE_CAL	2
-#define OP_CALIBRATION_NTC_CONSTANT_SET		3
-#define OP_CALIBRATION_RTD_CONSTANT_REQ		4
-#define OP_CALIBRATION_NTC_CON_TABLE_REQ	5
-#define OP_CALIBRATION_NTC_CONSTANT_REQ		6
+/* #define OP_CALIBRATION_RTD_CONSTANT_SET		1 */
+/* #define OP_CALIBRATION_NTC_CON_TABLE_CAL	2 */
+/* #define OP_CALIBRATION_NTC_CONSTANT_SET		3 */
+/* #define OP_CALIBRATION_RTD_CONSTANT_REQ		4 */
+/* #define OP_CALIBRATION_NTC_CON_TABLE_REQ	5 */
+/* #define OP_CALIBRATION_NTC_CONSTANT_REQ		6 */
 
-#define OP_SDCARD_LIST          			1
-#define OP_SDCARD_LIST_START       			1
-#define OP_SDCARD_LIST_BODY        			2
-#define OP_SDCARD_LIST_END        			3
-#define OP_SDCARD_DOWNLOAD		  		4
-#define OP_SDCARD_DOWNLOAD_HEADER  			4
-#define OP_SDCARD_DOWNLOAD_BADY    			5
-#define OP_SDCARD_DOWNLOAD_FOOTER 			6
-#define OP_SDCARD_DELETE        			7
-#define OP_SDCARD_FORMAT        			8
-#define OP_SDCARD_ERROR         			9
+/* #define OP_SDCARD_LIST          			1 */
+/* #define OP_SDCARD_LIST_START       			1 */
+/* #define OP_SDCARD_LIST_BODY        			2 */
+/* #define OP_SDCARD_LIST_END        			3 */
+/* #define OP_SDCARD_DOWNLOAD		  		4 */
+/* #define OP_SDCARD_DOWNLOAD_HEADER  			4 */
+/* #define OP_SDCARD_DOWNLOAD_BADY    			5 */
+/* #define OP_SDCARD_DOWNLOAD_FOOTER 			6 */
+/* #define OP_SDCARD_DELETE        			7 */
+/* #define OP_SDCARD_FORMAT        			8 */
+/* #define OP_SDCARD_ERROR         			9 */
 
-#define OP_SLOT_SET             			1
-#define OP_SLOT_REQ             			2
+/* #define OP_SLOT_SET             			1 */
+/* #define OP_SLOT_REQ             			2 */
 
-#define OP_TIME_SET             			1
-#define OP_TIME_REQ             			2
+/* #define OP_TIME_SET             			1 */
+/* #define OP_TIME_REQ             			2 */
 
 #define ALL_SLOT            0xFF
 

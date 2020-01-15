@@ -17,6 +17,7 @@
 
 #define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
 
+extern DMA_HandleTypeDef hdma_usart2_rx;
 extern int transaction_completed;
 extern app_ctx_t ctx;
 
@@ -50,8 +51,8 @@ void response_from_internal(struct internal_frame *received)
 {
 	/* if (received->cmd == INTERNAL_CMD_THRESHOLD_SET || received->cmd ==
 	 * INTERNAL_CMD_THRESHOLD_REQ) { */
-	DBG_LOG("int RX slot %d: %s - (datalen: %d) \n",
-		received->slot_id, int_cmd_str(received->cmd), received->datalen);
+	/* DBG_LOG("int RX slot %d: %s - (datalen: %d) \n", */
+	/* 	received->slot_id, int_cmd_str(received->cmd), received->datalen); */
 	/* DBG_DUMP(received->data, received->datalen); */
 	/* } */
 
@@ -145,7 +146,8 @@ static void internal_rx_check(void)
 	size_t pos;
 
 	/* Calculate current position in buffer */
-	pos = ARRAY_LEN(internal_rx_buffer) - LL_DMA_GetDataLength(DMA1, LL_DMA_STREAM_5);
+	pos = ARRAY_LEN(internal_rx_buffer) - __HAL_DMA_GET_COUNTER(&hdma_usart2_rx);
+	/* pos = ARRAY_LEN(internal_rx_buffer) - LL_DMA_GetDataLength(DMA1, LL_DMA_STREAM_5); */
 	if (pos != old_pos) {    /* Check change in received data */
 		if (pos > old_pos) { /* Current position is over previous one */
 			/* We are in "linear" mode */

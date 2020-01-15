@@ -23,8 +23,8 @@ uint8_t CopyToArray(uint8_t* TagetArray, uint8_t* OriginalString, uint16_t CopyL
 void doMakeSendData(uint8_t* SendData, uint8_t Command, uint8_t* Data, uint8_t  DataLength, uint8_t BufferLength);
 void doMakeSendSlotData(uint8_t* SendData, uint8_t SlotNumber, uint8_t Command, uint8_t* Data, uint8_t  DataLength,	uint8_t BufferLength);
 void doMakeRealTimeData(uint8_t* SendData, uint8_t Command, uint8_t Option, uint8_t* Data);
-void doMakeSend485Data(	uint8_t* SendData, uint8_t Command, uint8_t Option, uint8_t* Data, uint16_t  DataWriteLen, uint16_t DataLen, uint16_t BufferLen);
-void doMakeSend485DataDownLoad(	uint8_t* SendData,	    uint8_t  Command, uint8_t  Option, 		uint8_t* Data, 	uint16_t DataWriteLen,	uint16_t DataLen, uint16_t BufferLen);
+void doMakeSend485Data(	uint8_t* SendData, uint8_t Command, uint8_t Option, uint8_t* Data, uint16_t datalen, uint16_t arraylen);
+void doMakeSend485DataDownLoad(	uint8_t* SendData, uint8_t  Command, uint8_t Option, uint8_t* Data, uint16_t DataWriteLen, uint16_t DataLen, uint16_t BufferLen);
 void doPlayBuzzer100ms(uint16_t count);
 void doBuzzerEnable(uint8_t enable);
 void doBuzzerPlay(uint16_t delay);

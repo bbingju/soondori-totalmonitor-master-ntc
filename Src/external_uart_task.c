@@ -1,6 +1,7 @@
 #include "external_uart_task.h"
 #include "cmsis_os.h"
-#include "stm32f4xx_ll_dma.h"
+#include "stm32f4xx_hal_dma.h"
+/* #include "stm32f4xx_ll_dma.h" */
 #include "internal_uart_task.h"
 #include "app_task.h"
 #include "app_ctx.h"
@@ -9,6 +10,7 @@
 #include "protocol.h"
 #include "job_task.h"
 #include "fs_task.h"
+#include "debug.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -17,6 +19,7 @@
 
 extern app_ctx_t ctx;
 
+extern DMA_HandleTypeDef hdma_usart1_rx;
 uint8_t ReadFileBuf[MAX_485_BUF_LEN];
 uint8_t FindFilelistFlag = 0; //0 : 파일 리스트 검색 안하는중 / 1 : 파일 리스트 검색중
 int ext_tx_completed = 1;
@@ -47,7 +50,7 @@ static void handle_firmware_version_req(struct external_frame_rx *);
 static osMessageQDef(ext_rx_q, 24, uint32_t);
 static osMessageQId(ext_rx_q_id);
 
-uint8_t ext_rx_buffer[128];
+uint8_t ext_rx_buffer[1024];
 
 void ext_rx_notify() { osMessagePut(ext_rx_q_id, 1, 0); }
 
@@ -60,7 +63,8 @@ static void ext_rx_check(void)
 	size_t pos;
 
 	/* Calculate current position in buffer */
-	pos = ARRAY_LEN(ext_rx_buffer) - LL_DMA_GetDataLength(DMA2, LL_DMA_STREAM_5);
+	pos = ARRAY_LEN(ext_rx_buffer) - __HAL_DMA_GET_COUNTER(&hdma_usart1_rx);
+	/* pos = ARRAY_LEN(ext_rx_buffer) - LL_DMA_GetDataLength(DMA2, LL_DMA_STREAM_5); */
 	if (pos != old_pos) {    /* Check change in received data */
 		if (pos > old_pos) { /* Current position is over previous one */
 			/* We are in "linear" mode */
@@ -75,6 +79,8 @@ static void ext_rx_check(void)
 				parse_rx(&ext_rx_buffer[0], pos);
 			}
 		}
+	} else {
+		__HAL_DMA_CLEAR_FLAG(&hdma_usart1_rx, DMA_FLAG_FEIF1_5);
 	}
 	old_pos = pos; /* Save current position as old */
 
@@ -179,14 +185,19 @@ void receive_from_external(struct external_frame_rx *received)
 		switch (received->option) {
 		case OP_SDCARD_LIST:
 			post_fs_job(FS_JOB_TYPE_QUERY_FILELIST);
-			/* FindFilelistFlag = 1; */
-			/* DoReadFileList(received); */
-			/* FindFilelistFlag = 0; */
 			break;
-		case OP_SDCARD_DOWNLOAD:
+		case OP_SDCARD_DOWNLOAD: {
+			download_is_header_request = false;
+			strncpy(requested_path, received->data, 64);
 			post_fs_job(FS_JOB_TYPE_DOWNLOAD_FILE);
-			/* DoSendFile(received); */
 			break;
+		}
+		case OP_SDCARD_DOWNLOAD_HEADER: {
+			download_is_header_request = true;
+			strncpy(requested_path, received->data, 64);
+			post_fs_job(FS_JOB_TYPE_DOWNLOAD_FILE);
+			break;
+		}
 		case OP_SDCARD_DELETE:
 			break;
 		case OP_SDCARD_FORMAT:
@@ -313,6 +324,7 @@ void DoSendFileOpen(struct external_frame_rx *msg)
 
 void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 {
+#if 0
 	/* uint8_t t[1] = {0}; */
 	int32_t ReadSize;
 	uint16_t i = 0;
@@ -337,7 +349,7 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 		// util_mem_cpy(&ReadFileBuf[4], &temp.UI8[0], 4);
 
 		ReadSize = DoSendFileRead(Offset + (packetSize * i), packetSize);
-		send_to_external(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BADY,
+		send_to_external(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BODY,
 				&ReadFileBuf[0], ReadSize + 8, packetSize + 8,
 				packetSize + 8 + 20);
 		/* doMakeSend485DataDownLoad(tx485DataDMA, CMD_SD_CARD,
@@ -365,6 +377,7 @@ void DoSendFileBodyPacket(uint32_t Offset, UINT packetSize)
 	} while (1);
 
 	osDelay(1);
+#endif //0
 }
 
 void DoSendFileClose(void)
@@ -580,9 +593,9 @@ static void CmdRevisionConstantReq(struct external_frame_rx *msg)
 static void CmdRevisionTRConstantSet(struct external_frame_rx *msg)
 {
 	if (msg) {
-		uint8_t slot_id = msg->data[0];
-		float r1 = *((float *)&msg->data[1]);
-		float r2 = *((float *)&msg->data[5]);
+		uint8_t slot_id = msg->revision_tr_const.slot_id;
+		float r1 = msg->revision_tr_const.tr1;
+		float r2 = msg->revision_tr_const.tr2;
 
 		if (slot_id == 0xFF) {
 			FOREACH(struct slot_s *s, ctx.slots) {
@@ -787,4 +800,9 @@ static void doGetTime(struct external_frame_rx *req)
 static void handle_firmware_version_req(struct external_frame_rx *req)
 {
 	send_to_external(req->cmd, req->option, (void *) firmware_version(), strlen(firmware_version()), 12, 32);
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *husart)
+{
+	DBG_LOG("%s\r\n", __func__);
 }

@@ -114,6 +114,12 @@ __PACKED_STRUCT external_frame_rx {
 			float v;
 		} rtd_calibration_const;
 
+		__PACKED_STRUCT {
+			uint8_t slot_id;
+			float tr1;
+			float tr2;
+		} revision_tr_const;
+
 		uint8_t data[22];
 	};
 };
@@ -172,6 +178,19 @@ __PACKED_STRUCT external_sd_filelist {
 	uint16_t index;
 	uint8_t time_data[48];
 	uint8_t time_nbr;
+};
+
+__PACKED_STRUCT external_sd_download_start {
+	uint32_t filesize;
+	uint32_t chunksize;
+};
+
+__PACKED_STRUCT external_sd_download_chunk {
+	uint32_t index;
+};
+
+__PACKED_STRUCT external_sd_download_end {
+	uint32_t remained;
 };
 
 struct external_frame_tx {

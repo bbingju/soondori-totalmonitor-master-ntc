@@ -83,7 +83,7 @@ static void _send_to_external(struct external_frame_tx *ftx)
 	/* DBG_LOG("ext tx [%s::%s] (%d): ", ext_cmd_str(ftx->cmd), */
 	/* 	ext_option_str(ftx->cmd, ftx->option), ftx->len); */
 
-	doMakeSend485Data(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len, ftx->len - 20, ftx->len);
+	doMakeSend485Data(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len, ftx->len - 20);
 	/* int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, */
 	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
 

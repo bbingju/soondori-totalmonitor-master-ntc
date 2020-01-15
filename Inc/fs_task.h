@@ -2,6 +2,7 @@
 #define FS_TASK_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef enum {
     FS_JOB_TYPE_NONE,
@@ -10,6 +11,9 @@ typedef enum {
     FS_JOB_TYPE_DOWNLOAD_FILE,
     FS_JOB_TYPE_MAX
 } FS_JOB_TYPE_E;
+
+extern char requested_path[];
+extern bool download_is_header_request;
 
 #ifdef __cplusplus
 extern "C" {

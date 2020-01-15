@@ -11,13 +11,21 @@
 static osMessageQDef(fs_job_q, 16, FS_JOB_TYPE_E);
 static osMessageQId (fs_job_q_id);
 
+#define FILE_CHUNCK_SIZE 4096
+#define FILE_HEADER_SIZE 4096
+
 static FIL logfp;
 static FIL metafp;
-static uint8_t fs_buffer[4096];
+static FIL downloadfp;
+static uint8_t fs_buffer[FILE_CHUNCK_SIZE + 4 + 20];
+static uint8_t fs_data_buffer[FILE_CHUNCK_SIZE + 4];
+char requested_path[64];
+bool download_is_header_request = false;
 
 static void handle_fs_job(FS_JOB_TYPE_E type);
 static void save_log();
-static void answer_log_filelist();
+static void send_log_filelist();
+static void send_log_file(const char *filename);
 static int start_logfile_listing(FIL *);
 static void end_logfile_listing(FIL *);
 static char *current_log_dirname();
@@ -28,9 +36,13 @@ static FRESULT check_dir_for_current_date(void);
 static void write_log_file_header(FIL *fil);
 static FRESULT write_data(FIL *fil);
 static FRESULT update_metafile(FIL *fil);
+static void send_file_header(FIL *fil);
+static void send_file_overall(FIL *fil);
+static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t datasize, size_t arraysize);
 
 extern app_ctx_t ctx;
 extern uint8_t wData[];
+extern int ext_tx_completed;
 
 __PACKED_STRUCT ymd {
 	uint8_t y;
@@ -92,9 +104,11 @@ static void handle_fs_job(FS_JOB_TYPE_E type)
 		save_log();
 		break;
 	case FS_JOB_TYPE_QUERY_FILELIST:
-		answer_log_filelist();
+		send_log_filelist();
 		break;
 	case FS_JOB_TYPE_DOWNLOAD_FILE:
+		strcpy(requested_path, "/2020/01/13/200113_010000.ske");
+		send_log_file(requested_path);
 		break;
 	default:
 		return;
@@ -144,7 +158,7 @@ static void save_log()
 	}
 }
 
-static void answer_log_filelist()
+static void send_log_filelist()
 {
 	FRESULT ret = FR_OK;
 	static uint8_t _time_data[48] = { 0 };
@@ -237,9 +251,9 @@ static int start_logfile_listing(FIL *fil)
 			fs_buffer[date_count * 4 + 3] = 0x10;
 
 			date_count++;
-			DBG_LOG("header (%d): ", date_count);
-			for (int i = 0; i < date_count; i++)
-				DBG_DUMP(&fs_buffer[i * 4], 4);
+			/* DBG_LOG("header (%d): ", date_count); */
+			/* for (int i = 0; i < date_count; i++) */
+			/* 	DBG_DUMP(&fs_buffer[i * 4], 4); */
 		}
 	}
 
@@ -345,7 +359,7 @@ static void write_log_file_header(FIL *fil)
 
 	res = f_lseek(fil, 0x0000); // File 확장
 	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
+		sdValue.sdState = SCS_SEEK_ERROR;
 		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
 		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
 		return;
@@ -551,7 +565,7 @@ static FRESULT write_data(FIL *fil)
 	wData[8] = sensorCount;
 
 	//보드 센서 복사
-	float v;
+	__IO float v;
 	for (int i = 0; i < 4; i++) {
 		switch (i) {
 		case 0:
@@ -641,4 +655,139 @@ static FRESULT update_metafile(FIL *fil)
 	f_close(fil);
 
 	return ret;
+}
+
+static void send_log_file(const char *filename)
+{
+	FRESULT ret = FR_OK;
+
+	ctx.heavy_job_processing = true;
+
+	/* ret = f_open(&fil, filename, FA_OPEN_EXISTING | FA_READ); */
+	ret = f_open(&downloadfp, filename, FA_OPEN_EXISTING | FA_READ);
+	if (ret != FR_OK) {
+		DBG_LOG("error (%d): f_open metafile during %s\n", ret, __func__);
+		return;
+	}
+
+#if 0
+	UINT readnum = 0;
+	UINT totalnum = 0;
+	int count = 0;
+	while (!f_eof(&downloadfp)) {
+		readnum = 0;
+		ret = f_read(&downloadfp, fs_buffer, 4096, &readnum);
+		if (ret != FR_OK) {
+			f_close(&downloadfp);
+			return;
+		}
+		count++;
+		totalnum += readnum;
+		DBG_LOG("%s: %d readnum (%u), totalnum (%u)\r\n", __func__, count, readnum, totalnum);
+	}
+#endif //0
+
+	if (download_is_header_request) {
+		send_file_header(&downloadfp);
+	} else {
+		send_file_overall(&downloadfp);
+	}
+
+	f_close(&downloadfp);
+
+	ctx.heavy_job_processing = false;
+}
+
+static void send_file_header(FIL *fil)
+{
+	FRESULT ret = FR_OK;
+
+	/* 1. starting packet */
+	uint32_t filesize = f_size(fil);
+	/* send a starting packet */
+	uint32_t data[2] = { 0 };
+	data[0] = filesize;
+	data[1] = FILE_CHUNCK_SIZE;
+	_send_fs_packet(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_START | 0xF0, data, 8, 12);
+
+	/* 2. send chunks */
+	UINT readnum = 0;
+	UINT totalnum = 0;
+	uint32_t count = 0;
+
+	memset(fs_data_buffer, 0, sizeof(fs_data_buffer));
+
+	ret = f_read(fil, &fs_data_buffer[4], FILE_CHUNCK_SIZE, &readnum);
+	if (ret != FR_OK) {
+		f_close(fil);
+		return;
+	}
+
+	/* send packets */
+	*((uint32_t *)&fs_data_buffer[0]) = count;
+	_send_fs_packet(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BODY | 0xF0, fs_data_buffer, readnum + 4, readnum + 4);
+
+	readnum = 0;
+	*((uint32_t *)&fs_data_buffer[0]) = readnum;
+	memset(fs_data_buffer, 0, sizeof(fs_data_buffer));
+	_send_fs_packet(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_END | 0xF0, fs_data_buffer, readnum + 4, readnum + 4);
+	DBG_LOG("%s: %d readnum (%u), totalnum (%u)\r\n", __func__, count, readnum, totalnum);
+}
+
+static void send_file_overall(FIL *fil)
+{
+	FRESULT ret = FR_OK;
+
+	/* 1. starting packet */
+	uint32_t filesize = f_size(fil);
+	/* send a starting packet */
+	uint32_t data[2] = { 0 };
+	data[0] = filesize;
+	data[1] = FILE_CHUNCK_SIZE;
+	_send_fs_packet(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_START, data, 8, 12);
+
+	/* 2. send chunks */
+	UINT readnum = 0;
+	UINT totalnum = 0;
+	uint32_t count = 0;
+	while (!f_eof(fil)) {
+		readnum = 0;
+		memset(fs_data_buffer, 0, sizeof(fs_data_buffer));
+
+		ret = f_read(fil, &fs_data_buffer[4], FILE_CHUNCK_SIZE, &readnum);
+		if (ret != FR_OK) {
+			f_close(fil);
+			return;
+		}
+
+		/* send packets */
+		if (readnum < FILE_CHUNCK_SIZE) {
+			*((uint32_t *)&fs_data_buffer[0]) = readnum;
+			_send_fs_packet(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_END, fs_data_buffer, readnum + 4, readnum + 4);
+		} else {
+			*((uint32_t *)&fs_data_buffer[0]) = count;
+			_send_fs_packet(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_BODY, fs_data_buffer, readnum + 4, readnum + 4);
+		}
+		count++;
+		totalnum += readnum;
+		DBG_LOG("%s: %d readnum (%u), totalnum (%u)\r\n", __func__, count, readnum, totalnum);
+	}
+
+	/* send ending packet */
+}
+
+static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t datasize, size_t arraysize)
+{
+	doMakeSend485Data(fs_buffer, cmd, option, data, datasize, arraysize);
+	/* int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, */
+	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
+	/* DBG_DUMP(fs_buffer, arraysize + 20); */
+
+	if (ext_tx_completed) {
+		ext_tx_completed = 0;
+		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
+		HAL_UART_Transmit_DMA(&huart1, fs_buffer, arraysize + 20);
+		while (ext_tx_completed == 0)
+			__NOP();
+	}
 }

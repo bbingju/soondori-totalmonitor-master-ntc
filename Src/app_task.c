@@ -104,40 +104,26 @@ void app_task(void const *argument)
 				request_to_internal__THRESHOLD_REQ(s);
 				osDelay(1);
 			}
-			/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-			/* 	struct slot_s *s = &ctx.slots[i]; */
-			/* 	request_to_internal__THRESHOLD_REQ(s); */
-			/* 	osDelay(1); */
-			/* } */
-			/* osDelay(50); */
 			SysProperties.InterfaceStep = STEP_TEMP_READ;
 			break;
 
 		case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청한다.
-			if (!ctx.hard_job_processing) {
+			if (!ctx.heavy_job_processing) {
 				FOREACH(struct slot_s *s, ctx.slots) {
 					request_to_internal__TEMPERATURE_STATE_REQ(s);
 					osDelay(1);
 					request_to_internal__TEMPERATURE_REQ(s);
 					osDelay(10);
 				}
-				/* struct slot_s *s; */
-				/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-				/* 	s = &ctx.slots[i]; */
-				/* 	request_to_internal__TEMPERATURE_STATE_REQ(s); */
-				/* 	osDelay(1); */
-				/* 	request_to_internal__TEMPERATURE_REQ(s); */
-				/* 	osDelay(10); */
-				/* } */
 			}
-			/* next_wait += SysProperties.interval_ms * 1000; */
+
 			osDelay(100);
 
 			if (SysProperties.start_flag) {
 				send_to_external__BOARD_INFO(); // transmit board info
 				osDelay(1);
 
-				if (!ctx.hard_job_processing) {
+				if (!ctx.heavy_job_processing) {
 					FOREACH(struct slot_s *s, ctx.slots) {
 						send_to_external__SLOT_INFO(s);
 						osDelay(1);
@@ -146,16 +132,6 @@ void app_task(void const *argument)
 						send_to_external__TEMPERATURE(s);
 						osDelay(2);
 					}
-					/* struct slot_s *s; */
-					/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-					/* 	s = &ctx.slots[i]; */
-					/* 	send_to_external__SLOT_INFO(s->id); */
-					/* 	osDelay(1); */
-					/* 	send_to_external__TEMPERATURE_STATE(s->id); */
-					/* 	osDelay(1); */
-					/* 	send_to_external__TEMPERATURE(s->id); */
-					/* 	osDelay(2); */
-					/* } */
 				}
 			}
 			osDelay(25);

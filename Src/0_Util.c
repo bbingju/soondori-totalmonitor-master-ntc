@@ -90,49 +90,43 @@ void doMakeSendData(	uint8_t* SendData,
 
 
 void doMakeSend485Data(uint8_t* outbuffer, uint8_t  Command, uint8_t  Option,
-                       uint8_t* Data, uint16_t DataWriteLen, uint16_t DataLen,
-                       uint16_t BufferLen)
+		uint8_t* Data, uint16_t datalen, uint16_t arraylen)
 {
-    uni2Byte crc;
-    uni4Byte len;
-    uint8_t * SendData = outbuffer;
+    uint32_t total_len = arraylen + 20;
+    uint8_t * offset = outbuffer;
 
-    len.UI32 = 0;
-    len.UI16[0] = BufferLen;
-
-    memset(outbuffer, 0x00, BufferLen);
+    memset(outbuffer, 0x00, total_len);
 
     /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN); */
     /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN); */
 
-    *SendData++ = RS_STX;
-    *SendData++ = Command;
-    *SendData++ = Option;
-    *SendData++ = len.UI8[0];
-    *SendData++ = len.UI8[1];
-    *SendData++ = len.UI8[2];
-    *SendData++ = len.UI8[3];
-    *SendData++ = 192;                                      //ip
-    *SendData++ = 168;
-    *SendData++ = 255;
-    *SendData++ = 255;
-    *SendData++ = SysTime.Date.Year;        //time
-    *SendData++ = SysTime.Date.Month;
-    *SendData++ = SysTime.Date.Date;
-    *SendData++ = SysTime.Time.Hours;
-    *SendData++ = SysTime.Time.Minutes;
-    *SendData++ = SysTime.Time.Seconds;
-    //util_mem_cpy(&SendData[17], Data, DataWriteLen);
-    CopyToArray(SendData, Data, DataWriteLen, DataLen);
-    SendData -= 16;
+    *offset++ = RS_STX;
+    *offset++ = Command;
+    *offset++ = Option;
 
-    crc.UI16 = CRC16_Make(&SendData[0], BufferLen - 4);
-    SendData += BufferLen - 4;
+    *(uint32_t *) offset = total_len;
+    offset += sizeof(uint32_t);
 
-    *SendData++ = crc.UI8[0];
-    *SendData++ = crc.UI8[1];
+    *offset++ = 192;		//ip
+    *offset++ = 168;
+    *offset++ = 255;
+    *offset++ = 255;
+    *offset++ = SysTime.Date.Year; //time
+    *offset++ = SysTime.Date.Month;
+    *offset++ = SysTime.Date.Date;
+    *offset++ = SysTime.Time.Hours;
+    *offset++ = SysTime.Time.Minutes;
+    *offset++ = SysTime.Time.Seconds;
+    CopyToArray(offset, Data, datalen, arraylen);
+    offset -= 16;
 
-    *SendData = RS_ETX;
+    uint16_t crc = CRC16_Make(offset, total_len - 4);
+    offset += total_len - 4;
+
+    *(uint16_t *) offset = crc;
+    offset += sizeof(uint16_t);
+
+    *offset = RS_ETX;
 }
 
 void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Option,
