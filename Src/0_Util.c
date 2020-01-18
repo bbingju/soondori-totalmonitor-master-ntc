@@ -97,9 +97,6 @@ void doMakeSend485Data(uint8_t* outbuffer, uint8_t  Command, uint8_t  Option,
 
     memset(outbuffer, 0x00, total_len);
 
-    /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD); */
-    /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD); */
-
     *offset++ = RS_STX;
     *offset++ = Command;
     *offset++ = Option;
@@ -127,51 +124,6 @@ void doMakeSend485Data(uint8_t* outbuffer, uint8_t  Command, uint8_t  Option,
     offset += sizeof(uint16_t);
 
     *offset = RS_ETX;
-}
-
-void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Option,
-                               uint8_t* Data, uint16_t DataWriteLen, uint16_t DataLen,
-                               uint16_t BufferLen)
-{
-        uni2Byte crc;
-        uni4Byte len;
-
-        len.UI32 = 0;
-        len.UI16[0] = BufferLen;
-
-        memset(SendData, 0x00, BufferLen);
-
-        /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD); */
-        /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD); */
-
-        SendData[ 0] = RS_STX;
-        SendData[ 1] = Command;
-        SendData[ 2] = Option;
-        SendData[ 3] = len.UI8[0];
-        SendData[ 4] = len.UI8[1];
-        SendData[ 5] = len.UI8[2];
-        SendData[ 6] = len.UI8[3];
-        SendData[ 7] = 192;                                     //ip
-        SendData[ 8] = 168;
-        SendData[ 9] = 255;
-        SendData[10] = 255;
-        SendData[11] = SysTime.Date.Year;        //time
-        SendData[12] = SysTime.Date.Month;
-        SendData[13] = SysTime.Date.Date;
-        SendData[14] = SysTime.Time.Hours;
-        SendData[15] = SysTime.Time.Minutes;
-        SendData[16] = SysTime.Time.Seconds;
-        memcpy(&SendData[17], Data, DataWriteLen);
-        //CopyToArray(SendData, Data, DataWriteLen, DataLen);
-	//SendData -= 16;
-
-        crc.UI16 =	CRC16_Make(&SendData[1], BufferLen - 4);
-        //SendData += BufferLen - 4;
-
-        SendData[BufferLen - 3] = crc.UI8[0];
-        SendData[BufferLen - 2] = crc.UI8[1];
-
-        SendData[BufferLen - 1] = RS_ETX;
 }
 
 /*********************************************************************

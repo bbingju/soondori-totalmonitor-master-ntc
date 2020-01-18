@@ -598,12 +598,13 @@ static void CmdCalibrationNTCConstantReq(struct external_frame_rx *msg)
 	}
 }
 
+static RTC_DateTypeDef setDate, getDate;
+static RTC_TimeTypeDef setTime, getTime;
+
 static void cmd_time__SET_TIME(struct external_frame_rx *msg)
 {
 	uint8_t res = TRUE;
 	HAL_StatusTypeDef resHal;
-	RTC_DateTypeDef setDate, getDate;
-	RTC_TimeTypeDef setTime, getTime;
 
 	setDate.Year = msg->data[0];
 	setDate.Month = msg->data[1];
@@ -617,20 +618,20 @@ static void cmd_time__SET_TIME(struct external_frame_rx *msg)
 
 	do {
 		while (1) {
-			resHal = HAL_RTC_SetDate(&hrtc, &setDate, RTC_FORMAT_BCD);
+			resHal = HAL_RTC_SetDate(&hrtc, &setDate, RTC_FORMAT_BIN);
 			if (resHal == HAL_OK)
 				break;
 			osDelay(1);
 		}
 		while (1) {
-			resHal = HAL_RTC_SetTime(&hrtc, &setTime, RTC_FORMAT_BCD);
+			resHal = HAL_RTC_SetTime(&hrtc, &setTime, RTC_FORMAT_BIN);
 			if (resHal == HAL_OK)
 				break;
 			osDelay(1);
 		}
 
-		HAL_RTC_GetTime(&hrtc, &getTime, RTC_FORMAT_BCD);
-		HAL_RTC_GetDate(&hrtc, &getDate, RTC_FORMAT_BCD);
+		HAL_RTC_GetTime(&hrtc, &getTime, RTC_FORMAT_BIN);
+		HAL_RTC_GetDate(&hrtc, &getDate, RTC_FORMAT_BIN);
 
 		if ((setDate.Year == getDate.Year) &&
 			(setDate.Month == getDate.Month) &&

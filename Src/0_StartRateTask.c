@@ -38,8 +38,8 @@ void StartRateTask(void const * argument)
 	RTC_TimeTypeDef *time = &SysTime.Time;
 
 	//시간 초기화
-	HAL_RTC_GetDate(&hrtc, date, RTC_FORMAT_BCD);
-	HAL_RTC_GetTime(&hrtc, time, RTC_FORMAT_BCD);
+	HAL_RTC_GetDate(&hrtc, date, RTC_FORMAT_BIN);
+	HAL_RTC_GetTime(&hrtc, time, RTC_FORMAT_BIN);
 
 	if( (date->Year < 10) || (date->Year > 99) || (date->Month > 12) || (date->Date > 31) ||
 		(time->Hours > 23) || (time->Minutes > 59) || (time->Seconds > 59) ) {
@@ -51,8 +51,8 @@ void StartRateTask(void const * argument)
 		time->Minutes = 0;
 		time->Seconds = 0;
 
-		HAL_RTC_SetDate(&hrtc, date, RTC_FORMAT_BCD);
-		HAL_RTC_SetTime(&hrtc, time, RTC_FORMAT_BCD);
+		HAL_RTC_SetDate(&hrtc, date, RTC_FORMAT_BIN);
+		HAL_RTC_SetTime(&hrtc, time, RTC_FORMAT_BIN);
 	}
 
 	/* if (sdValue.sdMountState == SCS_OK) { //sd card Link 확인 */
@@ -140,8 +140,8 @@ void DoSdCardFreeSpace(void)
 
 void DoSdCardFunction(void)
 {
-	HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD);
-	HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD);
+	HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
+	HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
 
 	if (DoFolderCheck() == FR_OK)		// 디렉토리 생성 및 확인
 	{

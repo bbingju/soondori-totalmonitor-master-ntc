@@ -131,14 +131,13 @@ void app_ctx_init(app_ctx_t *ctx)
 
 		uint32_t start = osKernelSysTick();
 
-		FIL mfile;
-		ret = f_open(&mfile, "0://.metafile", FA_CREATE_ALWAYS | FA_WRITE);
+		ret = f_open(&ctx->metafd, "0://.metafile", FA_CREATE_ALWAYS | FA_WRITE);
 		if (ret) {
 			DBG_LOG("error (%d): f_open()\n", ret);
 		}
-		ff_create_metafile(&mfile, ctx->sd_root);
+		ff_create_metafile(&ctx->metafd, ctx->sd_root);
 		/* ff_enumerate_dir(ctx->sd_root); */
-		f_close(&mfile);
+		f_close(&ctx->metafd);
 		DBG_LOG("elapsed ticks: %u\n", osKernelSysTick() - start);
 	}
 
@@ -177,7 +176,7 @@ void update_rtc(time_t now)
     sTime.Hours = (uint8_t)time_tm.tm_hour;
     sTime.Minutes = (uint8_t)time_tm.tm_min;
     sTime.Seconds = (uint8_t)time_tm.tm_sec;
-    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK) {
+    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
         Error_Handler();
     }
 
@@ -190,7 +189,7 @@ void update_rtc(time_t now)
     /*
     * update the RTC
     */
-    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK) {
+    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
         Error_Handler();
     }
 

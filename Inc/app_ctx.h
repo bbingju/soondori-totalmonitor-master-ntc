@@ -87,6 +87,7 @@ typedef struct app_ctx {
 	FATFS *sd_ff;
 	char *sd_root;
 	bool sd_inserted;
+	FIL metafd, logfd;
 	SD_RET_E sd_last_error;
 
 	bool heavy_job_processing;

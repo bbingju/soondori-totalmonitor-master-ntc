@@ -17,6 +17,7 @@
   */
 
 #include "fatfs.h"
+#include "app_ctx.h"
 
 uint8_t retSD;    /* Return value for SD */
 char SDPath[4];   /* SD logical drive path */
@@ -24,25 +25,18 @@ FATFS SDFatFS;    /* File system object for SD logical drive */
 FIL SDFile;       /* File object for SD */
 
 /* USER CODE BEGIN Variables */
-
+extern app_ctx_t ctx;
 /* USER CODE END Variables */    
 
 void MX_FATFS_Init(void) 
 {
-  /*## FatFS: Link the SD driver ###########################*/
-  retSD = FATFS_LinkDriver(&SD_Driver, SDPath);
+	/*## FatFS: Link the SD driver ###########################*/
+	retSD = FATFS_LinkDriver(&SD_Driver, SDPath);
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 	/* additional user code for init */
-	/* if (retSD != 0)	// 0이면 정상 */
-	/* { */
-	/* 	ctx.sd_last_error = SCS_LINK_ERROR; */
-	/* } */
-	/* else */
-	/* { */
-	/* 	ctx.sd_last_error = SCS_OK; */
-	/* } */
-  /* USER CODE END Init */
+	ctx.sd_last_error = retSD ? SD_RET_LINK_ERR : SD_RET_OK;
+	/* USER CODE END Init */
 }
 
 /**
@@ -56,8 +50,8 @@ void MX_FATFS_Init(void)
 /*   RTC_TimeTypeDef Time_Value; */
 /*   RTC_DateTypeDef Date_Value; */
 	
-/*   HAL_RTC_GetTime(&hrtc, &Time_Value, RTC_FORMAT_BCD); */
-/*   HAL_RTC_GetDate(&hrtc, &Date_Value, RTC_FORMAT_BCD); */
+/*   HAL_RTC_GetTime(&hrtc, &Time_Value, RTC_FORMAT_BIN); */
+/*   HAL_RTC_GetDate(&hrtc, &Date_Value, RTC_FORMAT_BIN); */
 
 /*   return (DWORD)((  Date_Value.Year + 20 ) 	<< 25 */
 /*                  | Date_Value.Month   		<< 21 */

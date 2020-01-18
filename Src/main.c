@@ -101,11 +101,8 @@ osStaticThreadDef_t InternalJobTaskControlBlock;
 uint32_t FSTaskBuffer[1024];
 osStaticThreadDef_t FSTaskControlBlock;
 
-uint32_t DisplayTaskBuffer[128];
+uint32_t DisplayTaskBuffer[256];
 osStaticThreadDef_t DisplayTaskControlBlock;
-
-/* uint32_t RateTaskBuffer[256]; */
-/* osStaticThreadDef_t RateTaskControlBlock; */
 
 uint32_t InternalRxTaskBuffer[256];
 osStaticThreadDef_t InternalRxTaskControlBlock;
@@ -516,7 +513,7 @@ static void MX_RTC_Init(void)
   sTime.Seconds = 0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
@@ -525,7 +522,7 @@ static void MX_RTC_Init(void)
   sDate.Date = 1;
   sDate.Year = 19;
 
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
@@ -985,13 +982,9 @@ void init_task(void const *argument)
 			FSTaskBuffer, &FSTaskControlBlock);
 	osThreadCreate(osThread(FSTask), NULL);
 
-	osThreadStaticDef(myDisplayTask, StartDisplayTask, osPriorityBelowNormal, 0, 128,
+	osThreadStaticDef(myDisplayTask, StartDisplayTask, osPriorityBelowNormal, 0, 256,
 			DisplayTaskBuffer, &DisplayTaskControlBlock);
 	osThreadCreate(osThread(myDisplayTask), NULL);
-
-	/* osThreadStaticDef(myRateTask, StartRateTask, osPriorityBelowNormal, 0, 128, */
-	/* 		RateTaskBuffer, &RateTaskControlBlock); */
-	/* osThreadCreate(osThread(myRateTask), NULL); */
 
 	osThreadStaticDef(IntRxTask, internal_rx_task, osPriorityNormal, 0, 256,
 			InternalRxTaskBuffer, &InternalRxTaskControlBlock);
@@ -1066,8 +1059,8 @@ void vApplicationIdleHook( void )
 
     if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(400)) {
         elapsed_tick = osKernelSysTick();
-        HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD);
-        HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD);
+        HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
+        HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
     }
 
     HAL_IWDG_Refresh(&hiwdg);

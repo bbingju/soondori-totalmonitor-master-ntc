@@ -14,8 +14,7 @@ static osMessageQId (fs_job_q_id);
 #define FILE_CHUNCK_SIZE 4096
 #define FILE_HEADER_SIZE 4096
 
-static FIL logfp;
-static FIL metafp;
+/* static FIL logfp; */
 static FIL downloadfp;
 static uint8_t fs_buffer[FILE_CHUNCK_SIZE + 4 + 20];
 static uint8_t fs_data_buffer[FILE_CHUNCK_SIZE + 4];
@@ -159,7 +158,7 @@ static void save_log()
 
 	/* open log file */
 	char *fullpath = current_log_fullpath();
-	ret = f_open(&logfp, fullpath, FA_OPEN_APPEND | FA_WRITE);
+	ret = f_open(&ctx.logfd, fullpath, FA_OPEN_APPEND | FA_WRITE);
 	if (ret != FR_OK) {
 		DBG_LOG("error (%d): f_open during %s\n", ret, __func__);
 		ctx.sd_last_error = SD_RET_OPEN_ERR;
@@ -167,29 +166,29 @@ static void save_log()
 		return;
 	}
 
-	if (f_size(&logfp) == 0) {
+	if (f_size(&ctx.logfd) == 0) {
 		new_file_created = true;
-		ret = write_log_file_header(&logfp);
+		ret = write_log_file_header(&ctx.logfd);
 		if (ret != FR_OK) {
 			send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
-			f_close(&logfp);
+			f_close(&ctx.logfd);
 			return;
 		}
 	}
 
-	ret = write_data(&logfp);
+	ret = write_data(&ctx.logfd);
 	if (ret != FR_OK) {
 		DBG_LOG("error (%d): write_data during %s\n", ret, __func__);
 		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
-		f_close(&logfp);
+		f_close(&ctx.logfd);
 		return;
 	}
 
-	f_sync(&logfp);
-	f_close(&logfp);
+	f_sync(&ctx.logfd);
+	f_close(&ctx.logfd);
 
 	if (new_file_created) {
-		update_metafile(&metafp);
+		update_metafile(&ctx.metafd);
 	}
 }
 
@@ -198,14 +197,14 @@ static void send_log_filelist()
 	FRESULT ret = FR_OK;
 	static uint8_t _time_data[48] = { 0 };
 
-	ret = f_open(&metafp, "0://.metafile", FA_OPEN_ALWAYS | FA_READ);
+	ret = f_open(&ctx.metafd, "0://.metafile", FA_OPEN_EXISTING | FA_READ);
 	if (ret != FR_OK) {
 		ctx.sd_last_error = SD_RET_OPEN_ERR;
 		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
-		goto ret_error;
+		return;
 	}
 
-	int dates = start_logfile_listing(&metafp);
+	int dates = start_logfile_listing(&ctx.metafd);
 
 	char buffer[64] = { 0 };
 	uint16_t sequence_index = 0;
@@ -213,9 +212,9 @@ static void send_log_filelist()
 	/* char *n = NULL; */
 	struct ymd ymd = { 0 };
 
-	f_lseek(&metafp, 0);
+	f_lseek(&ctx.metafd, 0);
 
-	while (f_gets(buffer, 64, &metafp)) {
+	while (f_gets(buffer, 64, &ctx.metafd)) {
 
 		if (buffer[0] != '\t') {
 
@@ -251,10 +250,10 @@ static void send_log_filelist()
 				5 + time_index, 5 + time_index, 20 + 5 + time_index);
 
 
-	end_logfile_listing(&metafp);
+	end_logfile_listing(&ctx.metafd);
 
 ret_error:
-	f_close(&metafp);
+	f_close(&ctx.metafd);
 	/* return ret; */
 }
 
@@ -264,6 +263,8 @@ static int start_logfile_listing(FIL *fil)
 	char buffer[64] = { 0 };
 
 	f_lseek(fil, 0);
+
+	memset(fs_buffer, 0, sizeof(fs_buffer));
 
 	while (f_gets(buffer, 64, fil)) {
 
@@ -645,9 +646,8 @@ static int send_log_file(const char *filename, bool is_header)
 {
 	FRESULT ret = FR_OK;
 
-	/* ctx.heavy_job_processing = true; */
+	ctx.heavy_job_processing = true;
 
-	/* ret = f_open(&fil, filename, FA_OPEN_EXISTING | FA_READ); */
 	ret = f_open(&downloadfp, filename, FA_OPEN_EXISTING | FA_READ);
 	ctx.sd_last_error = (ret != FR_OK) ? SD_RET_OPEN_ERR : SD_RET_OK;
 	if (ret != FR_OK) {
@@ -657,24 +657,6 @@ static int send_log_file(const char *filename, bool is_header)
 		return -1;
 	}
 
-#if 0
-	UINT readnum = 0;
-	UINT totalnum = 0;
-	int count = 0;
-	while (!f_eof(&downloadfp)) {
-		readnum = 0;
-		ret = f_read(&downloadfp, fs_buffer, 4096, &readnum);
-		if (ret != FR_OK) {
-			f_close(&downloadfp);
-			ctx.heavy_job_processing = false;
-			return;
-		}
-		count++;
-		totalnum += readnum;
-		DBG_LOG("%s: %d readnum (%u), totalnum (%u)\r\n", __func__, count, readnum, totalnum);
-	}
-#endif //0
-
 	if (is_header) {
 		send_file_header(&downloadfp);
 	} else {
@@ -683,7 +665,7 @@ static int send_log_file(const char *filename, bool is_header)
 
 	f_close(&downloadfp);
 
-	/* ctx.heavy_job_processing = false; */
+	ctx.heavy_job_processing = false;
 
 	return 0;
 }
@@ -776,11 +758,11 @@ static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t data
 	while (!ext_tx_completed)
 		__NOP();
 
-		ext_tx_completed = 0;
-		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
-		HAL_UART_Transmit_DMA(&huart1, fs_buffer, arraysize + 20);
-		/* while (ext_tx_completed == 0) */
-		/* 	__NOP(); */
+	ext_tx_completed = 0;
+	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
+	HAL_UART_Transmit_DMA(&huart1, fs_buffer, arraysize + 20);
+	/* while (ext_tx_completed == 0) */
+	/* 	__NOP(); */
 
 }
 
