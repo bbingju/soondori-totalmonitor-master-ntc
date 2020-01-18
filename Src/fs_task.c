@@ -19,13 +19,16 @@ static FIL metafp;
 static FIL downloadfp;
 static uint8_t fs_buffer[FILE_CHUNCK_SIZE + 4 + 20];
 static uint8_t fs_data_buffer[FILE_CHUNCK_SIZE + 4];
-char requested_path[64];
+char request_filename[32];
+static char requested_path[128];
 bool download_is_header_request = false;
 
 static void handle_fs_job(FS_JOB_TYPE_E type);
 static void save_log();
 static void send_log_filelist();
-static void send_log_file(const char *filename);
+static int send_log_file(const char *filename, bool is_header);
+static int delete_log_file(const char *filename);
+
 static int start_logfile_listing(FIL *);
 static void end_logfile_listing(FIL *);
 static char *current_log_dirname();
@@ -33,7 +36,7 @@ static char *current_log_filename();
 static char *current_log_fullpath();
 static FRESULT check_n_create_dir(const char *dirname);
 static FRESULT check_dir_for_current_date(void);
-static void write_log_file_header(FIL *fil);
+static FRESULT write_log_file_header(FIL *fil);
 static FRESULT write_data(FIL *fil);
 static FRESULT update_metafile(FIL *fil);
 static void send_file_header(FIL *fil);
@@ -41,7 +44,6 @@ static void send_file_overall(FIL *fil);
 static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t datasize, size_t arraysize);
 
 extern app_ctx_t ctx;
-extern uint8_t wData[];
 extern int ext_tx_completed;
 
 __PACKED_STRUCT ymd {
@@ -100,16 +102,40 @@ void fs_task(void const *arg)
 static void handle_fs_job(FS_JOB_TYPE_E type)
 {
 	switch (type) {
-	case FS_JOB_TYPE_SAVE_LOG:
+	case FS_JOB_TYPE_SAVE_LOG: {
+		uint32_t elapsed = osKernelSysTick();
 		save_log();
+		DBG_LOG("Saving a log elapsed %u\n", osKernelSysTick() - elapsed);
 		break;
+	}
 	case FS_JOB_TYPE_QUERY_FILELIST:
 		send_log_filelist();
 		break;
-	case FS_JOB_TYPE_DOWNLOAD_FILE:
-		strcpy(requested_path, "/2020/01/13/200113_010000.ske");
-		send_log_file(requested_path);
+	case FS_JOB_TYPE_DOWNLOAD_FILE_HEADER:
+	case FS_JOB_TYPE_DOWNLOAD_FILE: {
+		uint32_t elapsed = osKernelSysTick();
+		struct ymd ymd;
+		strcpy(request_filename, "200117_220000.ske"); /* for test */
+		translate_ymd(&ymd, request_filename);
+		sprintf(requested_path, "0://20%02d/%02d/%02d/%s",
+			ymd.y, ymd.m, ymd.d, request_filename);
+		bool is_header = (type == FS_JOB_TYPE_DOWNLOAD_FILE) ? false : true;
+		if (send_log_file(requested_path, is_header) != 0) {
+			send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
+		}
+		DBG_LOG("Download file elapsed %u\n", osKernelSysTick() - elapsed);
 		break;
+	}
+	case FS_JOB_TYPE_DELETE_FILE: {
+		struct ymd ymd;
+		translate_ymd(&ymd, request_filename);
+		sprintf(requested_path, "0://20%02d/%02d/%02d/%s",
+			ymd.y, ymd.m, ymd.d, request_filename);
+		if (delete_log_file(requested_path) != 0) {
+			send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
+		}
+		break;
+	}
 	default:
 		return;
 	}
@@ -136,16 +162,25 @@ static void save_log()
 	ret = f_open(&logfp, fullpath, FA_OPEN_APPEND | FA_WRITE);
 	if (ret != FR_OK) {
 		DBG_LOG("error (%d): f_open during %s\n", ret, __func__);
+		ctx.sd_last_error = SD_RET_OPEN_ERR;
+		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
 		return;
 	}
 
 	if (f_size(&logfp) == 0) {
 		new_file_created = true;
-		write_log_file_header(&logfp);
+		ret = write_log_file_header(&logfp);
+		if (ret != FR_OK) {
+			send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
+			f_close(&logfp);
+			return;
+		}
 	}
+
 	ret = write_data(&logfp);
 	if (ret != FR_OK) {
 		DBG_LOG("error (%d): write_data during %s\n", ret, __func__);
+		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
 		f_close(&logfp);
 		return;
 	}
@@ -163,8 +198,10 @@ static void send_log_filelist()
 	FRESULT ret = FR_OK;
 	static uint8_t _time_data[48] = { 0 };
 
-	ret = f_open(&metafp, "0://.metafile", FA_OPEN_EXISTING | FA_READ);
+	ret = f_open(&metafp, "0://.metafile", FA_OPEN_ALWAYS | FA_READ);
 	if (ret != FR_OK) {
+		ctx.sd_last_error = SD_RET_OPEN_ERR;
+		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
 		goto ret_error;
 	}
 
@@ -195,8 +232,8 @@ static void send_log_filelist()
 			_time_data[3] = ymd.m;
 			_time_data[4] = ymd.d;
 
-			DBG_LOG("header: ");
-			DBG_DUMP(_time_data, 5);
+			/* DBG_LOG("header: "); */
+			/* DBG_DUMP(_time_data, 5); */
 		} else {
 			char *n;
 
@@ -298,6 +335,10 @@ static char *current_log_fullpath()
 	RTC_DateTypeDef *d = &SysTime.Date;
 	RTC_TimeTypeDef *t = &SysTime.Time;
 
+	/* if (t->Hours >= 24) { */
+		DBG_LOG("%02d%02d%02d_%02d%02d%02d\r\n", d->Year, d->Month, d->Date,
+			t->Hours, t->Minutes, t->Seconds);
+	/* } */
 	sprintf(_fullpath, "0://20%02d/%02d/%02d/%02d%02d%02d_%02d%02d%02d.ske",
 		d->Year, d->Month, d->Date,
 		d->Year, d->Month, d->Date,
@@ -351,109 +392,69 @@ ret:
 	return res;
 }
 
-static void write_log_file_header(FIL *fil)
+static FRESULT write_log_file_header(FIL *fil)
 {
 	FRESULT res;
 	uint16_t i;
 	uni4Byte timezone;
 
 	res = f_lseek(fil, 0x0000); // File 확장
-	if (res != FR_OK) {
-		sdValue.sdState = SCS_SEEK_ERROR;
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 
 	for (i = 0; i < FILE_HEADER_SIZE; i++) {
 		f_putc(0x00, fil); // File Header 초기화
 	}
 
-	res = f_lseek(fil, FILE_ADD_FILE_CONFIRMATION); // File Confirmation
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+	res = f_lseek(fil, FILE_ADDR_FILE_CONFIRMATION); // File Confirmation
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 	f_printf(fil, (const TCHAR *)"This is a TempMon File. devteam.");
 
-	res = f_lseek(fil, FILE_ADD_MODEL_NUMBER); // Model No.
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+	res = f_lseek(fil, FILE_ADDR_MODEL_NUMBER); // Model No.
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 	f_printf(fil, "TTM-128");
 
-	res = f_lseek(fil, FILE_ADD_HW_VERSION); // H/W version
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+	res = f_lseek(fil, FILE_ADDR_HW_VERSION); // H/W version
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 	f_printf(fil, "1.10");
 
-	res = f_lseek(fil, FILE_ADD_FW_VERSION); // F/W version
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+	res = f_lseek(fil, FILE_ADDR_FW_VERSION); // F/W version
+		ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 	f_printf(fil, "1.00");
 
-	res = f_lseek(fil,
-		FILE_ADD_TEST_DATE_TIME); // Start Date Time
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+	res = f_lseek(fil, FILE_ADDR_TEST_DATE_TIME); // Start Date Time
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 	f_printf(fil, "20%02d%02d%02d%02d%02d%02d",
 		SysTime.Date.Year, // file
 		SysTime.Date.Month, SysTime.Date.Date,
 		SysTime.Time.Hours, SysTime.Time.Minutes,
 		SysTime.Time.Seconds);
-	res = f_lseek(fil, FILE_ADD_TIME_ZONE); // Time Zone
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+
+	res = f_lseek(fil, FILE_ADDR_TIME_ZONE); // Time Zone
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 	timezone.Float = 9;
 	f_putc(timezone.UI8[0], fil);
 	f_putc(timezone.UI8[1], fil);
 	f_putc(timezone.UI8[2], fil);
 	f_putc(timezone.UI8[3], fil);
 
-	res = f_lseek(fil, FILE_ADD_MCU_UUID); // MCU UUID
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
+	res = f_lseek(fil, FILE_ADDR_MCU_UUID); // MCU UUID
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
 	f_putc(SysProperties.mcuUUID[0].UI8[0], fil);
 	f_putc(SysProperties.mcuUUID[0].UI8[1], fil);
 	f_putc(SysProperties.mcuUUID[0].UI8[2], fil);
@@ -467,49 +468,38 @@ static void write_log_file_header(FIL *fil)
 	f_putc(SysProperties.mcuUUID[2].UI8[2], fil);
 	f_putc(SysProperties.mcuUUID[2].UI8[3], fil);
 
-	res = f_lseek(fil, FILE_ADD_SLOT_USE); // slot use
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
-	for (int i = 0; i < 4; i++)
-		f_putc(ctx.slots[i].inserted, fil);
-
-	res = f_lseek(fil, FILE_ADD_SLOT_TYPE); // slot type
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
-	}
-	for (int i = 0; i < 4; i++)
-		f_putc(ctx.slots[i].type, fil);
-
-	res = f_lseek(fil, FILE_ADD_TEST_DATA); // file write position
-	if (res != FR_OK) {
-		/* sdValue.sdState = SCS_SEEK_ERROR; */
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
-		return;
-	} else {
-		/* sdValue.sdState = SCS_OK; */
+	res = f_lseek(fil, FILE_ADDR_SLOT_USE); // slot use
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
+	FOREACH(struct slot_s *s, ctx.slots) {
+		f_putc(s->inserted, fil);
 	}
 
-	/* res = f_sync(fil); */
-	/* if (res != FR_OK) { */
-	/* 	/\* sdValue.sdState = SCS_SYNC_ERROR; *\/ */
-	/* 	/\* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, *\/ */
-	/* 	/\*                        (uint8_t *)sdValue.sdState, 1, 12, 32); *\/ */
-	/* 	return; */
-	/* } else { */
-	/* 	/\* sdValue.sdState = SCS_OK; *\/ */
-	/* } */
+	res = f_lseek(fil, FILE_ADDR_SLOT_TYPE); // slot type
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
+	FOREACH(struct slot_s *s, ctx.slots) {
+		f_putc(s->type, fil);
+	}
+
+	res = f_lseek(fil, FILE_ADDR_NTC_TBL); // NTC Table
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
+	FOREACH(struct slot_s *s, ctx.slots) {
+		UINT readnum = 0;
+		res = f_write(fil, s->ntc.calibration_tbl,
+			sizeof(float) * CHANNEL_NBR, &readnum);
+	}
+
+	res = f_lseek(fil, FILE_ADDR_TEST_DATA); // file write position
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_SEEK_ERR : SD_RET_OK;
+	if (res != FR_OK)
+		return res;
+
+	return res;
 }
 
 static FRESULT write_data(FIL *fil)
@@ -521,36 +511,39 @@ static FRESULT write_data(FIL *fil)
 	// FSIZE_t size;
 
 	//메모리 초기화
-	memset(wData, 0x00, 420);
+	memset(fs_data_buffer, 0x00, 420);
 
 	//시간
-	wData[0] = SysTime.Date.Year;
-	wData[1] = SysTime.Date.Month;
-	wData[2] = SysTime.Date.Date;
-	wData[3] = SysTime.Time.Hours;
-	wData[4] = SysTime.Time.Minutes;
-	wData[5] = SysTime.Time.Seconds;
-	wData[6] = (uint8_t)((SysTime.Time.SubSeconds & 0x0000FF00) >> 8);
-	wData[7] = (uint8_t)(SysTime.Time.SubSeconds & 0x000000FF);
+	fs_data_buffer[0] = SysTime.Date.Year;
+	fs_data_buffer[1] = SysTime.Date.Month;
+	fs_data_buffer[2] = SysTime.Date.Date;
+	fs_data_buffer[3] = SysTime.Time.Hours;
+	fs_data_buffer[4] = SysTime.Time.Minutes;
+	fs_data_buffer[5] = SysTime.Time.Seconds;
+	fs_data_buffer[6] = (uint8_t)((SysTime.Time.SubSeconds & 0x0000FF00) >> 8);
+	fs_data_buffer[7] = (uint8_t)(SysTime.Time.SubSeconds & 0x000000FF);
 
 	//채널
 	FOREACH(struct slot_s *s, ctx.slots) {
+		/* if (!s || !s->inserted) */
+		/* 	continue; */
+
 		for (int i = 0; i < 16; i++) {
-			if (s->ntc.channel_states[i] != CHANNEL_STATE_DISCONNECTED) {
-				wData[34 + (sensorCount * 6)] = s->id * 16 + i; // 채널 번호
-				wData[35 + (sensorCount * 6)] = s->ntc.channel_states[i]; // 센서 상태
-				*((float *)&wData[36 + (sensorCount * 6)]) = s->ntc.temperatures[i]; // 센서값 저장
+		/* 	if (s->ntc.channel_states[i] != CHANNEL_STATE_DISCONNECTED) { */
+				fs_data_buffer[34 + (sensorCount * 6)] = s->id * 16 + i; // 채널 번호
+				fs_data_buffer[35 + (sensorCount * 6)] = s->ntc.channel_states[i]; // 센서 상태
+				*((float *)&fs_data_buffer[36 + (sensorCount * 6)]) = s->ntc.temperatures[i]; // 센서값 저장
 				sensorCount++; // 사용 채널수 확인
-			}
+		/* 	} */
 		}
 	}
 	/* for (int j = 0; j < 4; j++) { */
 	/*     for (int i = 0; i < 16; i++) { */
 	/*         if (TestData.sensorState[j][i] != LDM_DONOT_CONNECT) { */
-	/*             wData[34 + (sensorCount * 6)] = j * 16 + i; // 채널 번호 */
-	/*             wData[35 + (sensorCount * 6)] = */
+	/*             fs_data_buffer[34 + (sensorCount * 6)] = j * 16 + i; // 채널 번호 */
+	/*             fs_data_buffer[35 + (sensorCount * 6)] = */
 	/*                 TestData.sensorState[j][i]; // 센서 상태 */
-	/*             memcpy(&wData[36 + (sensorCount * 6)], */
+	/*             memcpy(&fs_data_buffer[36 + (sensorCount * 6)], */
 	/*                    &TestData.temperatures[j][i], 4); // 센서값 저장 */
 	/*             sensorCount++; // 사용 채널수 확인 */
 	/*         } */
@@ -562,7 +555,7 @@ static FRESULT write_data(FIL *fil)
 		return res;
 	}
 
-	wData[8] = sensorCount;
+	fs_data_buffer[8] = sensorCount;
 
 	//보드 센서 복사
 	__IO float v;
@@ -582,47 +575,32 @@ static FRESULT write_data(FIL *fil)
 			break;
 		}
 
-		wData[10 + (i * 6)] = MCU_BOARD_BATTERY + i; //채널 번호, 0xEB ~ 0xEE
-		wData[11 + (i * 6)] = 0x00; //보드 센서의 상태값은 없음.
-		*((float *)&wData[12 + (i * 6)]) = v;
+		fs_data_buffer[10 + (i * 6)] = MCU_BOARD_BATTERY + i; //채널 번호, 0xEB ~ 0xEE
+		fs_data_buffer[11 + (i * 6)] = 0x00; //보드 센서의 상태값은 없음.
+		*((float *)&fs_data_buffer[12 + (i * 6)]) = v;
 	}
 
 	res = f_lseek(fil, f_size(fil));
 	if (res != FR_OK) {
-		sdValue.sdState = SCS_SEEK_ERROR;
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
+		ctx.sd_last_error = SD_RET_SEEK_ERR;
 		return res;
 	} else {
-		sdValue.sdState = SCS_OK;
+		ctx.sd_last_error = SD_RET_OK;
 	}
 
 	writeLen = (sensorCount * 6) + 34;
-	res = f_write(fil, &wData[0], writeLen, &retCount);
+	res = f_write(fil, &fs_data_buffer[0], writeLen, &retCount);
+	ctx.sd_last_error = (res != FR_OK) ? SD_RET_WRITE_ERR : SD_RET_OK;
 	if (res != FR_OK) {
-		sdValue.sdState = SCS_WRITE_ERROR;
-		/* send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-		/*                        (uint8_t *)sdValue.sdState, 1, 12, 32); */
 		return res;
-	} else {
-		sdValue.sdState = SCS_OK;
 	}
 
-	/* res = f_sync(fil); */
-	/* if (res != FR_OK) { */
-	/*     sdValue.sdState = SCS_SYNC_ERROR; */
-	/*     send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, */
-	/*                            (uint8_t *)sdValue.sdState, 1, 12, 32); */
-	/*     return; */
-	/* } else { */
-	/*     sdValue.sdState = SCS_OK; */
-	/* } */
 	return res;
 }
 
 static FRESULT update_metafile(FIL *fil)
 {
-	/* char buffer[64] = { 0 }; */
+	char buffer[64] = { 0 };
 	FRESULT ret = FR_OK;
 
 	ret = f_open(fil, "0://.metafile", FA_OPEN_EXISTING | FA_READ | FA_WRITE);
@@ -631,25 +609,31 @@ static FRESULT update_metafile(FIL *fil)
 		return ret;
 	}
 
-	/* /\* move pointer to last line & read the line *\/ */
-	/* f_lseek(fil, f_size(fil) - 20); */
-	/* f_gets(buffer, 19, fil); */
+	/* move pointer to last line & read the line */
+	f_lseek(fil, f_size(fil) - 20);
+	f_gets(buffer, 19, fil);
 
+	if (buffer[0] != '\t') {
+		DBG_LOG("error: can not find last line of metafile\n");
+		f_close(fil);
+		return 100;
+	}
 
-	/* if (buffer[0] != '\t') { */
-	/* 	DBG_LOG("error: can not find last line of metafile\n"); */
-	/* 	f_close(fil); */
-	/* 	return 100; */
-	/* } */
+	struct ymd last_ymd = { 0 };
+	translate_ymd(&last_ymd, &buffer[1]);
+	if (last_ymd.d != SysTime.Date.Date) {
+		f_lseek(fil, f_size(fil));
+		f_printf(fil, "%02d%02d%02d\n",
+			SysTime.Date.Year, SysTime.Date.Month, SysTime.Date.Date);
+	}
 
-	/* struct ymd last_ymd = { 0 }; */
-	/* translate_ymd(&last_ymd, &buffer[1]); */
-	/* if (last_ymd.d != SysTime.Date.Date) { */
-
-	/* } */
-
-	f_lseek(fil, f_size(fil));
-	f_printf(fil, "\t%s\n", current_log_filename());
+	char *n = strndup(&buffer[8], 2);
+	uint8_t hour = (uint8_t)strtol(n, NULL, 10);
+	free(n);
+	if (hour != SysTime.Time.Hours) {
+		f_lseek(fil, f_size(fil));
+		f_printf(fil, "\t%s\n", current_log_filename());
+	}
 
 	f_sync(fil);
 	f_close(fil);
@@ -657,17 +641,20 @@ static FRESULT update_metafile(FIL *fil)
 	return ret;
 }
 
-static void send_log_file(const char *filename)
+static int send_log_file(const char *filename, bool is_header)
 {
 	FRESULT ret = FR_OK;
 
-	ctx.heavy_job_processing = true;
+	/* ctx.heavy_job_processing = true; */
 
 	/* ret = f_open(&fil, filename, FA_OPEN_EXISTING | FA_READ); */
 	ret = f_open(&downloadfp, filename, FA_OPEN_EXISTING | FA_READ);
+	ctx.sd_last_error = (ret != FR_OK) ? SD_RET_OPEN_ERR : SD_RET_OK;
 	if (ret != FR_OK) {
-		DBG_LOG("error (%d): f_open metafile during %s\n", ret, __func__);
-		return;
+		DBG_LOG("error (%d): f_open download during %s with %s\n",
+			ret, __func__, filename);
+		ctx.heavy_job_processing = false;
+		return -1;
 	}
 
 #if 0
@@ -679,6 +666,7 @@ static void send_log_file(const char *filename)
 		ret = f_read(&downloadfp, fs_buffer, 4096, &readnum);
 		if (ret != FR_OK) {
 			f_close(&downloadfp);
+			ctx.heavy_job_processing = false;
 			return;
 		}
 		count++;
@@ -687,7 +675,7 @@ static void send_log_file(const char *filename)
 	}
 #endif //0
 
-	if (download_is_header_request) {
+	if (is_header) {
 		send_file_header(&downloadfp);
 	} else {
 		send_file_overall(&downloadfp);
@@ -695,7 +683,9 @@ static void send_log_file(const char *filename)
 
 	f_close(&downloadfp);
 
-	ctx.heavy_job_processing = false;
+	/* ctx.heavy_job_processing = false; */
+
+	return 0;
 }
 
 static void send_file_header(FIL *fil)
@@ -783,11 +773,27 @@ static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t data
 	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
 	/* DBG_DUMP(fs_buffer, arraysize + 20); */
 
-	if (ext_tx_completed) {
+	while (!ext_tx_completed)
+		__NOP();
+
 		ext_tx_completed = 0;
 		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
 		HAL_UART_Transmit_DMA(&huart1, fs_buffer, arraysize + 20);
-		while (ext_tx_completed == 0)
-			__NOP();
+		/* while (ext_tx_completed == 0) */
+		/* 	__NOP(); */
+
+}
+
+static int delete_log_file(const char *filename)
+{
+	FRESULT ret = FR_OK;
+
+	ret = f_unlink(filename);
+	if (ret != FR_OK) {
+		ctx.sd_last_error = SD_RET_REMOVE_ERR;
+		DBG_LOG("error (%d): f_unlink %s with %s\n",
+			ret, __func__, filename);
+		return -1;
 	}
+	return 0;
 }

@@ -39,20 +39,21 @@
 **********************************************************************/
 #define FILE_HEADER_SIZE                        4096
 
-#define FILE_ADD_FILE_CONFIRMATION      0x0000
-#define FILE_ADD_MODEL_NUMBER           0x0020
-#define FILE_ADD_HW_VERSION                     0x0040
-#define FILE_ADD_FW_VERSION                     0x0050
-#define FILE_ADD_TEST_DATE_TIME         0x0060
-#define FILE_ADD_TIME_ZONE                      0x0070
-#define FILE_ADD_MCU_UUID                       0x0080
-#define FILE_ADD_SLOT_USE                       0x0090
-#define FILE_ADD_SLOT_TYPE                      0x00A0
-#define FILE_ADD_FINGERPRINT            0x00B0
-#define FILE_ADD_BOARD_ID                       0x00C0
-#define FILE_ADD_BOARD_IP                       0x00D0
+#define FILE_ADDR_FILE_CONFIRMATION      0x0000
+#define FILE_ADDR_MODEL_NUMBER           0x0020
+#define FILE_ADDR_HW_VERSION                     0x0040
+#define FILE_ADDR_FW_VERSION                     0x0050
+#define FILE_ADDR_TEST_DATE_TIME         0x0060
+#define FILE_ADDR_TIME_ZONE                      0x0070
+#define FILE_ADDR_MCU_UUID                       0x0080
+#define FILE_ADDR_SLOT_USE                       0x0090
+#define FILE_ADDR_SLOT_TYPE                      0x00A0
+#define FILE_ADDR_FINGERPRINT            0x00B0
+#define FILE_ADDR_BOARD_ID                       0x00C0
+#define FILE_ADDR_BOARD_IP                       0x00D0
+#define FILE_ADDR_NTC_TBL                        0x0500
 
-#define FILE_ADD_TEST_DATA                      0x1000
+#define FILE_ADDR_TEST_DATA                      0x1000
 
 /*********************************************************************
 *               Bluetooth

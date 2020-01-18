@@ -38,8 +38,8 @@ void StartRateTask(void const * argument)
 	RTC_TimeTypeDef *time = &SysTime.Time;
 
 	//시간 초기화
-	HAL_RTC_GetDate(&hrtc, date, RTC_FORMAT_BIN);
-	HAL_RTC_GetTime(&hrtc, time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, date, RTC_FORMAT_BCD);
+	HAL_RTC_GetTime(&hrtc, time, RTC_FORMAT_BCD);
 
 	if( (date->Year < 10) || (date->Year > 99) || (date->Month > 12) || (date->Date > 31) ||
 		(time->Hours > 23) || (time->Minutes > 59) || (time->Seconds > 59) ) {
@@ -51,22 +51,22 @@ void StartRateTask(void const * argument)
 		time->Minutes = 0;
 		time->Seconds = 0;
 
-		HAL_RTC_SetDate(&hrtc, date, RTC_FORMAT_BIN);
-		HAL_RTC_SetTime(&hrtc, time, RTC_FORMAT_BIN);
+		HAL_RTC_SetDate(&hrtc, date, RTC_FORMAT_BCD);
+		HAL_RTC_SetTime(&hrtc, time, RTC_FORMAT_BCD);
 	}
 
 	/* if (sdValue.sdMountState == SCS_OK) { //sd card Link 확인 */
 	/* 	if (MountSDIO() != FR_OK) { //sd card mount 확인 */
 	/* 		sdValue.sdMountState = SCS_MOUNT_ERROR; */
-	/* 		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32); */
+	/* 		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32); */
 	/* 	} */
 	/* 	else { */
 	/* 		sdValue.sdMountState = SCS_OK; */
 	/* 	} */
 	/* } */
 	/* else { */
-	/* 	sdValue.sdState = SCS_MOUNT_ERROR; */
-	/* 	send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32); */
+	/* 	ctx.sd_last_error = SCS_MOUNT_ERROR; */
+	/* 	send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32); */
 	/* } */
 
 	xLastWakeTime = osKernelSysTick();
@@ -131,28 +131,28 @@ void DoSdCardFreeSpace(void)
 	persent = (float)((float)free / (float)all);
 
 	if (persent < SD_CARD_FULL_ERROR_RATE) {
-		sdValue.sdState = SCS_DISK_FULL;
-		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &sdValue.sdState, 1, 12, 32);
+		ctx.sd_last_error = SCS_DISK_FULL;
+		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, &ctx.sd_last_error, 1, 12, 32);
 	} else {
-		sdValue.sdState = SCS_OK;
+		ctx.sd_last_error = SCS_OK;
 	}
 }
 
 void DoSdCardFunction(void)
 {
-	HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
-	HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD);
+	HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD);
 
 	if (DoFolderCheck() == FR_OK)		// 디렉토리 생성 및 확인
 	{
-		sdValue.sdState = SCS_OK;
+		ctx.sd_last_error = SCS_OK;
 		DoFileCheck();		// 파일 상태를 확인하고 파일 해더 생성 까지 한다. , 파일이 있을경우 기존 파일로 이어서 쓴다.
 		DoDataWrite();
 	}
 	else
 	{
-		sdValue.sdState = SCS_MKDIR_ERROR;
-		tempData[0] = (uint8_t)sdValue.sdState;
+		ctx.sd_last_error = SCS_MKDIR_ERROR;
+		tempData[0] = (uint8_t)ctx.sd_last_error;
 		send_to_external(CMD_SD_CARD, OP_SDCARD_ERROR, tempData, 1, 12, 32);
 	}
 }

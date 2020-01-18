@@ -5,12 +5,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define MAX_SLOT_NUM        4
 #define CHANNEL_NBR         32
 
 typedef enum {
-	SLOT_TYPE_NTC = 1,
+	SLOT_TYPE_NONE,
+	SLOT_TYPE_NTC,
 	SLOT_TYPE_RELAY,
 	SLOT_TYPE_RTD,
 	SLOT_TYPE_MULTI,
@@ -27,15 +29,21 @@ typedef uint8_t CHANNEL_STATE_E;
 
 struct slot_ntc_s {
 	float           temperatures[CHANNEL_NBR];
+	float           old_temperatures[CHANNEL_NBR];
 	CHANNEL_STATE_E channel_states[CHANNEL_NBR];
 	float           thresholds[CHANNEL_NBR];
 
-	uint8_t         revision_applied;
-	float           revision_const;
-	float           revision_tr1;
-	float           revision_tr2;
+	struct compensated_s {
+		uint8_t applied;
+		float tr1;
+		float tr2;
+		float contact_const;
+	} compensated;
+
 	float           calibration_tbl[CHANNEL_NBR];
-	float           calibration_const;
+	/* float           calibration_const; */
+
+	float           variation;
 };
 
 struct slot_s {
@@ -51,7 +59,7 @@ struct slot_s {
 #define INIT_SLOTS(s, n) do {						\
 		for (int i = 0; i < n; i++) {				\
 			struct slot_s *p = s + i;			\
-			p->id = i; p->type = SLOT_TYPE_NTC;		\
+			p->id = i; p->type = SLOT_TYPE_NONE;		\
 			p->inserted = false;				\
 			memset(p->ntc.temperatures, 0, sizeof(float) * CHANNEL_NBR); \
 			memset(p->ntc.channel_states, CHANNEL_STATE_DISCONNECTED, CHANNEL_NBR); \
@@ -74,10 +82,12 @@ struct rtd_s {
 
 typedef struct app_ctx {
 	bool time_synced;
+	time_t now;
 
 	FATFS *sd_ff;
 	char *sd_root;
 	bool sd_inserted;
+	SD_RET_E sd_last_error;
 
 	bool heavy_job_processing;
 
@@ -92,5 +102,7 @@ typedef struct app_ctx {
 
 void app_ctx_init(app_ctx_t *);
 const char *firmware_version();
+time_t datetime_to_timestamp(RTC_DateTypeDef *date, RTC_TimeTypeDef *time);
+void update_rtc(time_t now);
 
 #endif /* APP_CTX_H */

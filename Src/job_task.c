@@ -88,11 +88,14 @@ static void _send_to_external(struct external_frame_tx *ftx)
 	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
 
 	/* DBG_DUMP(tx_buffer, ftx->len); */
-	if (ext_tx_completed) {
-		ext_tx_completed = 0;
-		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
-		HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftx->len);
-		while (ext_tx_completed == 0)
-			__NOP();
-	}
+	/* if (ext_tx_completed) { */
+	while (!ext_tx_completed)
+		__NOP();
+
+	ext_tx_completed = 0;
+	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
+	HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftx->len);
+	/* 	while (ext_tx_completed == 0) */
+	/* 		__NOP(); */
+	/* } */
 }

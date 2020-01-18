@@ -97,8 +97,8 @@ void doMakeSend485Data(uint8_t* outbuffer, uint8_t  Command, uint8_t  Option,
 
     memset(outbuffer, 0x00, total_len);
 
-    /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN); */
-    /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN); */
+    /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD); */
+    /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD); */
 
     *offset++ = RS_STX;
     *offset++ = Command;
@@ -141,8 +141,8 @@ void doMakeSend485DataDownLoad(uint8_t* SendData, uint8_t Command, uint8_t Optio
 
         memset(SendData, 0x00, BufferLen);
 
-        /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN); */
-        /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN); */
+        /* HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD); */
+        /* HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD); */
 
         SendData[ 0] = RS_STX;
         SendData[ 1] = Command;

@@ -8,12 +8,14 @@ typedef enum {
     FS_JOB_TYPE_NONE,
     FS_JOB_TYPE_SAVE_LOG,
     FS_JOB_TYPE_QUERY_FILELIST,
+    FS_JOB_TYPE_DOWNLOAD_FILE_HEADER,
     FS_JOB_TYPE_DOWNLOAD_FILE,
+    FS_JOB_TYPE_DELETE_FILE,
+    FS_JOB_TYPE_FORMAT,
     FS_JOB_TYPE_MAX
 } FS_JOB_TYPE_E;
 
-extern char requested_path[];
-extern bool download_is_header_request;
+extern char request_filename[];
 
 #ifdef __cplusplus
 extern "C" {

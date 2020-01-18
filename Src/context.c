@@ -15,6 +15,21 @@ struct context {
 /*     return &context; */
 /* } */
 
+time_t datetime_to_timestamp(RTC_DateTypeDef *date, RTC_TimeTypeDef *time)
+{
+	struct tm t = { 0 };
+
+	t.tm_year = date->Year - 1900;
+	t.tm_mon = date->Month - 1;
+	t.tm_mday = date->Date;
+	t.tm_hour = time->Hours;
+	t.tm_min = time->Minutes;
+	t.tm_sec = time->Seconds;
+	t.tm_isdst = -1;
+
+	return mktime(&t);
+}
+
 /* from https://community.st.com/s/question/0D50X00009XkgJE/unix-epoch-timestamp-to-rtc */
 void update_rtc(time_t now)
 {
@@ -27,7 +42,7 @@ void update_rtc(time_t now)
     sTime.Hours = (uint8_t)time_tm.tm_hour;
     sTime.Minutes = (uint8_t)time_tm.tm_min;
     sTime.Seconds = (uint8_t)time_tm.tm_sec;
-    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
+    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK) {
         Error_Handler();
     }
 
@@ -40,7 +55,7 @@ void update_rtc(time_t now)
     /*
     * update the RTC
     */
-    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
+    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK) {
         Error_Handler();
     }
 

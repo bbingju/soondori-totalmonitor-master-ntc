@@ -8,10 +8,10 @@ Lib/Syscalls/SEGGER_RTT_Syscalls_GCC.c
 RTT_C_INCLUDES = \
 -ILib/RTT
 
+# Src/0_SdCard.c
 APP_C_SOURCES = \
 Src/0_16Segment.c \
 Src/0_BCD110DS.c \
-Src/0_SdCard.c \
 Src/0_SensorCal.c \
 Src/0_StartDisplayTask.c \
 Src/0_UartCallback.c \

@@ -15,9 +15,9 @@
 #define	DATA 			        			(7)
 
 /* #define CMD_TEMP_TEST           			1 */
-/* #define CMD_WARNING_TEMP        			2 */
-/* #define CMD_REVISION            			3 */
-/* #define CMD_CALIBRATION         			4 */
+/* #define CMD_WARNING        			2 */
+/* #define CMD_COMPENSATE            			3 */
+/* #define CMD_CORRECTION         			4 */
 /* #define CMD_SD_CARD             			5 */
 /* #define CMD_SLOT                			6 */
 /* #define CMD_TIME                			7 */
@@ -30,20 +30,20 @@
 /* #define OP_TEMP_STOP            			5 */
 /* #define OP_TEMP_SAMPLE_RATE     			6 */
 
-/* #define OP_WARNING_TEMP_SET     			1 */
-/* #define OP_WARNING_TEMP_REQ     			2 */
+/* #define OP_WARNING_THRESHOLD_SET     			1 */
+/* #define OP_WARNING_THRESHOLD_REQ     			2 */
 
-/* #define OP_REVISION_APPLY_SET      			1 */
-/* #define OP_REVISION_CONSTANT_SET			2 */
-/* #define OP_REVISION_APPLY_REQ      			3 */
-/* #define OP_REVISION_CONSTANT_REQ			4 */
+/* #define OP_COMPENSATED_APPLY_SET      			1 */
+/* #define OP_COMPENSATED_CONSTANT_SET			2 */
+/* #define OP_COMPENSATED_APPLY_REQ      			3 */
+/* #define OP_COMPENSATED_CONSTANT_REQ			4 */
 
-/* #define OP_CALIBRATION_RTD_CONSTANT_SET		1 */
-/* #define OP_CALIBRATION_NTC_CON_TABLE_CAL	2 */
-/* #define OP_CALIBRATION_NTC_CONSTANT_SET		3 */
-/* #define OP_CALIBRATION_RTD_CONSTANT_REQ		4 */
-/* #define OP_CALIBRATION_NTC_CON_TABLE_REQ	5 */
-/* #define OP_CALIBRATION_NTC_CONSTANT_REQ		6 */
+/* #define OP_CORRECTION_RTD_CONSTANT_SET		1 */
+/* #define OP_CORRECTION_NTC_CON_TABLE_CAL	2 */
+/* #define OP_CORRECTION_NTC_CONSTANT_SET		3 */
+/* #define OP_CORRECTION_RTD_CONSTANT_REQ		4 */
+/* #define OP_CORRECTION_NTC_CON_TABLE_REQ	5 */
+/* #define OP_CORRECTION_NTC_CONSTANT_REQ		6 */
 
 /* #define OP_SDCARD_LIST          			1 */
 /* #define OP_SDCARD_LIST_START       			1 */

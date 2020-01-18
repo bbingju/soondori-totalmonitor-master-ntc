@@ -36,11 +36,11 @@ void MX_FATFS_Init(void)
 	/* additional user code for init */
 	/* if (retSD != 0)	// 0이면 정상 */
 	/* { */
-	/* 	sdValue.sdState = SCS_LINK_ERROR; */
+	/* 	ctx.sd_last_error = SCS_LINK_ERROR; */
 	/* } */
 	/* else */
 	/* { */
-	/* 	sdValue.sdState = SCS_OK; */
+	/* 	ctx.sd_last_error = SCS_OK; */
 	/* } */
   /* USER CODE END Init */
 }
@@ -56,8 +56,8 @@ void MX_FATFS_Init(void)
 /*   RTC_TimeTypeDef Time_Value; */
 /*   RTC_DateTypeDef Date_Value; */
 	
-/*   HAL_RTC_GetTime(&hrtc, &Time_Value, RTC_FORMAT_BIN); */
-/*   HAL_RTC_GetDate(&hrtc, &Date_Value, RTC_FORMAT_BIN); */
+/*   HAL_RTC_GetTime(&hrtc, &Time_Value, RTC_FORMAT_BCD); */
+/*   HAL_RTC_GetDate(&hrtc, &Date_Value, RTC_FORMAT_BCD); */
 
 /*   return (DWORD)((  Date_Value.Year + 20 ) 	<< 25 */
 /*                  | Date_Value.Month   		<< 21 */

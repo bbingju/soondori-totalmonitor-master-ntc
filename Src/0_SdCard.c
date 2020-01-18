@@ -131,12 +131,12 @@ void DoMakeFile(void)
                      FA_OPEN_ALWAYS | FA_WRITE);
         if (res != FR_OK) //파일 열기 오류
         {
-            sdValue.sdState = SCS_OPEN_ERROR;
+            ctx.sd_last_error = SD_RET_OPEN_ERR;
             send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                                   (uint8_t *)sdValue.sdState, 1, 12, 32);
+                                   (uint8_t *)ctx.sd_last_error, 1, 12, 32);
             return;
         } else {
-            sdValue.sdState = SCS_OK;
+            ctx.sd_last_error = SD_RET_OK;
         }
         DoWriteFileHeader();
     } else //파일이 있을때,  부팅을 했는데 예전 파일이 이름이 같을때
@@ -145,12 +145,12 @@ void DoMakeFile(void)
                      FA_OPEN_APPEND | FA_WRITE); //이어 쓰기 한다.
         if (res != FR_OK)                        //파일 열기 오류
         {
-            sdValue.sdState = SCS_OPEN_ERROR;
+            ctx.sd_last_error = SD_RET_OPEN_ERR;
             send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                                   (uint8_t *)sdValue.sdState, 1, 12, 32);
+                                   (uint8_t *)ctx.sd_last_error, 1, 12, 32);
             return;
         } else {
-            sdValue.sdState = SCS_OK;
+            ctx.sd_last_error = SD_RET_OK;
         }
     }
 }
@@ -193,12 +193,12 @@ void DoWriteFileHeader(void)
 
     res = f_lseek(&sdValue.fileObject, 0x0000); // File 확장
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
 
     for (i = 0; i < FILE_HEADER_SIZE; i++) {
@@ -206,74 +206,74 @@ void DoWriteFileHeader(void)
     }
 
     res = f_lseek(&sdValue.fileObject,
-                  FILE_ADD_FILE_CONFIRMATION); // File Confirmation
+                  FILE_ADDR_FILE_CONFIRMATION); // File Confirmation
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     f_printf(&sdValue.fileObject,
              (const TCHAR *)"This is a TempMon File. devteam.");
 
-    res = f_lseek(&sdValue.fileObject, FILE_ADD_MODEL_NUMBER); // Model No.
+    res = f_lseek(&sdValue.fileObject, FILE_ADDR_MODEL_NUMBER); // Model No.
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     f_printf(&sdValue.fileObject, "TTM-128");
 
-    res = f_lseek(&sdValue.fileObject, FILE_ADD_HW_VERSION); // H/W version
+    res = f_lseek(&sdValue.fileObject, FILE_ADDR_HW_VERSION); // H/W version
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     f_printf(&sdValue.fileObject, "1.10");
 
-    res = f_lseek(&sdValue.fileObject, FILE_ADD_FW_VERSION); // F/W version
+    res = f_lseek(&sdValue.fileObject, FILE_ADDR_FW_VERSION); // F/W version
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     f_printf(&sdValue.fileObject, "1.00");
 
     res = f_lseek(&sdValue.fileObject,
-                  FILE_ADD_TEST_DATE_TIME); // Start Date Time
+                  FILE_ADDR_TEST_DATE_TIME); // Start Date Time
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     f_printf(&sdValue.fileObject, "20%02d%02d%02d%02d%02d%02d",
              (char)SysTime.Date.Year, // file
              (char)SysTime.Date.Month, (char)SysTime.Date.Date,
              (char)SysTime.Time.Hours, (char)SysTime.Time.Minutes,
              (char)SysTime.Time.Seconds);
-    res = f_lseek(&sdValue.fileObject, FILE_ADD_TIME_ZONE); // Time Zone
+    res = f_lseek(&sdValue.fileObject, FILE_ADDR_TIME_ZONE); // Time Zone
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     timezone.Float = 9;
     f_putc(timezone.UI8[0], &sdValue.fileObject);
@@ -281,14 +281,14 @@ void DoWriteFileHeader(void)
     f_putc(timezone.UI8[2], &sdValue.fileObject);
     f_putc(timezone.UI8[3], &sdValue.fileObject);
 
-    res = f_lseek(&sdValue.fileObject, FILE_ADD_MCU_UUID); // MCU UUID
+    res = f_lseek(&sdValue.fileObject, FILE_ADDR_MCU_UUID); // MCU UUID
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     f_putc(SysProperties.mcuUUID[0].UI8[0], &sdValue.fileObject);
     f_putc(SysProperties.mcuUUID[0].UI8[1], &sdValue.fileObject);
@@ -303,49 +303,49 @@ void DoWriteFileHeader(void)
     f_putc(SysProperties.mcuUUID[2].UI8[2], &sdValue.fileObject);
     f_putc(SysProperties.mcuUUID[2].UI8[3], &sdValue.fileObject);
 
-    res = f_lseek(&sdValue.fileObject, FILE_ADD_SLOT_USE); // slot use
+    res = f_lseek(&sdValue.fileObject, FILE_ADDR_SLOT_USE); // slot use
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     for (int i = 0; i < 4; i++)
         f_putc(ctx.slots[i].inserted, &sdValue.fileObject);
 
-    res = f_lseek(&sdValue.fileObject, FILE_ADD_SLOT_TYPE); // slot type
+    res = f_lseek(&sdValue.fileObject, FILE_ADDR_SLOT_TYPE); // slot type
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
     for (int i = 0; i < 4; i++)
         f_putc(ctx.slots[i].type, &sdValue.fileObject);
 
     res =
-        f_lseek(&sdValue.fileObject, FILE_ADD_TEST_DATA); // file write position
+        f_lseek(&sdValue.fileObject, FILE_ADDR_TEST_DATA); // file write position
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SEEK_ERROR;
+        ctx.sd_last_error = SD_RET_SEEK_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
 
     res = f_sync(&sdValue.fileObject);
     if (res != FR_OK) {
-        sdValue.sdState = SCS_SYNC_ERROR;
+        ctx.sd_last_error = SD_RET_SYNC_ERR;
         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR,
-                               (uint8_t *)sdValue.sdState, 1, 12, 32);
+                               (uint8_t *)ctx.sd_last_error, 1, 12, 32);
         return;
     } else {
-        sdValue.sdState = SCS_OK;
+        ctx.sd_last_error = SD_RET_OK;
     }
 }
 
@@ -415,33 +415,33 @@ void DoWriteFileHeader(void)
 
 /*     res = f_lseek(&sdValue.fileObject, f_size(&sdValue.fileObject)); */
 /*     if (res != FR_OK) { */
-/*         sdValue.sdState = SCS_SEEK_ERROR; */
+/*         ctx.sd_last_error = SD_RET_SEEK_ERR; */
 /*         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, */
-/*                                (uint8_t *)sdValue.sdState, 1, 12, 32); */
+/*                                (uint8_t *)ctx.sd_last_error, 1, 12, 32); */
 /*         return; */
 /*     } else { */
-/*         sdValue.sdState = SCS_OK; */
+/*         ctx.sd_last_error = SD_RET_OK; */
 /*     } */
 
 /*     writeLen = (sensorCount * 6) + 34; */
 /*     res = f_write(&sdValue.fileObject, &wData[0], writeLen, &retCount); */
 /*     if (res != FR_OK) { */
-/*         sdValue.sdState = SCS_WRITE_ERROR; */
+/*         ctx.sd_last_error = SD_RET_WRITE_ERR; */
 /*         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, */
-/*                                (uint8_t *)sdValue.sdState, 1, 12, 32); */
+/*                                (uint8_t *)ctx.sd_last_error, 1, 12, 32); */
 /*         return; */
 /*     } else { */
-/*         sdValue.sdState = SCS_OK; */
+/*         ctx.sd_last_error = SD_RET_OK; */
 /*     } */
 
 /*     res = f_sync(&sdValue.fileObject); */
 /*     if (res != FR_OK) { */
-/*         sdValue.sdState = SCS_SYNC_ERROR; */
+/*         ctx.sd_last_error = SD_RET_SYNC_ERR; */
 /*         send_external_response(CMD_SD_CARD, OP_SDCARD_ERROR, */
-/*                                (uint8_t *)sdValue.sdState, 1, 12, 32); */
+/*                                (uint8_t *)ctx.sd_last_error, 1, 12, 32); */
 /*         return; */
 /*     } else { */
-/*         sdValue.sdState = SCS_OK; */
+/*         ctx.sd_last_error = SD_RET_OK; */
 /*     } */
 /* } */
 
@@ -475,7 +475,7 @@ FRESULT scan_files(char *path) /* Start node to be scanned (***also used as work
             memset(sdValue.scanFilePath, 0x00, sizeof(sdValue.scanFilePath));
             res = f_readdir(&sdValue.scanDir[sdValue.scanDirDeep], &fno);
             if (res != FR_OK || fno.fname[0] == 0) {
-                // sdValue.sdState = SCS_READDIR_ERROR;
+                // ctx.sd_last_error = SD_RET_READDIR_ERR;
                 /* osDelay(1); */
                 break;
             }
@@ -520,7 +520,7 @@ FRESULT scan_files(char *path) /* Start node to be scanned (***also used as work
                                             //__HAL_IWDG_RELOAD_COUNTER(&hiwdg);
                                             osDelay(10);
                                     }*/
-            sdValue.sdState = SCS_OK;
+            ctx.sd_last_error = SD_RET_OK;
             send_external_response(CMD_SD_CARD, OP_SDCARD_LIST_BODY,
                                    (uint8_t *)sdValue.scanFilePath,
                                    len1 + len2 - 3, 36, 56);
@@ -530,7 +530,7 @@ FRESULT scan_files(char *path) /* Start node to be scanned (***also used as work
     } /*
      else
      {
-             sdValue.sdState = SCS_OPENDIR_ERROR;
+             ctx.sd_last_error = SD_RET_OPENDIR_ERR;
      }*/
     /* osDelay(1); */
 

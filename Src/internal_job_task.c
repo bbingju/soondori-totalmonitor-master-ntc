@@ -86,7 +86,12 @@ static void request_to_internal(struct internal_frame *frm)
 	/* 	frm->slot_id, int_cmd_str(frm->cmd), frm->datalen); */
 	/* DBG_DUMP(buffer, frame_size); */
 
-	if (int_tx_completed && transaction_completed) {
+	/* while (!int_tx_completed || !transaction_completed) */
+	/* 	__NOP(); */
+	while (!int_tx_completed)
+		__NOP();
+
+	/* if (int_tx_completed && transaction_completed) { */
 		int_tx_completed = 0;
 		HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET);
 		/* HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_SET); */
@@ -106,5 +111,5 @@ static void request_to_internal(struct internal_frame *frm)
 		}
 		/* DBG_LOG("transaction_completed count: %d tick: %d\r\n", */
 		/* count++, osKernelSysTick() - transaction_timeout); */
-	}
+	/* } */
 }

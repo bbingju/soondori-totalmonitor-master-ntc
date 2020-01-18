@@ -65,10 +65,6 @@ void app_task(void const *argument)
 					request_to_internal__SLOT_ID_REQ(s);
 					osDelay(1);
 				}
-				/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-				/* 	request_to_internal__SLOT_ID_REQ(i); */
-				/* 	osDelay(1); */
-				/* } */
 
 				osDelay(500);
 
@@ -78,14 +74,6 @@ void app_task(void const *argument)
 						last_slot_id = s->id;
 					}
 				}
-				/* for (int i = 0; i < MAX_SLOT_NUM; i++) { */
-				/* 	struct slot_s *slot = &ctx.slots[i]; */
-				/* 	if (slot->inserted) { */
-				/* 		existed_any_slot = true; */
-				/* 		last_slot_id = i; */
-				/* 	} */
-				/* } */
-
 			}
 			/* if (system_reset_needed) { */
 			/*     HAL_IWDG_Refresh(&hiwdg); */
@@ -98,21 +86,22 @@ void app_task(void const *argument)
 			break;
 		}
 
-		case STEP_READ_THRESHOLD: //각 슬롯의 경고 온도 값을 불러 온다.
-			/* startThreshold = TRUE; */
+		case STEP_READ_THRESHOLD: {
+			send_to_external(CMD_SYS, OP_STARTED_NOTIFY, NULL, 0, 12, 32);
 			FOREACH(struct slot_s *s, ctx.slots) {
 				request_to_internal__THRESHOLD_REQ(s);
 				osDelay(1);
 			}
 			SysProperties.InterfaceStep = STEP_TEMP_READ;
 			break;
+		}
 
 		case STEP_TEMP_READ: { // 각 슬롯의 id 설정 완료 후 온도센서의 온도를 요청한다.
 			if (!ctx.heavy_job_processing) {
 				FOREACH(struct slot_s *s, ctx.slots) {
-					request_to_internal__TEMPERATURE_STATE_REQ(s);
+					request_to_internal__GET_TEMPERATURE_STATES(s);
 					osDelay(1);
-					request_to_internal__TEMPERATURE_REQ(s);
+					request_to_internal__GET_TEMPERATURES(s);
 					osDelay(10);
 				}
 			}
@@ -134,7 +123,7 @@ void app_task(void const *argument)
 					}
 				}
 			}
-			osDelay(25);
+			/* osDelay(25); */
 			check_smps();
 			osDelayUntil(&next_wait, SysProperties.interval_ms);
 			break;
@@ -161,9 +150,8 @@ static void send_to_external__BOARD_INFO()
 		.rtd = ctx.rtd.temperature,
 		.temperature = ctx.temperature,
 		.humidity = ctx.humidity,
-		.sd_state = sdValue.sdState,
+		.sd_state = ctx.sd_last_error,
 	};
-	/* memcpy(info.values, &TestData.mainBoard[MBS_BATTERY].UI8[0], 16); */
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_MAIN_INFO, &info, sizeof(info), 32, 52);
 }
 
@@ -177,7 +165,7 @@ static void send_to_external__SLOT_INFO(struct slot_s *s)
 
 	info.slot_id = s->id;
 	info.slot_type = s->type;
-	info.revision_applied = s->ntc.revision_applied;
+	info.compensated = s->ntc.compensated.applied;
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &info, sizeof(info), 32, 52);
 }
 
@@ -189,7 +177,6 @@ static void send_to_external__TEMPERATURE_STATE(struct slot_s *s)
 		.slot_id = s->id,
 	};
 
-	/* struct slot_s *s = &ctx.slots[slot_id]; */
 	memcpy(d.states, s->ntc.channel_states, sizeof(d.states));
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_CHANNEL_INFO, &d, 33, 36, 56);
 }

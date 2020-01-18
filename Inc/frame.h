@@ -17,16 +17,18 @@
 #define INTERNAL_CMD_THRESHOLD_SET 0x08
 #define INTERNAL_CMD_RELAY_REQ 0x09
 #define INTERNAL_CMD_RELAY_SET 0x0A
-#define INTERNAL_CMD_REVISION_CONSTANT_REQ 0x0B
-#define INTERNAL_CMD_REVISION_CONSTANT_SET 0x0C
-#define INTERNAL_CMD_REVISION_APPLY_REQ 0x0D
-#define INTERNAL_CMD_REVISION_APPLY_SET 0x0E
-#define INTERNAL_CMD_CALIBRATION_NTC_TABLE_CAL 0x0F
-#define INTERNAL_CMD_CALIBRATION_NTC_TABLE_REQ 0x10
-#define INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ 0x11
-#define INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET 0x12
-#define INTERNAL_CMD_REVISION_TR_CONST_REQ 0x13
-#define INTERNAL_CMD_REVISION_TR_CONST_SET 0x14
+#define INTERNAL_CMD_COMPENSATE_CONSTANT_REQ 0x0B
+#define INTERNAL_CMD_COMPENSATE_CONSTANT_SET 0x0C
+#define INTERNAL_CMD_COMPENSATED_REQ 0x0D
+#define INTERNAL_CMD_COMPENSATED_SET 0x0E
+#define INTERNAL_CMD_CORRECTION_NTC_TABLE_CAL 0x0F
+#define INTERNAL_CMD_CORRECTION_NTC_TABLE_REQ 0x10
+#define INTERNAL_CMD_CORRECTION_NTC_CONSTANT_REQ 0x11
+#define INTERNAL_CMD_CORRECTION_NTC_CONSTANT_SET 0x12
+#define INTERNAL_CMD_COMPENSATE_TR_CONST_REQ 0x13
+#define INTERNAL_CMD_COMPENSATE_TR_CONST_SET 0x14
+#define INTERNAL_CMD_VARIATION_REQ 0x15
+#define INTERNAL_CMD_VARIATION_SET 0x16
 
 #define INT_STX 0xFE
 #define INT_ETX 0xFD
@@ -64,8 +66,16 @@ __PACKED_STRUCT internal_frame {
 		} threshold_set;
 
 		__PACKED_STRUCT {
+			float value;
+		} variation_set;
+
+		__PACKED_STRUCT {
+			float value;
+		} variation_get;
+
+		__PACKED_STRUCT {
 			uint8_t v;
-		} revision_applied;
+		} compensated;
 
 		__PACKED_STRUCT {
 			float v;
@@ -90,6 +100,7 @@ __PACKED_STRUCT internal_frame {
 	};
 };
 
+#define EXT_FRAME_RX_DATA_SIZE 22
 __PACKED_STRUCT external_frame_rx {
 	uint8_t cmd;
 	uint8_t option;
@@ -99,7 +110,12 @@ __PACKED_STRUCT external_frame_rx {
 			uint8_t slot_id;
 			uint8_t channel;
 			float value;
-		} warning_temp_set;
+		} warning_set_threshold;
+
+		__PACKED_STRUCT {
+			uint8_t slot_id;
+			float value;
+		} warning_set_variation;
 
 		__PACKED_STRUCT {
 			uint32_t sec;
@@ -120,7 +136,7 @@ __PACKED_STRUCT external_frame_rx {
 			float tr2;
 		} revision_tr_const;
 
-		uint8_t data[22];
+		uint8_t data[EXT_FRAME_RX_DATA_SIZE];
 	};
 };
 
@@ -151,7 +167,12 @@ __PACKED_STRUCT external_thresholds {
 	uint8_t padding[3];
 };
 
-__PACKED_STRUCT external_revision_applied {
+__PACKED_STRUCT external_variation {
+	uint8_t slot_id;
+	float value;
+};
+
+__PACKED_STRUCT external_compensated {
 	uint8_t slot_id;
 	uint8_t v;
 };
@@ -171,7 +192,7 @@ __PACKED_STRUCT external_slot_info {
 	uint8_t self_id;
 	uint8_t slot_id;
 	uint8_t slot_type;
-	uint8_t revision_applied;
+	uint8_t compensated;
 };
 
 __PACKED_STRUCT external_sd_filelist {
@@ -193,6 +214,10 @@ __PACKED_STRUCT external_sd_download_end {
 	uint32_t remained;
 };
 
+__PACKED_STRUCT external_sd_get_error {
+	uint8_t error;
+};
+
 struct external_frame_tx {
 	uint8_t cmd;
 	uint8_t option;
@@ -206,7 +231,7 @@ struct external_frame_tx {
 		struct external_temp_data temp_data;
 		struct external_temp_state_data temp_state_data;
 		struct external_thresholds thresholds;
-		struct external_revision_applied revision_applied;
+		struct external_compensated compensated;
 		struct external_revision_const revision_const;
 		struct external_revision_tr_const revision_tr_const;
 		struct external_slot_info slot_info;
@@ -239,7 +264,7 @@ __STATIC_INLINE const char *int_cmd_str(uint8_t cmd)
 		return "INTERNAL_CMD_SLOT_ID_REQ";
 		/* case INTERNAL_CMD_HW_VER: */
 		/*     return "INTERNAL_CMD_HW_VER"; */
-		/* case INTERNAL_CMD_FW_VER: */
+		/* case INTERNAL_CMD_SYS_VER: */
 		/*     return "INTERNAL_CMD_FW_VER"; */
 		/* case INTERNAL_CMD_UUID_REQ: */
 		/*     return "INTERNAL_CMD_UUID_REQ"; */
@@ -249,22 +274,22 @@ __STATIC_INLINE const char *int_cmd_str(uint8_t cmd)
 		return "INTERNAL_CMD_RELAY_REQ";
 	case INTERNAL_CMD_RELAY_SET:
 		return "INTERNAL_CMD_RELAY_SET";
-	case INTERNAL_CMD_REVISION_APPLY_SET:
-		return "INTERNAL_CMD_REVISION_APPLY_SET";
-	case INTERNAL_CMD_REVISION_CONSTANT_SET:
-		return "INTERNAL_CMD_REVISION_CONSTANT_SET";
-	case INTERNAL_CMD_REVISION_APPLY_REQ:
-		return "INTERNAL_CMD_REVISION_APPLY_REQ";
-	case INTERNAL_CMD_REVISION_CONSTANT_REQ:
-		return "INTERNAL_CMD_REVISION_CONSTANT_REQ";
-	case INTERNAL_CMD_REVISION_TR_CONST_REQ:
-		return "INTERNAL_CMD_REVISION_TR_CONST_REQ";
-	case INTERNAL_CMD_REVISION_TR_CONST_SET:
-		return "INTERNAL_CMD_REVISION_TR_CONST_SET";
-	case INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET:
-		return "INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_SET";
-	case INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ:
-		return "INTERNAL_CMD_CALIBRATION_NTC_CONSTANT_REQ";
+	case INTERNAL_CMD_COMPENSATED_SET:
+		return "INTERNAL_CMD_COMPENSATED_SET";
+	case INTERNAL_CMD_COMPENSATE_CONSTANT_SET:
+		return "INTERNAL_CMD_COMPENSATE_CONSTANT_SET";
+	case INTERNAL_CMD_COMPENSATED_REQ:
+		return "INTERNAL_CMD_COMPENSATED_REQ";
+	case INTERNAL_CMD_COMPENSATE_CONSTANT_REQ:
+		return "INTERNAL_CMD_COMPENSATE_CONSTANT_REQ";
+	case INTERNAL_CMD_COMPENSATE_TR_CONST_REQ:
+		return "INTERNAL_CMD_COMPENSATE_TR_CONST_REQ";
+	case INTERNAL_CMD_COMPENSATE_TR_CONST_SET:
+		return "INTERNAL_CMD_COMPENSATE_TR_CONST_SET";
+	case INTERNAL_CMD_CORRECTION_NTC_CONSTANT_SET:
+		return "INTERNAL_CMD_CORRECTION_NTC_CONSTANT_SET";
+	case INTERNAL_CMD_CORRECTION_NTC_CONSTANT_REQ:
+		return "INTERNAL_CMD_CORRECTION_NTC_CONSTANT_REQ";
 	case INTERNAL_CMD_TEMPERATURE_STATE_REQ:
 		return "INTERNAL_CMD_TEMPERATURE_STATE_REQ";
 	case INTERNAL_CMD_TEMPERATURE_REQ:
@@ -273,10 +298,10 @@ __STATIC_INLINE const char *int_cmd_str(uint8_t cmd)
 		return "INTERNAL_CMD_THRESHOLD_REQ";
 	case INTERNAL_CMD_THRESHOLD_SET:
 		return "INTERNAL_CMD_THRESHOLD_SET";
-	case INTERNAL_CMD_CALIBRATION_NTC_TABLE_CAL:
-		return "INTERNAL_CMD_CALIBRATION_NTC_TABLE_CAL";
-	case INTERNAL_CMD_CALIBRATION_NTC_TABLE_REQ:
-		return "INTERNAL_CMD_CALIBRATION_NTC_TABLE_REQ";
+	case INTERNAL_CMD_CORRECTION_NTC_TABLE_CAL:
+		return "INTERNAL_CMD_CORRECTION_NTC_TABLE_CAL";
+	case INTERNAL_CMD_CORRECTION_NTC_TABLE_REQ:
+		return "INTERNAL_CMD_CORRECTION_NTC_TABLE_REQ";
 	default:
 		return "";
 	}

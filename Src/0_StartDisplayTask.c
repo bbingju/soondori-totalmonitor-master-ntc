@@ -105,7 +105,7 @@ void DoDisplayModeChange(void)
 	}
 
 	//sd 카드 에러 확인
-	if (sdValue.sdState != SCS_OK) {
+	if (ctx.sd_last_error != SD_RET_OK) {
 		SysProperties.displayMode = DPM_SDCARD_ERROR;
 		return;
 	}
@@ -161,9 +161,9 @@ void doSegmentDisplay(uint8_t quarterSec)
   }
   else
   {
-  //iiii = (uint8_t)sdValue.sdState;
-  SegmentDisplay(1, doTextToDigitdata((uint8_t)(sdValue.sdState) / (uint8_t)10 + '0'));
-  SegmentDisplay(2, doTextToDigitdata((uint8_t)(sdValue.sdState) % (uint8_t)10 + '0'));
+  //iiii = (uint8_t)ctx.sd_last_error;
+  SegmentDisplay(1, doTextToDigitdata((uint8_t)(ctx.sd_last_error) / (uint8_t)10 + '0'));
+  SegmentDisplay(2, doTextToDigitdata((uint8_t)(ctx.sd_last_error) % (uint8_t)10 + '0'));
   }*/
 		break;
 	case DPM_SETTING:

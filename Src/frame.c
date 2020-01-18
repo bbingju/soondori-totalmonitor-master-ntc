@@ -282,7 +282,7 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 	}
 
 	case 4: {		/* data */
-		frm->data[22 - datalen] = *byte;
+		frm->data[EXT_FRAME_RX_DATA_SIZE - datalen] = *byte;
 		crc = crc16_modbus_update(crc, *byte);
 		if (--datalen == 0) {
 			++state;

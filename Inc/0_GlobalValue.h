@@ -144,40 +144,41 @@ typedef enum { BTN_NORMAL = 0, BTN_FALLING, BTN_ENTERED } BUTTONMODE;
 //      SD CARD
 //////////////////////////////////////////////////////////////////
 typedef enum {
-    SCS_OK = 0,
-    SCS_LINK_ERROR,
-    SCS_MOUNT_ERROR,
-    SCS_MKDIR_ERROR,
-    SCS_OPEN_ERROR,
-    SCS_SEEK_ERROR,
-    SCS_READ_ERROR,
-    SCS_SYNC_ERROR,
-    SCS_WRITE_ERROR,
-    SCS_CLOSE_ERROR,
-    SCS_READDIR_ERROR,
-    SCS_OPENDIR_ERROR,
-    SCS_DISK_FULL
-} SD_CARD_STATE;
+    SD_RET_OK = 0,
+    SD_RET_LINK_ERR,
+    SD_RET_MOUNT_ERR,
+    SD_RET_MKDIR_ERR,
+    SD_RET_OPEN_ERR,
+    SD_RET_SEEK_ERR,
+    SD_RET_READ_ERR,
+    SD_RET_SYNC_ERR,
+    SD_RET_WRITE_ERR,
+    SD_RET_CLOSE_ERR,
+    SD_RET_READDIR_ERR,
+    SD_RET_OPENDIR_ERR,
+    SD_RET_DISKFULL_ERR,
+    SD_RET_REMOVE_ERR,
+} SD_RET_E;
 
 typedef struct {
     /* FATFS sdFatFs; */
-    const TCHAR *path;
-    FIL fileObject; // File object
-    TCHAR loadFileName[40];
-    char diskPath[4];      // User logical drive path
-    SD_CARD_STATE sdState; // 에러 체크용
-    SD_CARD_STATE sdMountState;
-    FILINFO fno; // 파일 정보 리턴용
+    /* const TCHAR *path; */
+    /* FIL fileObject; // File object */
+    /* TCHAR loadFileName[40]; */
+    /* char diskPath[4];      // User logical drive path */
+    /* SD_RET_E sdState; // 에러 체크용 */
+    /* SD_RET_E sdMountState; */
+    /* FILINFO fno; // 파일 정보 리턴용 */
 
     /* DIR scanDir[5]; // 파일 리스트 전송용 */
     /* FIL sendFileObject; */
     /* uint8_t scanDirDeep; */
-    uint8_t scanFilePath[50];
-    uint32_t scanFileListCount;
+    /* uint8_t scanFilePath[50]; */
+    /* uint32_t scanFileListCount; */
     /* uint8_t scanReadFileName[50]; */
 
-    uint8_t sendFileName[50]; // 파일 다운로드용
-    uint8_t sendFileNameLen;
+    /* uint8_t sendFileName[50]; // 파일 다운로드용 */
+    /* uint8_t sendFileNameLen; */
 
     // uint8_t       errorState;             // 에러 체크용
 } SD_CARD_VALUE;

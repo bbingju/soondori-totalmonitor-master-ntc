@@ -186,7 +186,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
-  /* MX_IWDG_Init(); */
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
   /* Check if system reset is caused by IWDG */
@@ -516,7 +516,7 @@ static void MX_RTC_Init(void)
   sTime.Seconds = 0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -525,7 +525,7 @@ static void MX_RTC_Init(void)
   sDate.Date = 1;
   sDate.Year = 19;
 
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1066,8 +1066,8 @@ void vApplicationIdleHook( void )
 
     if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(400)) {
         elapsed_tick = osKernelSysTick();
-        HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
-        HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
+        HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BCD);
+        HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BCD);
     }
 
     HAL_IWDG_Refresh(&hiwdg);
