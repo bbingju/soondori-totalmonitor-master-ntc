@@ -46,6 +46,7 @@ void job_task(void const *arg)
 {
 	job_q_id = osMailCreate(osMailQ(job_q), NULL);
 
+
 	while (1) {
 		osEvent event = osMailGet(job_q_id, osWaitForever);
 		struct job *job = (struct job *)event.value.p;
@@ -208,19 +209,18 @@ static void _send_to_external(struct external_frame_tx *ftx)
 	/* DBG_LOG("ext tx [%s::%s] (%d): ", ext_cmd_str(ftx->cmd), */
 	/* 	ext_option_str(ftx->cmd, ftx->option), ftx->len); */
 
+	while (!ext_tx_completed)
+		__NOP();
+
 	doMakeSend485Data(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len, ftx->len - 20);
 	/* int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, */
 	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
 
 	/* DBG_DUMP(tx_buffer, ftx->len); */
-	/* if (ext_tx_completed) { */
-	while (!ext_tx_completed)
-		__NOP();
 
 	ext_tx_completed = 0;
 	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
 	HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftx->len);
 	while (ext_tx_completed == 0)
 		__NOP();
-	/* } */
 }

@@ -81,7 +81,6 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 osThreadId init_task_id;
-osTimerId MeasureTimerHandle;
 osSemaphoreId myBinarySemModeHandle;
 osSemaphoreId myBinarySemUpHandle;
 osSemaphoreId myBinarySemDownHandle;
@@ -130,7 +129,6 @@ static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_IWDG_Init(void);
 void init_task(void const * argument);
-/* void measure_timer_callback(void const * argument); */
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -239,11 +237,6 @@ int main(void)
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
-
-  /* Create the timer(s) */
-  /* definition and creation of MeasureTimer */
-  /* osTimerDef(MeasureTimer, measure_timer_callback); */
-  /* MeasureTimerHandle = osTimerCreate(osTimer(MeasureTimer), osTimerPeriodic, NULL); */
 
   /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
@@ -1002,14 +995,6 @@ void init_task(void const * argument)
 
 	osThreadTerminate(init_task_id);
 }
-
-/* /\* measure_timer_callback function *\/ */
-/* void measure_timer_callback(void const * argument) */
-/* { */
-/*   /\* USER CODE BEGIN measure_timer_callback *\/ */
-  
-/*   /\* USER CODE END measure_timer_callback *\/ */
-/* } */
 
 /**
   * @brief  Period elapsed callback in non blocking mode

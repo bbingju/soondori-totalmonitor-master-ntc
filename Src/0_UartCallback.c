@@ -29,8 +29,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		/* HAL_GPIO_WritePin(SLAVE_DEBUGE_GPIO_Port, SLAVE_DEBUGE_Pin, GPIO_PIN_RESET); */
 		/* HAL_GPIO_WritePin(UART_EN_SLOT_GPIO_Port, UART_EN_SLOT_Pin, GPIO_PIN_RESET); */
 	}
-	else if (huart->Instance == USART1)
-	{
+	else if (huart->Instance == USART1) {
 		ext_tx_completed = 1;
 		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
 	}
