@@ -1,11 +1,16 @@
 /**
  ******************************************************************************
   * @file    bsp_driver_sd.c for F4 (based on stm324x9i_eval_sd.c)
-  * @brief   This file includes a generic uSD card driver.
-  ******************************************************************************
+ * @brief   This file includes a generic uSD card driver.
+ *          To be completed by the user according to the board used for the project.
+ * @note    Functions generated as weak: they can be overriden by
+ *          - code in user files
+ *          - or BSP code from the FW pack files
+ *          if such files are added to the generated project (by the user).
+ ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under Ultimate Liberty license
@@ -13,8 +18,8 @@
   * the License. You may obtain a copy of the License at:
   *                             www.st.com/SLA0044
   *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ */
 
 #ifdef OLD_API
 /* kept to avoid issue when migrating old projects. */
@@ -31,7 +36,7 @@
 #include "bsp_driver_sd.h"
 
 /* Extern variables ---------------------------------------------------------*/ 
-  
+
 extern SD_HandleTypeDef hsd;
 
 /* USER CODE BEGIN BeforeInitSection */

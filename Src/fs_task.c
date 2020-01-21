@@ -6,6 +6,7 @@
 #include "external_uart_task.h"
 #include "debug.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 static osMessageQDef(fs_job_q, 16, FS_JOB_TYPE_E);
