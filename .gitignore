@@ -3,6 +3,7 @@ _si/
 .ccls-cache/
 *~
 *.jdebug.user
+.mxproject
 
 GPATH
 GRTAGS
