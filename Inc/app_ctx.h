@@ -75,6 +75,7 @@ struct slot_s {
 		for (item = (array) + count; keep; keep = !keep)
 
 struct rtd_s {
+	bool     attached;
 	uint32_t adc_val;
 	float    temperature;
 	float    calibration_const;

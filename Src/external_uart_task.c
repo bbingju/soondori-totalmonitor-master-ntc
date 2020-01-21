@@ -19,6 +19,7 @@
 
 extern app_ctx_t ctx;
 
+extern UART_HandleTypeDef huart1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 __IO int ext_tx_completed = 1;
 
@@ -82,7 +83,45 @@ static void ext_rx_check(void)
 			}
 		}
 	} else {
-		__HAL_DMA_CLEAR_FLAG(&hdma_usart1_rx, DMA_FLAG_FEIF1_5);
+
+		huart1.Instance = USART1;
+		huart1.Init.BaudRate = 921600;
+		huart1.Init.WordLength = UART_WORDLENGTH_8B;
+		huart1.Init.StopBits = UART_STOPBITS_1;
+		huart1.Init.Parity = UART_PARITY_NONE;
+		huart1.Init.Mode = UART_MODE_TX_RX;
+		huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+		huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+		if (HAL_UART_Init(&huart1) != HAL_OK)
+		{
+			Error_Handler();
+		}
+
+		USART_TypeDef *regs = huart1.Instance;
+		SET_BIT(regs->CR1, USART_CR1_IDLEIE);
+
+		hdma_usart1_rx.Instance = DMA2_Stream5;
+		hdma_usart1_rx.Init.Channel = DMA_CHANNEL_4;
+		hdma_usart1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+		hdma_usart1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+		hdma_usart1_rx.Init.MemInc = DMA_MINC_ENABLE;
+		hdma_usart1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+		hdma_usart1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+		hdma_usart1_rx.Init.Mode = DMA_CIRCULAR;
+		hdma_usart1_rx.Init.Priority = DMA_PRIORITY_LOW;
+		hdma_usart1_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+		if (HAL_DMA_Init(&hdma_usart1_rx) != HAL_OK)
+		{
+			Error_Handler();
+		}
+
+		__HAL_LINKDMA(&huart1, hdmarx, hdma_usart1_rx);
+
+		/* USART1 interrupt Init */
+		HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+		HAL_NVIC_EnableIRQ(USART1_IRQn);
+
+		HAL_UART_Receive_DMA(&huart1, ext_rx_buffer, ARRAY_LEN(ext_rx_buffer));
 	}
 	old_pos = pos; /* Save current position as old */
 
@@ -109,6 +148,8 @@ static void parse_rx(const void *data, size_t len)
 	}
 }
 
+extern void send_to_external__BOARD_INFO();
+
 void receive_from_external(struct external_frame_rx *received)
 {
 	/* DBG_LOG("ext rx [%s::%s]: ", ext_cmd_str(received->cmd), */
@@ -118,11 +159,15 @@ void receive_from_external(struct external_frame_rx *received)
 	switch (received->cmd) {
 	case CMD_TEMP_TEST:
 		switch(received->option) {
-		case OP_TEMP_START_RX:
+		case OP_TEMP_START_RX: {
+			send_to_external__BOARD_INFO();
+			start_temperature_measuring();
 			SysProperties.start_flag = TRUE;
 			break;
+		}
 		case OP_TEMP_STOP:
 			SysProperties.start_flag = FALSE;
+			stop_temperature_measuring();
 			break;
 		case OP_TEMP_SAMPLE_RATE:
 			cmd_surveillance__SET_INTERVAL(received);
@@ -276,7 +321,7 @@ int send_to_external(uint8_t cmd, uint8_t option, void *data,
 	if (data)
 		memcpy(ext_frm_tx.data, data, data_len);
 	ext_frm_tx.data_padding_len = data_padding_len;
-	post_job(JOB_TYPE_TO_EXTERNAL, &ext_frm_tx, sizeof(struct external_frame_tx)/* ext_frm_tx.len - 20 */);
+	post_job(JOB_TYPE_TO_EXTERNAL, &ext_frm_tx, 17 + data_padding_len);
 
 	return ext_frm_tx.len;
 }

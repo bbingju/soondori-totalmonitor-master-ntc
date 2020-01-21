@@ -8,8 +8,9 @@
 #include "0_GlobalValue.h"
 
 //  공통
-void SlotRxFunction(void);
-void UnpackingRxQueue(void);
+void start_temperature_measuring();
+void stop_temperature_measuring();
+
 void DoSlotReset(uint8_t slot);
 void DoSelectSlot(uint8_t slot);
 void DoRejectSlot(void);

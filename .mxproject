@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/Users/popla/Documents/11_Firmware/TotalMonitor470/Inc
+HeaderPath=C:/Users/bbing/OneDrive/work/soondori/totalmonitor-405/Inc
 HeaderFiles=ffconf.h;bsp_driver_sd.h;sd_diskio.h;fatfs.h;FreeRTOSConfig.h;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_dfu_if.h;stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;fatfs_platform.h;
-SourcePath=C:/Users/popla/Documents/11_Firmware/TotalMonitor470/Src
+SourcePath=C:/Users/bbing/OneDrive/work/soondori/totalmonitor-405/Src
 SourceFiles=bsp_driver_sd.c;sd_diskio.c;fatfs.c;freertos.c;usb_device.c;usbd_conf.c;usbd_desc.c;usbd_dfu_if.c;stm32f4xx_it.c;stm32f4xx_hal_msp.c;stm32f4xx_hal_timebase_TIM.c;main.c;fatfs_platform.c;stm32f4xx_hal_timebase_tim.c;
 
 [PreviousLibFiles]

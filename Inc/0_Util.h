@@ -30,7 +30,7 @@ void doBuzzerPlay(uint16_t delay);
 void doNOP(uint16_t count);
 uint16_t CRC16_Make(uint8_t *byMsg, uint16_t len);
 float midADC_float(float * inData);
-void swap(float *a, float *b);
+/* void swap(float *a, float *b); */
 void doRejectSlot(void);
 
 #endif

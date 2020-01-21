@@ -91,6 +91,8 @@ void receive_from_external(struct external_frame_rx *);
 int send_to_external(uint8_t cmd, uint8_t option, void *data,
 		uint16_t data_writhe_len, uint16_t data_len, uint16_t buffer_len);
 
+void external_rx_task(void const * argument);
+
 #ifdef __cplusplus
 }
 #endif

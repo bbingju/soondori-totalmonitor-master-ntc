@@ -80,6 +80,8 @@ DMA_HandleTypeDef hdma_usart2_tx;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
+osThreadId init_task_id;
+osTimerId MeasureTimerHandle;
 osSemaphoreId myBinarySemModeHandle;
 osSemaphoreId myBinarySemUpHandle;
 osSemaphoreId myBinarySemDownHandle;
@@ -128,12 +130,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_IWDG_Init(void);
 void init_task(void const * argument);
-extern void StartDisplayTask(void const * argument);
-extern void external_rx_task(void const * argument);
-extern void external_tx_task(void const * argument);
-extern void StartRateTask(void const * argument);
-extern void internal_uart_task(void const * argument);
-extern void system_task(void const * argument);
+/* void measure_timer_callback(void const * argument); */
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -182,6 +179,7 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_FATFS_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
@@ -241,6 +239,11 @@ int main(void)
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
+
+  /* Create the timer(s) */
+  /* definition and creation of MeasureTimer */
+  /* osTimerDef(MeasureTimer, measure_timer_callback); */
+  /* MeasureTimerHandle = osTimerCreate(osTimer(MeasureTimer), osTimerPeriodic, NULL); */
 
   /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
@@ -513,11 +516,11 @@ static void MX_RTC_Init(void)
   sTime.Seconds = 0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+  sDate.WeekDay = RTC_WEEKDAY_TUESDAY;
   sDate.Month = RTC_MONTH_JANUARY;
   sDate.Date = 1;
   sDate.Year = 19;
@@ -736,7 +739,7 @@ static void MX_DMA_Init(void)
   HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
   /* DMA2_Stream7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 6, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 
 }
@@ -958,14 +961,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDisplayTask */
+/* USER CODE BEGIN Header_init_task */
 /**
   * @brief  Function implementing the InitTask thread.
   * @param  argument: Not used 
   * @retval None
   */
-/* USER CODE END Header_StartDisplayTask */
-void init_task(void const *argument)
+/* USER CODE END Header_init_task */
+void init_task(void const * argument)
 {
 	app_ctx_init(&ctx);
 
@@ -999,6 +1002,14 @@ void init_task(void const *argument)
 
 	osThreadTerminate(init_task_id);
 }
+
+/* /\* measure_timer_callback function *\/ */
+/* void measure_timer_callback(void const * argument) */
+/* { */
+/*   /\* USER CODE BEGIN measure_timer_callback *\/ */
+  
+/*   /\* USER CODE END measure_timer_callback *\/ */
+/* } */
 
 /**
   * @brief  Period elapsed callback in non blocking mode

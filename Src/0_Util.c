@@ -209,37 +209,37 @@ uint16_t CRC16_Make(uint8_t *byMsg, uint16_t len)
         return crc;
 }
 
-void swap(float *a, float *b)
-{
-        float tmp = *a;
-        *a = *b;
-        *b = tmp;
-}
+/* void swap(float *a, float *b) */
+/* { */
+/*         float tmp = *a; */
+/*         *a = *b; */
+/*         *b = tmp; */
+/* } */
 
 
-float midADC_float(float * inData) /* using Bubble sort */
-{
-        float	sortData[11];
+/* float midADC_float(float * inData) /\* using Bubble sort *\/ */
+/* { */
+/*         float	sortData[11]; */
 
-        sortData[0]     = *(inData++);
-        sortData[1]     = *(inData++);
-        sortData[2]     = *(inData++);
-        sortData[3]     = *(inData++);
-        sortData[4]     = *(inData++);
-        sortData[5]     = *(inData++);
-        sortData[6]     = *(inData++);
-        sortData[7]     = *(inData++);
-        sortData[8]     = *(inData++);
-        sortData[9]     = *(inData++);
-        sortData[10]	= *(inData);
+/*         sortData[0]     = *(inData++); */
+/*         sortData[1]     = *(inData++); */
+/*         sortData[2]     = *(inData++); */
+/*         sortData[3]     = *(inData++); */
+/*         sortData[4]     = *(inData++); */
+/*         sortData[5]     = *(inData++); */
+/*         sortData[6]     = *(inData++); */
+/*         sortData[7]     = *(inData++); */
+/*         sortData[8]     = *(inData++); */
+/*         sortData[9]     = *(inData++); */
+/*         sortData[10]	= *(inData); */
 
-        for(int i = 0; i < 11 - 1; ++i)
-        {
-                for(int j = 11 - 1; i < j; --j)
-                {
-                        if(sortData[j - 1] > sortData[j])
-                            swap(&sortData[j - 1], &sortData[j]);
-                }
-        }
-        return sortData[6];
-}
+/*         for(int i = 0; i < 11 - 1; ++i) */
+/*         { */
+/*                 for(int j = 11 - 1; i < j; --j) */
+/*                 { */
+/*                         if(sortData[j - 1] > sortData[j]) */
+/*                             swap(&sortData[j - 1], &sortData[j]); */
+/*                 } */
+/*         } */
+/*         return sortData[6]; */
+/* } */

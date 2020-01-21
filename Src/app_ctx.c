@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char fw_ver[] = "200116.01";
+static const char fw_ver[] = "200121.01";
 
 FRESULT ff_create_metafile(FIL *mf, char *path)
 {
@@ -111,10 +111,10 @@ void app_ctx_init(app_ctx_t *ctx)
 		return;
 
 	/* initialize FatFS */
-	MX_FATFS_Init();
-	if (retSD != 0) {
-		DBG_LOG("error: MX_FATFS_Init()\n");
-	}
+	/* MX_FATFS_Init(); */
+	/* if (retSD != 0) { */
+	/* 	DBG_LOG("error: MX_FATFS_Init()\n"); */
+	/* } */
 
 	ctx->heavy_job_processing = false;
 

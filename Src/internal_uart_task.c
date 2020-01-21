@@ -52,7 +52,8 @@ void response_from_internal(struct internal_frame *received)
 {
 	/* if (received->cmd == INTERNAL_CMD_THRESHOLD_SET || received->cmd ==
 	 * INTERNAL_CMD_THRESHOLD_REQ) { */
-	DBG_LOG("int RX slot %d: %s - (datalen: %d) \n",
+	/* if (received->cmd != 0x04 && received->cmd != 0x05) { */
+	DBG_LOG("int RX slot %d: %s - (len: %d) \r\n",
 		received->slot_id, int_cmd_str(received->cmd), received->datalen);
 	/* DBG_DUMP(received->data, received->datalen); */
 	/* } */
@@ -193,6 +194,10 @@ static void parse_rx(const void *data, size_t len)
 	}
 }
 
+extern void send_to_external__SLOT_INFO(struct slot_s *);
+extern void send_to_external__TEMPERATURE_STATE(struct slot_s *);
+extern void send_to_external__TEMPERATURE(struct slot_s *);
+
 void request_to_internal__SLOT_ID_REQ(struct slot_s *s)
 {
 	HAL_GPIO_WritePin(SLAVE_OE_GPIO_Port, SLAVE_OE_Pin, GPIO_PIN_SET);
@@ -215,6 +220,9 @@ static void handle__TEMPERATURES(struct internal_frame *msg)
 		memcpy(s->ntc.old_temperatures, s->ntc.temperatures, sizeof(float) * CHANNEL_NBR);
 		memcpy(s->ntc.temperatures, msg->temperatures.v, sizeof(float) * CHANNEL_NBR);
 
+		/* if (!ctx.heavy_job_processing && SysProperties.start_flag) { */
+		/* 	send_to_external__TEMPERATURE(s); */
+		/* } */
 		/* write log */
 		if (ctx.last_slot_id == msg->slot_id)
 			post_fs_job(FS_JOB_TYPE_SAVE_LOG);
@@ -227,6 +235,12 @@ static void handle__TEMPERATURE_STATES(struct internal_frame *frm)
 		struct slot_s *s = &ctx.slots[frm->slot_id];
 		memcpy(&s->ntc.channel_states[0], &frm->channel_states, sizeof(frm->channel_states));
 		memcpy(&s->ntc.channel_states[16], &frm->channel_states, sizeof(frm->channel_states));
+
+		/* if (!ctx.heavy_job_processing && SysProperties.start_flag) { */
+		/* 	/\* send_to_external__SLOT_INFO(s); *\/ */
+		/* 	/\* osDelay(1); *\/ */
+		/* 	send_to_external__TEMPERATURE_STATE(s); */
+		/* } */
 	}
 }
 

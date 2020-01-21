@@ -23,11 +23,15 @@ extern int int_tx_completed;
 extern int int_rx_completed;
 extern IWDG_HandleTypeDef hiwdg;
 
-static void send_to_external__BOARD_INFO();
-static void send_to_external__SLOT_INFO(struct slot_s *);
+/* static void send_to_external__BOARD_INFO(); */
+/* void send_to_external__SLOT_INFO(struct slot_s *); */
 static void send_to_external__TEMPERATURE_STATE(struct slot_s *);
 static void send_to_external__TEMPERATURE(struct slot_s *);
 static void check_smps(void);
+static void _measuring_timer_callback(void const *arg);
+
+static osTimerDef(periodic, _measuring_timer_callback);
+static osTimerId periodic_id;
 
 void app_task(void const *argument)
 {
@@ -49,6 +53,8 @@ void app_task(void const *argument)
 	osDelay(100);
 	HAL_IWDG_Refresh(&hiwdg);
 	// todo : 센서 타입을 슬레이브 보드에서 읽어 와야 함.
+
+	periodic_id = osTimerCreate(osTimer(periodic), osTimerPeriodic, (void *)5);
 
 	uint32_t next_wait = osKernelSysTick();
 
@@ -75,11 +81,6 @@ void app_task(void const *argument)
 					}
 				}
 			}
-			/* if (system_reset_needed) { */
-			/*     HAL_IWDG_Refresh(&hiwdg); */
-			/*     osDelay(500); */
-			/*     HAL_NVIC_SystemReset(); */
-			/* } */
 
 			ctx.last_slot_id = last_slot_id;
 			SysProperties.InterfaceStep = STEP_READ_THRESHOLD;
@@ -106,24 +107,23 @@ void app_task(void const *argument)
 				}
 			}
 
-			osDelay(100);
+			/* osDelay(100); */
 
-			if (SysProperties.start_flag) {
-				send_to_external__BOARD_INFO(); // transmit board info
-				osDelay(1);
+			/* if (SysProperties.start_flag) { */
+			/* 	/\* send_to_external__BOARD_INFO(); // transmit board info *\/ */
+			/* 	/\* osDelay(1); *\/ */
 
-				if (!ctx.heavy_job_processing) {
-					FOREACH(struct slot_s *s, ctx.slots) {
-						send_to_external__SLOT_INFO(s);
-						osDelay(1);
-						send_to_external__TEMPERATURE_STATE(s);
-						osDelay(1);
-						send_to_external__TEMPERATURE(s);
-						osDelay(2);
-					}
-				}
-			}
-			/* osDelay(25); */
+			/* 	if (!ctx.heavy_job_processing) { */
+			/* 		FOREACH(struct slot_s *s, ctx.slots) { */
+			/* 			/\* send_to_external__SLOT_INFO(s); *\/ */
+			/* 			/\* osDelay(1); *\/ */
+			/* 			send_to_external__TEMPERATURE_STATE(s); */
+			/* 			osDelay(1); */
+			/* 			send_to_external__TEMPERATURE(s); */
+			/* 			osDelay(2); */
+			/* 		} */
+			/* 	} */
+			/* } */
 			check_smps();
 			osDelayUntil(&next_wait, SysProperties.interval_ms);
 			break;
@@ -142,7 +142,7 @@ static void check_smps(void)
 		SysProperties.smpsState |= 0x02;
 }
 
-static void send_to_external__BOARD_INFO()
+void send_to_external__BOARD_INFO()
 {
 	struct external_board_info info = {
 		.self_id = 0, /* 부모 ID (MCU Board ID는 0으로 일단 고정) */
@@ -155,7 +155,7 @@ static void send_to_external__BOARD_INFO()
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_MAIN_INFO, &info, sizeof(info), 32, 52);
 }
 
-static void send_to_external__SLOT_INFO(struct slot_s *s)
+void send_to_external__SLOT_INFO(struct slot_s *s)
 {
 	if (!s) return;
 
@@ -192,4 +192,38 @@ static void send_to_external__TEMPERATURE(struct slot_s *s)
 
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_CHANNEL_VALUE,
 			&temp_data, sizeof(temp_data), 132, 152);
+}
+
+static void _measuring_timer_callback(void const *arg)
+{
+	/* if (!ctx.heavy_job_processing) { */
+	/* 	FOREACH(struct slot_s *s, ctx.slots) { */
+	/* 		send_to_external__SLOT_INFO(s); */
+	/* 		request_to_internal__GET_TEMPERATURE_STATES(s); */
+	/* 		/\* osDelay(1); *\/ */
+	/* 		request_to_internal__GET_TEMPERATURES(s); */
+	/* 		/\* osDelay(10); *\/ */
+	/* 	} */
+	/* } */
+
+	if (!ctx.heavy_job_processing) {
+		FOREACH(struct slot_s *s, ctx.slots) {
+			send_to_external__SLOT_INFO(s);
+			/* osDelay(1); */
+			send_to_external__TEMPERATURE_STATE(s);
+			/* osDelay(1); */
+			send_to_external__TEMPERATURE(s);
+			/* osDelay(2); */
+		}
+	}
+}
+
+void start_temperature_measuring()
+{
+	osTimerStart(periodic_id, SysProperties.interval_ms);
+}
+
+void stop_temperature_measuring()
+{
+	osTimerStop(periodic_id);
 }

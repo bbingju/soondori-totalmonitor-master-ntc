@@ -38,8 +38,8 @@ static FRESULT check_dir_for_current_date(void);
 static FRESULT write_log_file_header(FIL *fil);
 static FRESULT write_data(FIL *fil);
 static FRESULT update_metafile(FIL *fil);
-static void send_file_header(FIL *fil);
-static void send_file_overall(FIL *fil);
+static FRESULT send_file_header(FIL *fil);
+static FRESULT send_file_overall(FIL *fil);
 static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t datasize, size_t arraysize);
 
 extern app_ctx_t ctx;
@@ -102,9 +102,9 @@ static void handle_fs_job(FS_JOB_TYPE_E type)
 {
 	switch (type) {
 	case FS_JOB_TYPE_SAVE_LOG: {
-		uint32_t elapsed = osKernelSysTick();
+		/* uint32_t elapsed = osKernelSysTick(); */
 		save_log();
-		DBG_LOG("Saving a log elapsed %u\n", osKernelSysTick() - elapsed);
+		/* DBG_LOG("Saving a log elapsed %u\n", osKernelSysTick() - elapsed); */
 		break;
 	}
 	case FS_JOB_TYPE_QUERY_FILELIST:
@@ -114,7 +114,7 @@ static void handle_fs_job(FS_JOB_TYPE_E type)
 	case FS_JOB_TYPE_DOWNLOAD_FILE: {
 		uint32_t elapsed = osKernelSysTick();
 		struct ymd ymd;
-		/* strcpy(request_filename, "200119_100000.ske"); /\* for test *\/ */
+		/* strcpy(request_filename, "200121_130000.ske"); /\* for test *\/ */
 		translate_ymd(&ymd, request_filename);
 		sprintf(requested_path, "0://20%02d/%02d/%02d/%s",
 			ymd.y, ymd.m, ymd.d, request_filename);
@@ -336,10 +336,10 @@ static char *current_log_fullpath()
 	RTC_DateTypeDef *d = &SysTime.Date;
 	RTC_TimeTypeDef *t = &SysTime.Time;
 
-	/* if (t->Hours >= 24) { */
-		DBG_LOG("%02d%02d%02d_%02d%02d%02d\r\n", d->Year, d->Month, d->Date,
-			t->Hours, t->Minutes, t->Seconds);
-	/* } */
+	/* /\* if (t->Hours >= 24) { *\/ */
+	/* 	DBG_LOG("%02d%02d%02d_%02d%02d%02d\r\n", d->Year, d->Month, d->Date, */
+	/* 		t->Hours, t->Minutes, t->Seconds); */
+	/* /\* } *\/ */
 	sprintf(_fullpath, "0://20%02d/%02d/%02d/%02d%02d%02d_%02d%02d%02d.ske",
 		d->Year, d->Month, d->Date,
 		d->Year, d->Month, d->Date,
@@ -661,24 +661,24 @@ static int send_log_file(const char *filename, bool is_header)
 	if (ret != FR_OK) {
 		DBG_LOG("error (%d): f_open download during %s with %s\n",
 			ret, __func__, filename);
-		ctx.heavy_job_processing = false;
-		return -1;
+		goto _end;
 	}
 
 	if (is_header) {
-		send_file_header(&downloadfp);
+		ret = send_file_header(&downloadfp);
 	} else {
-		send_file_overall(&downloadfp);
+		ret = send_file_overall(&downloadfp);
 	}
+	if (ret != FR_OK)
+		goto _end;
 
+_end:
 	f_close(&downloadfp);
-
 	ctx.heavy_job_processing = false;
-
 	return 0;
 }
 
-static void send_file_header(FIL *fil)
+static FRESULT send_file_header(FIL *fil)
 {
 	FRESULT ret = FR_OK;
 
@@ -700,7 +700,7 @@ static void send_file_header(FIL *fil)
 	ret = f_read(fil, &fs_data_buffer[4], FILE_CHUNCK_SIZE, &readnum);
 	if (ret != FR_OK) {
 		f_close(fil);
-		return;
+		return ret;
 	}
 
 	/* send packets */
@@ -712,9 +712,11 @@ static void send_file_header(FIL *fil)
 	memset(fs_data_buffer, 0, sizeof(fs_data_buffer));
 	_send_fs_packet(CMD_SD_CARD, OP_SDCARD_DOWNLOAD_END | 0xF0, fs_data_buffer, readnum + 4, readnum + 4);
 	DBG_LOG("%s: %d readnum (%u), totalnum (%u)\r\n", __func__, count, readnum, totalnum);
+
+	return ret;
 }
 
-static void send_file_overall(FIL *fil)
+static FRESULT send_file_overall(FIL *fil)
 {
 	FRESULT ret = FR_OK;
 
@@ -737,7 +739,7 @@ static void send_file_overall(FIL *fil)
 		ret = f_read(fil, &fs_data_buffer[4], FILE_CHUNCK_SIZE, &readnum);
 		if (ret != FR_OK) {
 			f_close(fil);
-			return;
+			return ret;
 		}
 
 		/* send packets */
@@ -753,7 +755,7 @@ static void send_file_overall(FIL *fil)
 		DBG_LOG("%s: %d readnum (%u), totalnum (%u)\r\n", __func__, count, readnum, totalnum);
 	}
 
-	/* send ending packet */
+	return ret;
 }
 
 static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t datasize, size_t arraysize)
@@ -769,9 +771,9 @@ static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t data
 	ext_tx_completed = 0;
 	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
 	HAL_UART_Transmit_DMA(&huart1, fs_buffer, arraysize + 20);
+	osDelay(100);
 	/* while (ext_tx_completed == 0) */
 	/* 	__NOP(); */
-
 }
 
 static int delete_log_file(const char *filename)

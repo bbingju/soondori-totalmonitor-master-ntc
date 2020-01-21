@@ -3,6 +3,9 @@
 #include "0_16Segment.h"
 #include "0_GlobalValue.h"
 #include "0_SensorCal.h"
+#include "debug.h"
+
+#include <string.h>
 
 /*********************************************************************
 *	Private variables
@@ -29,6 +32,8 @@ uint32_t	uid[3];
 
 extern app_ctx_t ctx;
 extern IWDG_HandleTypeDef hiwdg;
+
+static uint32_t get_middle_value(uint32_t * array, int nbr);
 
 /*********************************************************************
 *	StartDisplayTask
@@ -247,37 +252,62 @@ void doBatteryVoltageCheck(void)
 	HAL_ADC_Start_DMA(&hadc1, adc_battery, SAMPLE_NBR);
 }
 
+static uint32_t sorted_data[SAMPLE_NBR];
+
 /*********************************************************************
 *	doMainBoardSensorCheck
 *	메인보드 내부 센서 확인
 **********************************************************************/
 void doMainBoardSensorCheck(void)
 {
-	uint32_t adc_mainBoardRTD_add = 0;
-	float adc_mainBoardTEMP_add = 0;
-	float adc_mainBoardHUMI_add = 0;
-
-	// RTD DATA
-	for (int i = 0; i < SAMPLE_NBR; i++)
-	{
-		adc_mainBoardRTD_add += adc_mainBoardSensor[i * 3];
+	for (int i = 0; i < SAMPLE_NBR; i++) {
+		sorted_data[i] = adc_mainBoardSensor[i * 3];
 	}
 	struct rtd_s *r = &ctx.rtd;
-	r->adc_val = adc_mainBoardRTD_add / SAMPLE_NBR;
+	r->adc_val = get_middle_value(sorted_data, SAMPLE_NBR);
 	r->temperature = Calc_Temp_RTD(r->adc_val) + r->calibration_const;
+	/* DBG_LOG("%s: rtd adc %u\r\n", __func__, r->adc_val); */
 
 	// BOARD TEMP
 	for (int i = 0; i < SAMPLE_NBR; i++) {
-		adc_mainBoardTEMP_add += Calc_BD_Temp(adc_mainBoardSensor[i * 3 + 1]);
+		sorted_data[i] = adc_mainBoardSensor[i * 3 + 1];
 	}
-	ctx.temperature = adc_mainBoardTEMP_add / SAMPLE_NBR;
+	uint32_t temp = get_middle_value(sorted_data, SAMPLE_NBR);
+	ctx.temperature = Calc_BD_Temp(temp);
 
 	// BOARD HUMIDITY
 	for (int i = 0; i < SAMPLE_NBR; i++) {
-		adc_mainBoardHUMI_add += Calc_BD_Humi(adc_mainBoardSensor[i * 3 + 2]);
+		sorted_data[i] = adc_mainBoardSensor[i * 3 + 2];
 	}
-	ctx.humidity = adc_mainBoardHUMI_add / SAMPLE_NBR;
+	uint32_t humi = get_middle_value(sorted_data, SAMPLE_NBR);
+	ctx.humidity = Calc_BD_Humi(humi);
 
 	HAL_ADC_Start_DMA(&hadc2, adc_mainBoardSensor, SAMPLE_NBR * 3);
 }
 
+__STATIC_INLINE void swap(uint32_t *a, uint32_t *b)
+{
+	register uint32_t tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+
+static uint32_t get_middle_value(uint32_t * array, int nbr)
+{
+	memcpy(sorted_data, array, nbr * sizeof(uint32_t));
+
+	for (int i = 0; i < nbr; ++i) {
+		for (int j = nbr; i < j; --j) {
+			if (sorted_data[j - 1] > sorted_data[j])
+				swap(&sorted_data[j - 1], &sorted_data[j]);
+		}
+	}
+
+	/* for (int i = 0; i < nbr / 5; i++) { */
+	/* 	DBG_LOG("%u %u %u %u %u\n", sorted_data[i * 5 + 0], */
+	/* 		sorted_data[i * 5 + 1], sorted_data[i * 5 + 2], */
+	/* 		sorted_data[i * 5 + 3], sorted_data[i * 5 + 4]); */
+	/* } */
+
+	return sorted_data[nbr / 2];
+}

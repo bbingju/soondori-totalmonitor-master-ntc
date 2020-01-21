@@ -301,8 +301,8 @@ int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte)
 		if (crc != *((uint16_t*)received_crc)) {
 			DBG_LOG("%s: mismatch with crc, received (0x%04X), calcurated (0x%04X)\n", __func__,
 				*((uint16_t*)received_crc), crc);
-			/* state = 0; */
-			/* break; */
+			state = 0;
+			break;
 		}
 		++state;
 		break;
