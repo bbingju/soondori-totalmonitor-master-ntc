@@ -1063,17 +1063,4 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 #endif /* USE_FULL_ASSERT */
 
-void vApplicationIdleHook( void )
-{
-    static uint32_t elapsed_tick = 0;
-
-    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(400)) {
-        elapsed_tick = osKernelSysTick();
-        HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
-        HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
-    }
-
-    HAL_IWDG_Refresh(&hiwdg);
-}
-
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

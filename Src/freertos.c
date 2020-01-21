@@ -55,7 +55,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
-
+#include "0_GlobalValue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,7 +75,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+extern RTC_HandleTypeDef hrtc;
+extern IWDG_HandleTypeDef hiwdg;
 /* USER CODE END Variables */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -106,6 +107,15 @@ __weak void vApplicationIdleHook( void )
    important that vApplicationIdleHook() is permitted to return to its calling
    function, because it is the responsibility of the idle task to clean up
    memory allocated by the kernel to any task that has since been deleted. */
+    static uint32_t elapsed_tick = 0;
+
+    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(400)) {
+        elapsed_tick = osKernelSysTick();
+        HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
+        HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
+    }
+
+    HAL_IWDG_Refresh(&hiwdg);
 }
 /* USER CODE END 2 */
 
