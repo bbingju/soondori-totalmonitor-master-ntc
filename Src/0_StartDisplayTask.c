@@ -152,19 +152,16 @@ void doSegmentDisplay(uint8_t quarterSec)
 		}
 		break;
 	case DPM_SDCARD_ERROR:
-/*
-  if((quarterSec % 4) < 2)
-  {
-  //doBuzzerPlay(100);
-  SegmentDisplay(1, doTextToDigitdata('E'));
-  SegmentDisplay(2, doTextToDigitdata('S'));
-  }
-  else
-  {
-  //iiii = (uint8_t)ctx.sd_last_error;
-  SegmentDisplay(1, doTextToDigitdata((uint8_t)(ctx.sd_last_error) / (uint8_t)10 + '0'));
-  SegmentDisplay(2, doTextToDigitdata((uint8_t)(ctx.sd_last_error) % (uint8_t)10 + '0'));
-  }*/
+		if ((quarterSec % 4) < 2)
+		{
+			SegmentDisplay(1, doTextToDigitdata('E'));
+			SegmentDisplay(2, doTextToDigitdata('S'));
+		}
+		else
+		{
+			SegmentDisplay(1, doTextToDigitdata((uint8_t)(ctx.sd_last_error) / (uint8_t)10 + '0'));
+			SegmentDisplay(2, doTextToDigitdata((uint8_t)(ctx.sd_last_error) % (uint8_t)10 + '0'));
+		}
 		break;
 	case DPM_SETTING:
 		SegmentDisplay(1, doTextToDigitdata('S'));

@@ -967,7 +967,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 /* USER CODE END Header_StartDisplayTask */
 void init_task(void const *argument)
 {
-	/* MX_FATFS_Init(); */
 	app_ctx_init(&ctx);
 
 	osThreadStaticDef(JobTask, job_task, osPriorityNormal, 0, 256,

@@ -114,7 +114,7 @@ static void handle_fs_job(FS_JOB_TYPE_E type)
 	case FS_JOB_TYPE_DOWNLOAD_FILE: {
 		uint32_t elapsed = osKernelSysTick();
 		struct ymd ymd;
-		strcpy(request_filename, "200117_220000.ske"); /* for test */
+		/* strcpy(request_filename, "200119_100000.ske"); /\* for test *\/ */
 		translate_ymd(&ymd, request_filename);
 		sprintf(requested_path, "0://20%02d/%02d/%02d/%s",
 			ymd.y, ymd.m, ymd.d, request_filename);
@@ -526,16 +526,16 @@ static FRESULT write_data(FIL *fil)
 
 	//채널
 	FOREACH(struct slot_s *s, ctx.slots) {
-		/* if (!s || !s->inserted) */
-		/* 	continue; */
+		if (!s || !s->inserted)
+			continue;
 
 		for (int i = 0; i < 16; i++) {
-		/* 	if (s->ntc.channel_states[i] != CHANNEL_STATE_DISCONNECTED) { */
+			if (s->ntc.channel_states[i] != CHANNEL_STATE_DISCONNECTED) {
 				fs_data_buffer[34 + (sensorCount * 6)] = s->id * 16 + i; // 채널 번호
 				fs_data_buffer[35 + (sensorCount * 6)] = s->ntc.channel_states[i]; // 센서 상태
 				*((float *)&fs_data_buffer[36 + (sensorCount * 6)]) = s->ntc.temperatures[i]; // 센서값 저장
 				sensorCount++; // 사용 채널수 확인
-		/* 	} */
+			}
 		}
 	}
 	/* for (int j = 0; j < 4; j++) { */
@@ -604,36 +604,44 @@ static FRESULT update_metafile(FIL *fil)
 	char buffer[64] = { 0 };
 	FRESULT ret = FR_OK;
 
-	ret = f_open(fil, "0://.metafile", FA_OPEN_EXISTING | FA_READ | FA_WRITE);
+	ret = f_open(fil, "0://.metafile", FA_OPEN_APPEND | FA_READ | FA_WRITE);
 	if (ret != FR_OK) {
 		DBG_LOG("error (%d): f_open metafile during %s\n", ret, __func__);
 		return ret;
 	}
 
 	/* move pointer to last line & read the line */
-	f_lseek(fil, f_size(fil) - 20);
-	f_gets(buffer, 19, fil);
+	if (f_size(fil) == 0) {
+		if (SysTime.Date.Year >= 20) {
+			f_printf(fil, "%02d%02d%02d\n",
+				SysTime.Date.Year, SysTime.Date.Month, SysTime.Date.Date);
+			f_printf(fil, "\t%s\n", current_log_filename());
+		}
+	} else {
+		f_lseek(fil, f_size(fil) - 20);
+		f_gets(buffer, 19, fil);
 
-	if (buffer[0] != '\t') {
-		DBG_LOG("error: can not find last line of metafile\n");
-		f_close(fil);
-		return 100;
-	}
+		if (buffer[0] != '\t') {
+			DBG_LOG("error: can not find last line of metafile\n");
+			f_close(fil);
+			return 100;
+		}
 
-	struct ymd last_ymd = { 0 };
-	translate_ymd(&last_ymd, &buffer[1]);
-	if (last_ymd.d != SysTime.Date.Date) {
-		f_lseek(fil, f_size(fil));
-		f_printf(fil, "%02d%02d%02d\n",
-			SysTime.Date.Year, SysTime.Date.Month, SysTime.Date.Date);
-	}
+		struct ymd last_ymd = { 0 };
+		translate_ymd(&last_ymd, &buffer[1]);
+		if (last_ymd.d != SysTime.Date.Date) {
+			f_lseek(fil, f_size(fil));
+			f_printf(fil, "%02d%02d%02d\n",
+				SysTime.Date.Year, SysTime.Date.Month, SysTime.Date.Date);
+		}
 
-	char *n = strndup(&buffer[8], 2);
-	uint8_t hour = (uint8_t)strtol(n, NULL, 10);
-	free(n);
-	if (hour != SysTime.Time.Hours) {
-		f_lseek(fil, f_size(fil));
-		f_printf(fil, "\t%s\n", current_log_filename());
+		char *n = strndup(&buffer[8], 2);
+		uint8_t hour = (uint8_t)strtol(n, NULL, 10);
+		free(n);
+		if (hour != SysTime.Time.Hours) {
+			f_lseek(fil, f_size(fil));
+			f_printf(fil, "\t%s\n", current_log_filename());
+		}
 	}
 
 	f_sync(fil);
