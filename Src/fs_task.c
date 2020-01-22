@@ -115,7 +115,7 @@ static void handle_fs_job(FS_JOB_TYPE_E type)
 	case FS_JOB_TYPE_DOWNLOAD_FILE: {
 		uint32_t elapsed = osKernelSysTick();
 		struct ymd ymd;
-		/* strcpy(request_filename, "200121_130000.ske"); /\* for test *\/ */
+		strcpy(request_filename, "200122_070000.ske"); /* for test */
 		translate_ymd(&ymd, request_filename);
 		sprintf(requested_path, "0://20%02d/%02d/%02d/%s",
 			ymd.y, ymd.m, ymd.d, request_filename);
@@ -761,9 +761,8 @@ static FRESULT send_file_overall(FIL *fil)
 
 static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t datasize, size_t arraysize)
 {
-	doMakeSend485Data(fs_buffer, cmd, option, data, datasize, arraysize);
-	/* int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, */
-	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
+	/* doMakeSend485Data(fs_buffer, cmd, option, data, datasize, arraysize); */
+	int ftxsize = fill_external_tx_frame(fs_buffer, cmd, option, data, arraysize);
 	/* DBG_DUMP(fs_buffer, arraysize + 20); */
 
 	while (!ext_tx_completed)
@@ -771,7 +770,7 @@ static void _send_fs_packet(uint8_t cmd, uint8_t option, void *data, size_t data
 
 	ext_tx_completed = 0;
 	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
-	HAL_UART_Transmit_DMA(&huart1, fs_buffer, arraysize + 20);
+	HAL_UART_Transmit_DMA(&huart1, fs_buffer, ftxsize /* arraysize + 20 */);
 	osDelay(100);
 	/* while (ext_tx_completed == 0) */
 	/* 	__NOP(); */

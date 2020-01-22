@@ -195,7 +195,7 @@ void doNOP(uint16_t count)
 uint16_t CRC16_Make(uint8_t *byMsg, uint16_t len)
 {
 	__IO uint16_t  crc = 0xFFFF;
-	uint16_t flag;
+	__IO uint16_t flag;
         for (int i = 0; i < len; i++)
         {
                 crc ^= byMsg[i];

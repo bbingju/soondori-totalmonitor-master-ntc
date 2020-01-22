@@ -212,15 +212,15 @@ static void _send_to_external(struct external_frame_tx *ftx)
 	while (!ext_tx_completed)
 		__NOP();
 
-	doMakeSend485Data(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len, ftx->len - 20);
-	/* int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, */
-	/* 				ftx->ipaddr, ftx->datetime, ftx->data, ftx->len - 20); */
+	/* doMakeSend485Data(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len, ftx->len - 20); */
+	int ftxsize = fill_external_tx_frame(tx_buffer, ftx->cmd, ftx->option, ftx->data, ftx->data_padding_len);
 
 	/* DBG_DUMP(tx_buffer, ftx->len); */
 
 	ext_tx_completed = 0;
 	HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
-	HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftx->len);
+	HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftxsize);
+	/* HAL_UART_Transmit_DMA(&huart1, tx_buffer, ftx->len); */
 	while (ext_tx_completed == 0)
 		__NOP();
 }

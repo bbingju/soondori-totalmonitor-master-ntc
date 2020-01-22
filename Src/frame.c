@@ -54,7 +54,7 @@ static uint16_t crc16_ccitt(const uint8_t *buf, int len)
 	return crc;
 }
 
-static uint16_t crc16_modbus_update(uint16_t crc, uint8_t a)
+__STATIC_INLINE uint16_t crc16_modbus_update(uint16_t crc, uint8_t a)
 {
 	register int i;
 	crc ^= (uint16_t)a;
@@ -66,6 +66,15 @@ static uint16_t crc16_modbus_update(uint16_t crc, uint8_t a)
 	}
 
 	return crc;
+}
+static uint16_t crc16_modbus(const uint8_t *buf, int len)
+{
+    register uint16_t crc = 0xFFFF;
+    register int i;
+    for (i = 0; i < len; i++) {
+        crc = crc16_modbus_update(crc, *(uint8_t *)buf++);
+    }
+    return crc;
 }
 
 int fill_internal_frame(uint8_t *buffer, uint8_t slot_id, uint8_t cmd,
@@ -184,7 +193,7 @@ int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte)
 }
 
 int fill_external_tx_frame(uint8_t *buffer, uint8_t cmd, uint8_t option,
-			uint8_t *ipaddr, uint8_t *datetime, uint8_t* data, uint32_t datalen)
+			   uint8_t* data, uint32_t datalen)
 {
 	if (!buffer)
 		return 0;
@@ -204,8 +213,6 @@ int fill_external_tx_frame(uint8_t *buffer, uint8_t cmd, uint8_t option,
 	*offset++ = 168;
 	*offset++ = 255;
 	*offset++ = 255;
-	/* for (int i = 0; i < 4; i++) */
-	/* 	*offset++ = ipaddr[i]; */
 
 	/* date & time */
 	*offset++ = SysTime.Date.Year;
@@ -214,16 +221,13 @@ int fill_external_tx_frame(uint8_t *buffer, uint8_t cmd, uint8_t option,
 	*offset++ = SysTime.Time.Hours;
 	*offset++ = SysTime.Time.Minutes;
 	*offset++ = SysTime.Time.Seconds;
-	/* for (int i = 0; i < 6; i++) */
-	/* 	*offset++ = datetime[i]; */
 
 	if (datalen > 0) {
 		memcpy(offset, data, datalen);
 		offset += datalen;
 	}
 
-	*((uint16_t *)offset) = CRC16_Make(buffer + 1, datalen + 20 - 4);
-	/* *((uint16_t *)offset) = crc16_ccitt(buffer + 1, 3 + datalen); */
+	*((uint16_t *)offset) = crc16_modbus(buffer + 1, datalen + 20 - 4);
 	offset += 2;
 
 	*offset = EXT_ETX;

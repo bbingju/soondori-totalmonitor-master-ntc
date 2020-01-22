@@ -248,7 +248,7 @@ int fill_internal_frame(uint8_t *buffer, uint8_t slot_id, uint8_t cmd, uint8_t d
 int parse_internal_frame(struct internal_frame *frm, uint8_t const *byte);
 
 int fill_external_tx_frame(uint8_t *buffer, uint8_t cmd, uint8_t option,
-			uint8_t *ipaddr, uint8_t *datetime, uint8_t* data, uint32_t datalen);
+			   uint8_t* data, uint32_t datalen);
 int parse_external_rx_frame(struct external_frame_rx *frm, uint8_t const *byte);
 
 __STATIC_INLINE const char *int_cmd_str(uint8_t cmd)
