@@ -212,33 +212,6 @@ uint8_t BSP_SD_Erase(uint32_t StartAddr, uint32_t EndAddr)
   return sd_state;
 }
 
-/* USER CODE BEGIN BeforeHandlersSection */
-/* can be used to modify previous code / undefine following code / add code */
-/* USER CODE END BeforeHandlersSection */
-/**
-  * @brief  Handles SD card interrupt request.
-  */
-void BSP_SD_IRQHandler(void)
-{
-  HAL_SD_IRQHandler(&hsd);
-}
-
-/**
-  * @brief  Handles SD DMA Tx transfer interrupt request.
-  */
-void BSP_SD_DMA_Tx_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(hsd.hdmatx); 
-}
-
-/**
-  * @brief  Handles SD DMA Rx transfer interrupt request.
-  */
-void BSP_SD_DMA_Rx_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(hsd.hdmarx);
-}
-
 /**
   * @brief  Gets the current SD card data status.
   * @param  None
