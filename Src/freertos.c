@@ -109,7 +109,7 @@ __weak void vApplicationIdleHook( void )
    memory allocated by the kernel to any task that has since been deleted. */
     static uint32_t elapsed_tick = 0;
 
-    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(400)) {
+    if (osKernelSysTick() - elapsed_tick > osKernelSysTickMicroSec(200)) {
         elapsed_tick = osKernelSysTick();
         HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
         HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
