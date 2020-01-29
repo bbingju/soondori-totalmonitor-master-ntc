@@ -160,12 +160,12 @@ void send_to_external__SLOT_INFO(struct slot_s *s)
 	if (!s) return;
 
 	struct external_slot_info info = {
-		.self_id = 0,	/* 부모 ID (MCU Board ID는 0으로 일단 고정) */
+		.self_id = 0, /* 부모 ID (MCU Board ID는 0으로 일단 고정) */
+		.slot_id = s->id,
+		.slot_type = s->type,
+		.compensated = s->ntc.compensated.applied,
 	};
 
-	info.slot_id = s->id;
-	info.slot_type = s->type;
-	info.compensated = s->ntc.compensated.applied;
 	send_to_external(CMD_TEMP_TEST, OP_TEMP_SLOT_INFO, &info, sizeof(info), 32, 52);
 }
 
