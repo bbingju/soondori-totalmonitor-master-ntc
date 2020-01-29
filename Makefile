@@ -24,7 +24,7 @@ TARGET = totalmonitor-master
 # debug build?
 DEBUG = 0
 # optimization
-OPT = -Os
+OPT = -Og
 
 
 #######################################
