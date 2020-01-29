@@ -160,7 +160,6 @@ void receive_from_external(struct external_frame_rx *received)
 	case CMD_TEMP_TEST:
 		switch(received->option) {
 		case OP_TEMP_START_RX: {
-			send_to_external__BOARD_INFO();
 			start_temperature_measuring();
 			SysProperties.start_flag = TRUE;
 			break;

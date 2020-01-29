@@ -207,6 +207,10 @@ static void _measuring_timer_callback(void const *arg)
 	/* } */
 
 	if (!ctx.heavy_job_processing) {
+		HAL_RTC_GetDate(&hrtc, &SysTime.Date, RTC_FORMAT_BIN);
+		HAL_RTC_GetTime(&hrtc, &SysTime.Time, RTC_FORMAT_BIN);
+		send_to_external__BOARD_INFO();
+
 		FOREACH(struct slot_s *s, ctx.slots) {
 			send_to_external__SLOT_INFO(s);
 			/* osDelay(1); */
